@@ -1,12 +1,17 @@
-
 import './App.css'
+import { Route,Routes } from 'react-router-dom'
+import Home from './pages/Home'
+import Login from './pages/Loign'
 
 function App() {
   
   return (
-    <>
-      <h1 className='text-4xl font-bold'>e-Voting Platform</h1>
-    </>
+    <div className="min-h-screen">
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+      </Routes>
+    </div>
   )
 }
 
