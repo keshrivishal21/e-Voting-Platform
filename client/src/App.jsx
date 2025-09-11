@@ -1,11 +1,16 @@
-
 import './App.css'
+import Navbar from './components/Navbar'
+import StudentBoard from './pages/StudentBoard/Home'
+import Footer from './components/Footer'
 
 function App() {
   
   return (
     <>
-      <h1 className='text-4xl font-bold'>e-Voting Platform</h1>
+    <Navbar isCandidate={true} notificationCount={3}/>
+      <StudentBoard/>
+
+    <Footer/>
     </>
   )
 }
