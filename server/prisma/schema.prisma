@@ -1,15 +1,157 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// schema.prisma
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
+  url      = env("DATABASE_URL") // Example: "mysql://user:password@localhost:3306/eVoting"
+}
+
+enum UserType {
+  Student
+  Candidate
+}
+
+enum ElectionStatus {
+  Upcoming
+  Ongoing
+  Completed
+}
+
+enum LogType {
+  Authentication
+  Audit
+}
+
+model USERS {
+  User_id   Int       @id
+  User_type UserType
+
+  student   STUDENT?
+  candidate CANDIDATE?
+  feedbacks FEEDBACK[]
+  logs      SYSTEM_LOGS[]
+  notif     NOTIFICATION[]
+}
+
+model ADMIN {
+  Admin_id      Int           @id
+  Admin_name    String        @db.VarChar(30)
+  Admin_email   String        @db.VarChar(50)
+  Admin_phone   String        @db.VarChar(15)
+  Admin_password String       @db.VarChar(255)
+
+  elections     ELECTION[]
+  results       RESULT[]
+  feedbacks     FEEDBACK[]
+  logs          SYSTEM_LOGS[]
+  notifications NOTIFICATION[]
+}
+
+model ELECTION {
+  Election_id Int              @id
+  Title       String           @db.VarChar(100)
+  Start_date  DateTime         @db.Date
+  End_date    DateTime         @db.Date
+  Status      ElectionStatus
+  Created_by  Int
+
+  admin       ADMIN            @relation(fields: [Created_by], references: [Admin_id])
+  candidates  CANDIDATE[]
+  votes       VOTE[]
+  results     RESULT[]
+}
+
+model STUDENT {
+  Std_id      Int       @id
+  Std_name    String    @db.VarChar(30)
+  Std_phone   String    @db.VarChar(15)
+  Std_password String   @db.VarChar(255)
+  Dob         DateTime  @db.Date
+  Std_email   String    @db.VarChar(50)
+
+  user        USERS     @relation(fields: [Std_id], references: [User_id])
+  votes       VOTE[]
+}
+
+model CANDIDATE {
+  Can_id      Int       @id
+  Can_name    String    @db.VarChar(30)
+  Position    String    @db.VarChar(30)
+  Can_email   String    @db.VarChar(50)
+  Can_phone   String    @db.VarChar(15)
+  Can_password String   @db.VarChar(255)
+  Manifesto   String
+  Election_id Int
+
+  election    ELECTION  @relation(fields: [Election_id], references: [Election_id])
+  user        USERS     @relation(fields: [Can_id], references: [User_id])
+  votes       VOTE[]
+  results     RESULT[]
+}
+
+model VOTE {
+  Vote_id       Int       @id
+  Std_id        Int
+  Can_id        Int
+  Election_id   Int
+  Vote_time     DateTime  @db.Timestamp(0)
+  Encrypted_vote String
+
+  student   STUDENT   @relation(fields: [Std_id], references: [Std_id])
+  candidate CANDIDATE @relation(fields: [Can_id], references: [Can_id])
+  election  ELECTION  @relation(fields: [Election_id], references: [Election_id])
+
+  @@unique([Std_id, Election_id])
+}
+
+model RESULT {
+  R_id        Int       @id
+  Can_id      Int
+  Election_id Int
+  Vote_count  Int
+  Admin_id    Int
+
+  candidate   CANDIDATE @relation(fields: [Can_id], references: [Can_id])
+  election    ELECTION  @relation(fields: [Election_id], references: [Election_id])
+  admin       ADMIN     @relation(fields: [Admin_id], references: [Admin_id])
+
+  @@unique([Election_id, Can_id])
+}
+
+model FEEDBACK {
+  FB_id     Int       @id
+  User_id   Int
+  FB_time   DateTime  @db.Timestamp(0)
+  Message   String
+  Status    String    @db.VarChar(50)
+  Admin_id  Int?
+
+  user      USERS     @relation(fields: [User_id], references: [User_id])
+  admin     ADMIN?    @relation(fields: [Admin_id], references: [Admin_id])
+}
+
+model SYSTEM_LOGS {
+  Log_id   Int     @id
+  User_id  Int
+  Admin_id Int?
+  Log_time DateTime @db.Timestamp(0)
+  Log_type LogType
+  Action   String
+
+  user     USERS  @relation(fields: [User_id], references: [User_id])
+  admin    ADMIN? @relation(fields: [Admin_id], references: [Admin_id])
+}
+
+model NOTIFICATION {
+  N_id          Int      @id
+  User_id       Int
+  Notif_time    DateTime @db.Timestamp(0)
+  Notif_message String
+  Admin_id      Int?
+
+  user          USERS   @relation(fields: [User_id], references: [User_id])
+  admin         ADMIN?  @relation(fields: [Admin_id], references: [Admin_id])
 }
