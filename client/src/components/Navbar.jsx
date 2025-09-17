@@ -9,7 +9,7 @@ export default function Navbar({ isCandidate, notificationCount = 0 }) {
     <header className="fixed top-0 left-0 w-full z-50">
       <div className="flex items-center justify-between px-6 py-3 md:py-4 shadow max-w-6xl mx-auto bg-white/70 backdrop-blur-lg rounded-full mt-4">
         {/* Left: Project Name */}
-        <Link to="/student" className="text-2xl font-extrabold text-indigo-600">
+        <Link to="/" className="text-2xl font-extrabold text-indigo-600">
           e-Voting
         </Link>
 
