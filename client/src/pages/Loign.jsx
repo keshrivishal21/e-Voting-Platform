@@ -9,11 +9,15 @@ function Login() {
     const Navigate = useNavigate();
     const submitHndler = (e) => {
         e.preventDefault();
-        if(e.target.userId.value === "" || e.target.password.value === "") {
+        if(e.target.userId.value === "" || e.target.password.value === "" || e.target.userType.value === "") {
             toast.error("Please fill all the fields")
         }
         else{
             toast.success("Login Successful")
+            // You can access the form values like this:
+            // const userId = e.target.userId.value;
+            // const password = e.target.password.value;
+            // const userType = e.target.userType.value;
         }
     }
   return (
@@ -43,6 +47,19 @@ function Login() {
               placeholder="Enter the Password"
               className="w-full px-4 py-2 rounded-md bg-white text-black outline-none focus:ring-2 focus:ring-blue-400"
             />
+          </div>
+
+          <div className="text-left">
+            <label className="block mb-1 text-sm font-semibold">User Type</label>
+            <select
+              name='userType'
+              className="w-full px-4 py-2 rounded-md bg-white text-black outline-none focus:ring-2 focus:ring-blue-400"
+            >
+              <option value="">Select User Type</option>
+              <option value="student">Student</option>
+              <option value="candidate">Candidate</option>
+              <option value="admin">Admin</option>
+            </select>
           </div>
 
           <div className="text-right text-sm text-blue-300 hover:underline cursor-pointer">
