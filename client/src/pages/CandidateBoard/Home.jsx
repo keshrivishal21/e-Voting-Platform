@@ -1,14 +1,3 @@
-<<<<<<< HEAD
-import React from 'react'
-
-const Home = () => {
-  return (
-    <div>Home</div>
-  )
-}
-
-export default Home
-=======
 import React from "react";
 import { FileText, User, BarChart3 } from "lucide-react";
 
@@ -110,4 +99,3 @@ const Home = () => {
 };
 
 export default Home;
->>>>>>> anjali/main

@@ -1,14 +1,3 @@
-<<<<<<< HEAD
-import React from 'react'
-
-const LiveVotes = () => {
-  return (
-    <div>LiveVotes</div>
-  )
-}
-
-export default LiveVotes
-=======
 import React from "react";
 
 const LiveVotes = () => {
@@ -33,4 +22,3 @@ const LiveVotes = () => {
 };
 
 export default LiveVotes;
->>>>>>> anjali/main
