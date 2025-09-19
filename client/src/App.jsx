@@ -1,7 +1,7 @@
 import './App.css';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import StudentHome from './pages/StudentBoard/Home';
 import CandidateList from './pages/StudentBoard/CandidateList';
 import StudentNotifications from './pages/StudentBoard/Notifications';
@@ -18,19 +18,32 @@ import AdminNotifications from './pages/AdminBoard/Notifications';
 import AdminResultManagement from './pages/AdminBoard/ResultMangement';
 import AdminStudentManagement from './pages/AdminBoard/StudentMangement';
 import Login from './pages/Auth/Login';
-import Register from './pages/Auth/Register';
+import Register from './pages/Auth/CandidateRegister';
 import NotFound from './pages/NotFound';
 import ProtectedRoute from './components/ProtectedRoute';
+import Home from './pages/Home';
 
 function App() {
   // TODO: Replace with real auth logic
   const isAuthenticated = true;
   const userRole = 'student'; // 'admin', 'candidate', 'student'
+  
+  // Get current location
+  const location = useLocation();
+  
+  // Simple approach - just list the routes where you want to hide navbar
+  const noNavbarRoutes = ['/login', '/register', '/404', '/not-found'];
+  const noFooterRoutes = ['/login', '/register'];
+  
+  const shouldHideNavbar = noNavbarRoutes.includes(location.pathname);
+  const shouldHideFooter = noFooterRoutes.includes(location.pathname);
 
   return (
-    <>
-      <Navbar isCandidate={true} notificationCount={3} />
+    <div className="flex flex-col min-h-screen">
+      {/* Conditionally render navbar */}
+      {!shouldHideNavbar && <Navbar isCandidate={true} notificationCount={3} />}
       <Routes>
+        <Route path="/home" element={<Home />} />
         {/* Auth routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -57,10 +70,12 @@ function App() {
         <Route path="/admin/students" element={<ProtectedRoute isAuthenticated={isAuthenticated}><AdminStudentManagement /></ProtectedRoute>} />
 
         {/* 404 Not Found */}
-        <Route path="*" element={<NotFound />} />
+        <Route path="/404" element={<NotFound />} />
+        <Route path="*" element={<Navigate to="/404" replace />} />
       </Routes>
-      <Footer />
-    </>
+      {/* Conditionally render footer */}
+      {!shouldHideFooter && <Footer />}
+    </div>
   );
 }
 
