@@ -114,17 +114,11 @@ const Testimonials = () => {
         </div>
       </div>
       <button
-<<<<<<< HEAD
-  className="mt-12 mx-auto block bg-indigo-500 text-white font-medium py-3 px-6 rounded-xl shadow-md hover:bg-indigo-600 transition-colors duration-200"
-=======
   className="mt-12 mx-auto block bg-indigo-500 text-white font-medium py-3 px-6 rounded-xl shadow-md hover:bg-indigo-600 transition-colors duration-200" onClick={()=>setShowModal(true)}
->>>>>>> anjali/main
 >
   Submit Your Feedback
 </button>
 
-<<<<<<< HEAD
-=======
 {showModal && (
         <div className="fixed inset-0 bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowModal(false)}>
           <div className="bg-white rounded-2xl w-96 p-6 relative" onClick={(e)=>e.stopPropagation()}>
@@ -152,7 +146,6 @@ const Testimonials = () => {
         </div>
       )}
 
->>>>>>> anjali/main
     </section>
   );
 };
