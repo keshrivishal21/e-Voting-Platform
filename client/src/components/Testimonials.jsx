@@ -1,6 +1,8 @@
 import React from "react";
+import { useState } from "react";
 
 const Testimonials = () => {
+  const [showModal,setShowModal]=useState(false);
   const cardsData = [
     {
       image:
@@ -112,11 +114,45 @@ const Testimonials = () => {
         </div>
       </div>
       <button
+<<<<<<< HEAD
   className="mt-12 mx-auto block bg-indigo-500 text-white font-medium py-3 px-6 rounded-xl shadow-md hover:bg-indigo-600 transition-colors duration-200"
+=======
+  className="mt-12 mx-auto block bg-indigo-500 text-white font-medium py-3 px-6 rounded-xl shadow-md hover:bg-indigo-600 transition-colors duration-200" onClick={()=>setShowModal(true)}
+>>>>>>> anjali/main
 >
   Submit Your Feedback
 </button>
 
+<<<<<<< HEAD
+=======
+{showModal && (
+        <div className="fixed inset-0 bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowModal(false)}>
+          <div className="bg-white rounded-2xl w-96 p-6 relative" onClick={(e)=>e.stopPropagation()}>
+            <button
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-800 font-bold text-xl"
+              onClick={() => setShowModal(false)}
+            >
+              &times;
+            </button>
+            <h3 className="text-xl font-semibold mb-4">Submit Your Feedback</h3>
+            <textarea
+              className="w-full h-32 border border-gray-300 rounded-md p-2 mb-4"
+              placeholder="Write your feedback here..."
+            ></textarea>
+            <button
+              className="bg-indigo-500 text-white font-medium py-2 px-4 rounded-xl hover:bg-indigo-600 transition-colors"
+              onClick={() => {
+                alert("Feedback submitted!");
+                setShowModal(false);
+              }}
+            >
+              Submit
+            </button>
+          </div>
+        </div>
+      )}
+
+>>>>>>> anjali/main
     </section>
   );
 };
