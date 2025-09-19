@@ -1,14 +1,3 @@
-<<<<<<< HEAD
-import React from 'react'
-
-const CandidateList = () => {
-  return (
-    <div>CandidateList</div>
-  )
-}
-
-export default CandidateList
-=======
 import React from "react";
 
 const CandidateList = () => {
@@ -212,4 +201,3 @@ const CandidateList = () => {
 };
 
 export default CandidateList;
->>>>>>> anjali/main

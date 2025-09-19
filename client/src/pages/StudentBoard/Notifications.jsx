@@ -1,14 +1,3 @@
-<<<<<<< HEAD
-import React from 'react'
-
-const Notifications = () => {
-  return (
-    <div>Notifications</div>
-  )
-}
-
-export default Notifications
-=======
 import React, { useState } from "react";
 
 const Notifications = () => {
@@ -104,4 +93,3 @@ const Notifications = () => {
 };
 
 export default Notifications;
->>>>>>> anjali/main
