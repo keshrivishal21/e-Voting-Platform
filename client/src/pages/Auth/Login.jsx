@@ -6,6 +6,16 @@ import logo from "../../assets/evoting.png"
 
 function Login() {
     const Navigate = useNavigate();
+
+    const collegeEmailRegex = /^(\d+)@maint\.ac\.in$/;
+
+    const match = email.match(collegeEmailRegex);
+
+    if (!match) {
+      setError("Please enter a valid college email (e.g. 123456@maint.ac.in)");
+      setStudentId(null);
+      return;
+    }
     const submitHndler = (e) => {
         e.preventDefault();
         if(e.target.userId.value === "" || e.target.password.value === "" || e.target.userType.value === "") {
