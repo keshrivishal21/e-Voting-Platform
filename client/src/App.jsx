@@ -22,6 +22,7 @@ import Register from './pages/Auth/CandidateRegister';
 import NotFound from './pages/NotFound';
 import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
+import Signup from './pages/Auth/Signup';
 
 function App() {
   // TODO: Replace with real auth logic
@@ -47,6 +48,7 @@ function App() {
         {/* Auth routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path='/signup' element={<Signup />} />
 
         {/* Student Board */}
         <Route path="/" element={<ProtectedRoute isAuthenticated={isAuthenticated}><StudentHome /></ProtectedRoute>} />

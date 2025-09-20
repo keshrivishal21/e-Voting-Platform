@@ -42,12 +42,12 @@ function Login() {
             {/* User ID Field */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Scholar No./User ID
+                Email ID
               </label>
               <input
                 name='userId'
-                type="text"
-                placeholder="Enter your Scholar Number"
+                type="email"
+                placeholder="Enter your college email ID"
                 className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
                 required
               />
@@ -86,9 +86,9 @@ function Login() {
           {/* Additional Links */}
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              Need help? 
-              <a href="#" className="ml-1 text-indigo-600 hover:text-indigo-700 font-medium hover:underline transition-colors duration-200">
-                Contact Support
+              Dont't have an account? 
+              <a href="/signup" className="ml-1 text-indigo-600 hover:text-indigo-700 font-medium hover:underline transition-colors duration-200">
+                Sign Up
               </a>
             </p>
           </div>
