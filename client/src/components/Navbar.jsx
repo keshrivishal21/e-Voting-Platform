@@ -1,9 +1,11 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { BellIcon, UserCircleIcon } from "@heroicons/react/24/outline";
 
 export default function Navbar({ isCandidate, notificationCount = 0 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
 
   return (
     <header className="fixed top-0 left-0 w-full z-50">
@@ -19,7 +21,8 @@ export default function Navbar({ isCandidate, notificationCount = 0 }) {
             menuOpen ? "max-md:w-full" : "max-md:w-0"
           } transition-[width] bg-white/90 backdrop-blur flex-col md:flex-row gap-8 text-gray-900 text-sm font-medium`}
         >
-          {isCandidate && (
+          {/* Candidate Board (hidden for /admin routes) */}
+          {isCandidate && !isAdminRoute && (
             <Link
               to="/candidate"
               className="bg-indigo-600 text-white px-5 py-2 rounded-full text-sm shadow hover:bg-indigo-700 transition"
@@ -29,19 +32,21 @@ export default function Navbar({ isCandidate, notificationCount = 0 }) {
             </Link>
           )}
 
-          {/* Notifications */}
-          <Link
-            to="/student/notifications"
-            className="relative"
-            onClick={() => setMenuOpen(false)}
-          >
-            <BellIcon className="h-6 w-6 text-gray-700 hover:text-indigo-600 transition" />
-            {notificationCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow">
-                {notificationCount}
-              </span>
-            )}
-          </Link>
+          {/* Notifications (hidden for /admin routes) */}
+          {!isAdminRoute && (
+            <Link
+              to="/student/notifications"
+              className="relative"
+              onClick={() => setMenuOpen(false)}
+            >
+              <BellIcon className="h-6 w-6 text-gray-700 hover:text-indigo-600 transition" />
+              {notificationCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow">
+                  {notificationCount}
+                </span>
+              )}
+            </Link>
+          )}
 
           {/* Profile Dropdown */}
           <div className="relative group">

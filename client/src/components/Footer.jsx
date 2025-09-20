@@ -5,7 +5,7 @@ const Footer = () => {
     <footer className="flex flex-col items-center justify-center w-full py-12 bg-gradient-to-b from-[#5524B7] to-[#380B60] text-white/70">
       {/* Project Name / Logo */}
       <h2 className="text-2xl font-bold text-white tracking-wide">
-        e-Voting Platform for Student Elections
+        e-Voting Platform for College Elections
       </h2>
 
       {/* Copyright */}
