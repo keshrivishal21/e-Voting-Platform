@@ -1,16 +1,15 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { parse } from "dotenv";
 import jwt from "jsonwebtoken";
 
 const prisma = new PrismaClient();
 
 // Generate JWT Token
-const generateToken = (userId,userType) => {
-  return jwt.sign(
-    { userId,userType },
-    process.env.JWT_SECRET,
-    { expiresIn: "24h" }
-  );
+const generateToken = (userId, userType) => {
+  return jwt.sign({ userId, userType }, process.env.JWT_SECRET, {
+    expiresIn: "24h",
+  });
 };
 
 // Admin Login
@@ -20,30 +19,30 @@ export const adminLogin = async (req, res) => {
 
     // Validate input
     if (!userId || !password) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "User ID and password are required" 
+      return res.status(400).json({
+        success: false,
+        message: "User ID and password are required",
       });
     }
 
     // Find admin by userId
     const admin = await prisma.aDMIN.findUnique({
-      where: { userId: userId }
+      where: { userId: userId },
     });
 
     if (!admin) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Admin not found" 
+      return res.status(404).json({
+        success: false,
+        message: "Admin not found",
       });
     }
 
     // Check password
     const isPasswordValid = await bcrypt.compare(password, admin.password);
     if (!isPasswordValid) {
-      return res.status(401).json({ 
-        success: false, 
-        message: "Invalid credentials" 
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
       });
     }
 
@@ -60,16 +59,15 @@ export const adminLogin = async (req, res) => {
           userId: admin.userId,
           name: admin.name,
           role: admin.role,
-          userType: "admin"
-        }
-      }
+          userType: "admin",
+        },
+      },
     });
-
   } catch (error) {
     console.error("Admin login error:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Internal server error" 
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
     });
   }
 };
@@ -81,30 +79,33 @@ export const studentLogin = async (req, res) => {
 
     // Validate input
     if (!email || !password) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Email and password are required" 
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required",
       });
     }
 
     // Find student by email
-    const student = await prisma.sTUDENT.findUnique({
-      where: { Std_email: email }
+    const student = await prisma.sTUDENT.findFirst({
+      where: { Std_email: email },
     });
 
     if (!student) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Student not found" 
+      return res.status(404).json({
+        success: false,
+        message: "Student not found",
       });
     }
 
     // Check password
-    const isPasswordValid = await bcrypt.compare(password, student.Std_password);
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      student.Std_password
+    );
     if (!isPasswordValid) {
-      return res.status(401).json({ 
-        success: false, 
-        message: "Invalid credentials" 
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
       });
     }
 
@@ -118,78 +119,74 @@ export const studentLogin = async (req, res) => {
         token,
         user: {
           scholarNo: student.Std_id,
-          name: student.Std_name,
-          email: student.Std_email,
-          userType: "student"
-        }
-      }
+          userType: "Student",
+        },
+      },
     });
-
   } catch (error) {
     console.error("Student login error:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Internal server error" 
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
     });
   }
 };
 
-
-
 // Student Registration
 export const studentRegister = async (req, res) => {
   try {
-    const { name,email,dob,phone,password,confirmPassword } = req.body;
+    const { name, email, dob, phone, password, confirmPassword } = req.body;
 
     // Validate input
     if (!name || !email || !dob || !phone || !password || !confirmPassword) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "All fields are required" 
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required",
       });
     }
 
     // Check if passwords match
     if (password !== confirmPassword) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Passwords do not match" 
+      return res.status(400).json({
+        success: false,
+        message: "Passwords do not match",
       });
     }
 
     // Check if student already exists
-    const existingStudent = await prisma.sTUDENT.findUnique({
-      where: { email: email }
+    const existingStudent = await prisma.sTUDENT.findFirst({
+      where: { Std_email: email },
     });
 
     if (existingStudent) {
-      return res.status(409).json({ 
-        success: false, 
-        message: "Student with this email already exist" 
+      return res.status(409).json({
+        success: false,
+        message: "Student with this email already exist",
       });
     }
 
     // parse scholar number from email assuming format: 123456@stu.maint.ac.in
-    const scholarNo = email.split('@')[0];
+    const scholarNo = parseInt(email.split("@")[0]);
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
+    // Create user entry
+    const user = await prisma.uSERS.create({
+      data: {
+        User_id: scholarNo,
+        User_type: "Student",
+      },
+    });
     // Create student
     const student = await prisma.sTUDENT.create({
       data: {
-        Std_id: parseInt(scholarNo),
+        Std_id: scholarNo,
         Std_name: name,
-        Std_phone: phone, 
+        Std_phone: phone,
         Std_password: hashedPassword,
         Dob: new Date(dob),
         Std_email: email,
-        user: {
-          create: {
-            User_id: parseInt(scholarNo),
-            User_type: 'Student'
-          }
-        }
-      }
+      },
     });
 
     // Generate token
@@ -202,16 +199,15 @@ export const studentRegister = async (req, res) => {
         token,
         user: {
           scholarNo: student.Std_id,
-          userType: "student"
-        }
-      }
+          userType: "student",
+        },
+      },
     });
-
   } catch (error) {
     console.error("Student registration error:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Internal server error" 
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
     });
   }
 };
@@ -219,33 +215,52 @@ export const studentRegister = async (req, res) => {
 // Candidate Registration
 export const candidateRegister = async (req, res) => {
   try {
-    const { name, email, phone, password, confirmPassword, position, manifesto, electionId, cgpa } = req.body;
+    const {
+      name,
+      email,
+      phone,
+      password,
+      confirmPassword,
+      position,
+      manifesto,
+      electionId,
+      cgpa,
+    } = req.body;
 
     // Validate input
-    if (!name || !email || !phone || !password || !confirmPassword || !position || !electionId) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Name, email, phone, password, position, and election ID are required" 
+    if (
+      !name ||
+      !email ||
+      !phone ||
+      !password ||
+      !confirmPassword ||
+      !position ||
+      !electionId
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Name, email, phone, password, position, and election ID are required",
       });
     }
 
     // Check if passwords match
     if (password !== confirmPassword) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Passwords do not match" 
+      return res.status(400).json({
+        success: false,
+        message: "Passwords do not match",
       });
     }
 
     // Check if candidate already exists
     const existingCandidate = await prisma.cANDIDATE.findUnique({
-      where: { Can_email: email }
+      where: { Can_email: email },
     });
 
     if (existingCandidate) {
-      return res.status(409).json({ 
-        success: false, 
-        message: "Candidate with this email already exists" 
+      return res.status(409).json({
+        success: false,
+        message: "Candidate with this email already exists",
       });
     }
 
@@ -271,10 +286,10 @@ export const candidateRegister = async (req, res) => {
         user: {
           create: {
             User_id: candidateId,
-            User_type: 'Candidate'
-          }
-        }
-      }
+            User_type: "Candidate",
+          },
+        },
+      },
     });
 
     // Generate token
@@ -293,16 +308,15 @@ export const candidateRegister = async (req, res) => {
           position: candidate.Position,
           manifesto: candidate.Manifesto,
           electionId: candidate.Election_id,
-          cgpa: candidate.Cgpa
-        }
-      }
+          cgpa: candidate.Cgpa,
+        },
+      },
     });
-
   } catch (error) {
     console.error("Candidate registration error:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Internal server error" 
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
     });
   }
 };
@@ -314,30 +328,33 @@ export const candidateLogin = async (req, res) => {
 
     // Validate input
     if (!email || !password) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Email and password are required" 
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required",
       });
     }
 
     // Find candidate by email
     const candidate = await prisma.cANDIDATE.findUnique({
-      where: { Can_email: email }
+      where: { Can_email: email },
     });
 
     if (!candidate) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Candidate not found" 
+      return res.status(404).json({
+        success: false,
+        message: "Candidate not found",
       });
     }
 
     // Check password
-    const isPasswordValid = await bcrypt.compare(password, candidate.Can_password);
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      candidate.Can_password
+    );
     if (!isPasswordValid) {
-      return res.status(401).json({ 
-        success: false, 
-        message: "Invalid credentials" 
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
       });
     }
 
@@ -356,16 +373,15 @@ export const candidateLogin = async (req, res) => {
           phone: candidate.Can_phone,
           position: candidate.Position,
           manifesto: candidate.Manifesto,
-          userType: "candidate"
-        }
-      }
+          userType: "candidate",
+        },
+      },
     });
-
   } catch (error) {
     console.error("Candidate login error:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Internal server error" 
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
     });
   }
 };
