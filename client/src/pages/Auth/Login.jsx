@@ -9,25 +9,25 @@ function Login() {
 
     const collegeEmailRegex = /^(\d+)@maint\.ac\.in$/;
 
-    const match = email.match(collegeEmailRegex);
+    // const match = email.match(collegeEmailRegex);
 
-    if (!match) {
-      setError("Please enter a valid college email (e.g. 123456@maint.ac.in)");
-      setStudentId(null);
-      return;
-    }
+    // if (!match) {
+    //   setError("Please enter a valid college email (e.g. 123456@maint.ac.in)");
+    //   setStudentId(null);
+    //   return;
+    // }
     const submitHndler = (e) => {
-        e.preventDefault();
-        if(e.target.userId.value === "" || e.target.password.value === "" || e.target.userType.value === "") {
-            // toast.error("Please fill all the fields")
-        }
-        else{
-            // toast.success("Login Successful")
-            // You can access the form values like this:
-            // const userId = e.target.userId.value;
-            // const password = e.target.password.value;
-            // const userType = e.target.userType.value;
-        }
+        // e.preventDefault();
+        // if(e.target.userId.value === "" || e.target.password.value === "" || e.target.userType.value === "") {
+        //     // toast.error("Please fill all the fields")
+        // }
+        // else{
+        //     // toast.success("Login Successful")
+        //     // You can access the form values like this:
+        //     // const userId = e.target.userId.value;
+        //     // const password = e.target.password.value;
+        //     // const userType = e.target.userType.value;
+        // }
     }
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center px-4 py-8">

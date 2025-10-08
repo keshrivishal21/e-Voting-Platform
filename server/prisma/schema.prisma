@@ -53,8 +53,8 @@ model ADMIN {
 model ELECTION {
   Election_id Int              @id
   Title       String           @db.VarChar(100)
-  Start_date  DateTime         @db.Date
-  End_date    DateTime         @db.Date
+  Start_date  DateTime     
+  End_date    DateTime       
   Status      ElectionStatus
   Created_by  Int
 
@@ -69,7 +69,7 @@ model STUDENT {
   Std_name    String    @db.VarChar(30)
   Std_phone   String    @db.VarChar(15)
   Std_password String   @db.VarChar(255)
-  Dob         DateTime  @db.Date
+  Dob         DateTime  
   Std_email   String    @db.VarChar(50)
 
   user        USERS     @relation(fields: [Std_id], references: [User_id])
@@ -77,27 +77,30 @@ model STUDENT {
 }
 
 model CANDIDATE {
-  Can_id      Int       @id
-  Can_name    String    @db.VarChar(30)
-  Position    String    @db.VarChar(30)
-  Can_email   String    @db.VarChar(50)
-  Can_phone   String    @db.VarChar(15)
-  Can_password String   @db.VarChar(255)
-  Manifesto   String
-  Election_id Int
+  Can_id       Int       @id
+  Can_name     String    @db.VarChar(30)
+  Position     String    @db.VarChar(30)
+  Can_email    String    @db.VarChar(50)
+  Can_phone    String    @db.VarChar(15)
+  Can_password String    @db.VarChar(255)
+  Manifesto    String
+  Election_id  Int
+  Cgpa         Float
+  Data         Bytes     @db.MediumBlob
 
-  election    ELECTION  @relation(fields: [Election_id], references: [Election_id])
-  user        USERS     @relation(fields: [Can_id], references: [User_id])
-  votes       VOTE[]
-  results     RESULT[]
+  election     ELECTION  @relation(fields: [Election_id], references: [Election_id])
+  user         USERS     @relation(fields: [Can_id], references: [User_id])
+  votes        VOTE[]
+  results      RESULT[]
 }
+
 
 model VOTE {
   Vote_id       Int       @id
   Std_id        Int
   Can_id        Int
   Election_id   Int
-  Vote_time     DateTime  @db.Timestamp(0)
+  Vote_time     DateTime  @db.Timestamp
   Encrypted_vote String
 
   student   STUDENT   @relation(fields: [Std_id], references: [Std_id])
