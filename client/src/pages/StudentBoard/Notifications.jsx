@@ -64,6 +64,35 @@ const Notifications = () => {
     },
   ]);
 
+  // const [notifications, setNotifications] = useState([]);
+  // const [loading, setLoading] = useState(true);
+  // const [error, setError] = useState(null);
+
+  // // Function to fetch notifications from backend
+  // const fetchNotifications = async () => {
+  //   try {
+  //     setLoading(true);
+  //     setError(null);
+
+  //     // Replace this URL with your backend route
+  //     const response = await axios.get("http://localhost:5000/api/notifications");
+
+  //     // Assuming your backend returns an array of notifications
+  //     setNotifications(response.data);
+  //   } catch (err) {
+  //     console.error("Error fetching notifications:", err);
+  //     setError("Failed to load notifications. Please try again later.");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  // // Fetch notifications when component mounts
+  // useEffect(() => {
+  //   fetchNotifications();
+  // }, []);
+
+
   return (
     <div className="max-w-4xl mx-auto px-6 py-12 mt-20">
       <h1 className="text-3xl font-bold text-black-700 mb-6 text-center">

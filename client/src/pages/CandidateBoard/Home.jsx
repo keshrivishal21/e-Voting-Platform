@@ -1,7 +1,9 @@
 import React from "react";
 import { FileText, User, BarChart3 } from "lucide-react";
+import { Navigate, } from "react-router-dom";
 
 const Home = () => {
+
   const candidate = {
     name: "Aarav Mehta",
     branch: "CSE",
@@ -41,9 +43,12 @@ const Home = () => {
             >
               <FileText size={16} /> View Manifesto
             </a>
-            <button className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl shadow hover:bg-indigo-700 transition">
-              <User size={16} /> Edit Profile
-            </button>
+            <a
+              className="flex items-center gap-2 bg-indigo-50 text-indigo-700 border border-indigo-300 px-4 py-2 rounded-xl hover:bg-indigo-100 transition"
+              href="/candidate/results"
+            >
+              View Results
+            </a>
           </div>
         </div>
       </div>

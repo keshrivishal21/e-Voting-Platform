@@ -71,10 +71,25 @@ class AuthAPI {
     }
   }
 
+  // Get current active token
+  static getCurrentToken() {
+    try {
+      const currentUserType = localStorage.getItem('currentUserType');
+      if (currentUserType) {
+        const tokenKey = `${currentUserType.toLowerCase()}Token`;
+        return localStorage.getItem(tokenKey);
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting current token:', error);
+      return null;
+    }
+  }
+
   // Verify token
   static async verifyToken() {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = this.getCurrentToken();
       if (!token) {
         throw new Error('No token found');
       }
@@ -97,7 +112,7 @@ class AuthAPI {
   // Check candidate status for student
   static async checkCandidateStatus() {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = this.getCurrentToken();
       if (!token) {
         throw new Error('No token found');
       }
@@ -108,6 +123,148 @@ class AuthAPI {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         }
+      });
+
+      const data = await response.json();
+      return { response, data };
+    } catch (error) {
+      throw new Error(`Network error: ${error.message}`);
+    }
+  }
+
+  // Get student profile
+  static async getStudentProfile(studentId) {
+    try {
+      const token = this.getCurrentToken();
+      if (!token) {
+        throw new Error('No token found');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/auth/student/${studentId}/profile`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+      return { response, data };
+    } catch (error) {
+      throw new Error(`Network error: ${error.message}`);
+    }
+  }
+
+  // Update student profile
+  static async updateStudentProfile(studentId, profileData) {
+    try {
+      const token = this.getCurrentToken();
+      if (!token) {
+        throw new Error('No token found');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/auth/student/${studentId}/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(profileData)
+      });
+
+      const data = await response.json();
+      return { response, data };
+    } catch (error) {
+      throw new Error(`Network error: ${error.message}`);
+    }
+  }
+
+  // Change student password
+  static async changeStudentPassword(studentId, passwordData) {
+    try {
+      const token = this.getCurrentToken();
+      if (!token) {
+        throw new Error('No token found');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/auth/student/${studentId}/change-password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(passwordData)
+      });
+
+      const data = await response.json();
+      return { response, data };
+    } catch (error) {
+      throw new Error(`Network error: ${error.message}`);
+    }
+  }
+
+  // Get candidate profile
+  static async getCandidateProfile(candidateId) {
+    try {
+      const token = this.getCurrentToken();
+      if (!token) {
+        throw new Error('No token found');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/auth/candidate/${candidateId}/profile`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+      return { response, data };
+    } catch (error) {
+      throw new Error(`Network error: ${error.message}`);
+    }
+  }
+
+  // Update candidate profile
+  static async updateCandidateProfile(candidateId, profileData) {
+    try {
+      const token = this.getCurrentToken();
+      if (!token) {
+        throw new Error('No token found');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/auth/candidate/${candidateId}/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(profileData)
+      });
+
+      const data = await response.json();
+      return { response, data };
+    } catch (error) {
+      throw new Error(`Network error: ${error.message}`);
+    }
+  }
+
+  // Change candidate password
+  static async changeCandidatePassword(candidateId, passwordData) {
+    try {
+      const token = this.getCurrentToken();
+      if (!token) {
+        throw new Error('No token found');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/auth/candidate/${candidateId}/change-password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(passwordData)
       });
 
       const data = await response.json();

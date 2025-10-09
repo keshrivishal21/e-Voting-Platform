@@ -214,12 +214,11 @@ export const candidateRegister = async (req, res) => {
   try {
     const {
       name,
-      phone,
       email,
+      phone,
       password,
       confirmPassword,
       position,
-      electionId,
       manifesto,
       branch,
       year,
@@ -237,7 +236,6 @@ export const candidateRegister = async (req, res) => {
       !password ||
       !confirmPassword ||
       !position ||
-      !electionId ||
       !branch ||
       !year
     ) {
@@ -276,17 +274,17 @@ export const candidateRegister = async (req, res) => {
       });
     }
 
-    // Validate election exists
-    const election = await prisma.eLECTION.findUnique({
-      where: { Election_id: parseInt(electionId) }
-    });
+    // // Validate election exists
+    // const election = await prisma.eLECTION.findUnique({
+    //   where: { Election_id: parseInt(electionId) }
+    // });
 
-    if (!election) {
-      return res.status(400).json({
-        success: false,
-        message: `Election with ID ${electionId} does not exist`,
-      });
-    }
+    // if (!election) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: `Election with ID ${electionId} does not exist`,
+    //   });
+    // }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -342,7 +340,7 @@ export const candidateRegister = async (req, res) => {
             Can_password: hashedPassword,
             Position: position,
             Manifesto: manifesto || "",
-            Election_id: parseInt(electionId),
+            Election_id: 1,
             Branch: branch,
             Year: parseInt(year),
             Cgpa: cgpa ? parseFloat(cgpa) : 0.0,
@@ -464,6 +462,402 @@ export const candidateLogin = async (req, res) => {
     });
   } catch (error) {
     console.error("Candidate login error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+// Get Student Profile
+export const getStudentProfile = async (req, res) => {
+  try {
+    const { studentId } = req.params;
+
+    if (!studentId) {
+      return res.status(400).json({
+        success: false,
+        message: "Student ID is required",
+      });
+    }
+
+    // Find student by ID
+    const student = await prisma.sTUDENT.findUnique({
+      where: { Std_id: parseInt(studentId) },
+      select: {
+        Std_id: true,
+        Std_name: true,
+        Std_email: true,
+        Std_phone: true,
+        Dob: true,
+        // Don't include password in response
+      },
+    });
+
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Student profile retrieved successfully",
+      data: {
+        profile: student,
+      },
+    });
+  } catch (error) {
+    console.error("Get student profile error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+// Update Student Profile
+export const updateStudentProfile = async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    const { name, phone, dob } = req.body;
+
+    if (!studentId) {
+      return res.status(400).json({
+        success: false,
+        message: "Student ID is required",
+      });
+    }
+
+    // Validate input
+    if (!name || !phone || !dob) {
+      return res.status(400).json({
+        success: false,
+        message: "Name, phone, and date of birth are required",
+      });
+    }
+
+    // Check if student exists
+    const existingStudent = await prisma.sTUDENT.findUnique({
+      where: { Std_id: parseInt(studentId) },
+    });
+
+    if (!existingStudent) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found",
+      });
+    }
+
+    // Update student profile
+    const updatedStudent = await prisma.sTUDENT.update({
+      where: { Std_id: parseInt(studentId) },
+      data: {
+        Std_name: name,
+        Std_phone: phone,
+        Dob: new Date(dob),
+      },
+      select: {
+        Std_id: true,
+        Std_name: true,
+        Std_email: true,
+        Std_phone: true,
+        Dob: true,
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      data: {
+        profile: updatedStudent,
+      },
+    });
+  } catch (error) {
+    console.error("Update student profile error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+// Change Student Password
+export const changeStudentPassword = async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!studentId) {
+      return res.status(400).json({
+        success: false,
+        message: "Student ID is required",
+      });
+    }
+
+    // Validate input
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Current password and new password are required",
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "New password must be at least 6 characters long",
+      });
+    }
+
+    // Find student
+    const student = await prisma.sTUDENT.findUnique({
+      where: { Std_id: parseInt(studentId) },
+    });
+
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found",
+      });
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(
+      currentPassword,
+      student.Std_password
+    );
+
+    if (!isCurrentPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: "Current password is incorrect",
+      });
+    }
+
+    // Hash new password
+    const hashedNewPassword = await bcrypt.hash(newPassword, 12);
+
+    // Update password
+    await prisma.sTUDENT.update({
+      where: { Std_id: parseInt(studentId) },
+      data: {
+        Std_password: hashedNewPassword,
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Password changed successfully",
+    });
+  } catch (error) {
+    console.error("Change student password error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+// Get Candidate Profile
+export const getCandidateProfile = async (req, res) => {
+  try {
+    const { candidateId } = req.params;
+
+    if (!candidateId) {
+      return res.status(400).json({
+        success: false,
+        message: "Candidate ID is required",
+      });
+    }
+
+    // Find candidate by ID
+    const candidate = await prisma.cANDIDATE.findUnique({
+      where: { Can_id: parseInt(candidateId) },
+      select: {
+        Can_id: true,
+        Can_name: true,
+        Can_email: true,
+        Can_phone: true,
+        Position: true,
+        Branch: true,
+        Year: true,
+        Cgpa: true,
+        Manifesto: true,
+        Election_id: true,
+        // Don't include password or file data in response
+      },
+    });
+
+    if (!candidate) {
+      return res.status(404).json({
+        success: false,
+        message: "Candidate not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Candidate profile retrieved successfully",
+      data: {
+        profile: candidate,
+      },
+    });
+  } catch (error) {
+    console.error("Get candidate profile error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+// Update Candidate Profile
+export const updateCandidateProfile = async (req, res) => {
+  try {
+    const { candidateId } = req.params;
+    const { name, phone, position, branch, year, cgpa, manifesto } = req.body;
+
+    if (!candidateId) {
+      return res.status(400).json({
+        success: false,
+        message: "Candidate ID is required",
+      });
+    }
+
+    // Validate input
+    if (!name || !phone || !position || !branch || !year) {
+      return res.status(400).json({
+        success: false,
+        message: "Name, phone, position, branch, and year are required",
+      });
+    }
+
+    // Check if candidate exists
+    const existingCandidate = await prisma.cANDIDATE.findUnique({
+      where: { Can_id: parseInt(candidateId) },
+    });
+
+    if (!existingCandidate) {
+      return res.status(404).json({
+        success: false,
+        message: "Candidate not found",
+      });
+    }
+
+    // Update candidate profile
+    const updatedCandidate = await prisma.cANDIDATE.update({
+      where: { Can_id: parseInt(candidateId) },
+      data: {
+        Can_name: name,
+        Can_phone: phone,
+        Position: position,
+        Branch: branch,
+        Year: parseInt(year),
+        Cgpa: cgpa ? parseFloat(cgpa) : existingCandidate.Cgpa,
+        Manifesto: manifesto || existingCandidate.Manifesto,
+      },
+      select: {
+        Can_id: true,
+        Can_name: true,
+        Can_email: true,
+        Can_phone: true,
+        Position: true,
+        Branch: true,
+        Year: true,
+        Cgpa: true,
+        Manifesto: true,
+        Election_id: true,
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      data: {
+        profile: updatedCandidate,
+      },
+    });
+  } catch (error) {
+    console.error("Update candidate profile error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+// Change Candidate Password
+export const changeCandidatePassword = async (req, res) => {
+  try {
+    const { candidateId } = req.params;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!candidateId) {
+      return res.status(400).json({
+        success: false,
+        message: "Candidate ID is required",
+      });
+    }
+
+    // Validate input
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Current password and new password are required",
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "New password must be at least 6 characters long",
+      });
+    }
+
+    // Find candidate
+    const candidate = await prisma.cANDIDATE.findUnique({
+      where: { Can_id: parseInt(candidateId) },
+    });
+
+    if (!candidate) {
+      return res.status(404).json({
+        success: false,
+        message: "Candidate not found",
+      });
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(
+      currentPassword,
+      candidate.Can_password
+    );
+
+    if (!isCurrentPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: "Current password is incorrect",
+      });
+    }
+
+    // Hash new password
+    const hashedNewPassword = await bcrypt.hash(newPassword, 12);
+
+    // Update password
+    await prisma.cANDIDATE.update({
+      where: { Can_id: parseInt(candidateId) },
+      data: {
+        Can_password: hashedNewPassword,
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Password changed successfully",
+    });
+  } catch (error) {
+    console.error("Change candidate password error:", error);
     res.status(500).json({
       success: false,
       message: "Internal server error",

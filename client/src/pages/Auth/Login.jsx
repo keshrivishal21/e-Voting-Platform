@@ -1,12 +1,15 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';   
+import { useNavigate, useLocation } from 'react-router-dom';   
 import logo from "../../assets/evoting.png"
 import AuthAPI from '../../utils/authAPI';
+import { useAuth } from '../../contexts/AuthContext';
 // import { toast } from 'react-hot-toast';
 
 function Login() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const { login } = useAuth();
     const [formData, setFormData] = useState({
         email: '',
         password: ''
@@ -44,12 +47,13 @@ function Login() {
             const { response, data } = await AuthAPI.studentLogin(formData.email, formData.password);
 
             if (response.ok && data.success) {
-                // Store token in localStorage
-                localStorage.setItem('authToken', data.data.token);
-                localStorage.setItem('userType', 'student');
+                // Use auth context to login - just token and type
+                login(data.data.token, 'Student');
 
-                // Navigate to student dashboard
-                navigate('/student');
+                // Navigate to intended page or student dashboard
+                const from = location.state?.from?.pathname || '/student';
+                navigate(from);
+                localStorage.removeItem("candidateToken");
             } else {
                 setError(data.message || 'Login failed. Please try again.');
             }

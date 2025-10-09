@@ -6,7 +6,13 @@ import {
   studentLogin, 
   candidateLogin,
   studentRegister,
-  candidateRegister
+  candidateRegister,
+  getStudentProfile,
+  updateStudentProfile,
+  changeStudentPassword,
+  getCandidateProfile,
+  updateCandidateProfile,
+  changeCandidatePassword
 } from "../controllers/authController.js";
 import { 
   verifyToken, 
@@ -37,6 +43,16 @@ router.post("/candidate/login", candidateLogin); // Candidate-specific login
 // Registration Routes
 router.post("/student/register", studentRegister); // Student registration
 router.post("/candidate/register", upload.single('document'), candidateRegister); // Candidate registration with file upload
+
+// Student Profile Routes
+router.get("/student/:studentId/profile", verifyToken, getStudentProfile); // Get student profile
+router.put("/student/:studentId/profile", verifyToken, updateStudentProfile); // Update student profile
+router.put("/student/:studentId/change-password", verifyToken, changeStudentPassword); // Change student password
+
+// Candidate Profile Routes
+router.get("/candidate/:candidateId/profile", verifyToken, getCandidateProfile); // Get candidate profile
+router.put("/candidate/:candidateId/profile", verifyToken, updateCandidateProfile); // Update candidate profile
+router.put("/candidate/:candidateId/change-password", verifyToken, changeCandidatePassword); // Change candidate password
 
 // Check student-candidate status
 router.get("/student/candidate-status", verifyStudent, async (req, res) => {

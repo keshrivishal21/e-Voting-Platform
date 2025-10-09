@@ -1,46 +1,50 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import AuthAPI from '../../utils/authAPI';
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import AuthAPI from "../../utils/authAPI";
+import { useAuth } from "../../contexts/AuthContext";
 
 const CandidateRegister = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    password: '',
-    confirmPassword: '',
-    position: '',
-    manifesto: '',
-    electionId: '',
-    branch: '',
-    year: '',
-    cgpa: ''
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
+    position: "",
+    manifesto: "",
+    branch: "",
+    year: "",
+    cgpa: "",
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
 
   const branches = [
-    'Computer Science Engineering',
-    'Electrical Engineering',
-    'Mechanical Engineering',
-    'Civil Engineering',
-    'Electronics & Communication Engineering',
-    'Chemical Engineering',
-    'Information Technology',
-    'Biotechnology'
+    "MCA",
+    "Computer Science Engineering",
+    "Electrical Engineering",
+    "Mechanical Engineering",
+    "Civil Engineering",
+    "Electronics & Communication Engineering",
+    "Chemical Engineering",
+    "Information Technology",
+    "Biotechnology",
   ];
+
+  const positions = ["President", "Vice President", "Secretary", "Treasurer"];
 
   const years = [1, 2, 3, 4];
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
-    if (error) setError('');
+    if (error) setError("");
   };
 
   const handleFileChange = (e) => {
@@ -48,78 +52,90 @@ const CandidateRegister = () => {
     if (file) {
       // Validate file size (5MB limit)
       if (file.size > 5 * 1024 * 1024) {
-        setError('File size should not exceed 5MB');
+        setError("File size should not exceed 5MB");
         return;
       }
-      
+
       // Validate file type
       const allowedTypes = [
-        'application/pdf',
-        'image/jpeg',
-        'image/jpg',
-        'image/png',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        "application/pdf",
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       ];
-      
+
       if (!allowedTypes.includes(file.type)) {
-        setError('Only PDF, DOC, DOCX, JPEG, JPG, and PNG files are allowed');
+        setError("Only PDF, DOC, DOCX, JPEG, JPG, and PNG files are allowed");
         return;
       }
-      
+
       setSelectedFile(file);
-      if (error) setError('');
+      if (error) setError("");
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
       // Validate required fields
-      const requiredFields = ['name', 'email', 'phone', 'password', 'confirmPassword', 'position', 'electionId', 'branch', 'year'];
-      const missingFields = requiredFields.filter(field => !formData[field].trim());
-      
+      const requiredFields = [
+        "name",
+        "email",
+        "phone",
+        "password",
+        "confirmPassword",
+        "position",
+        "branch",
+        "year",
+      ];
+      const missingFields = requiredFields.filter(
+        (field) => !formData[field].trim()
+      );
+
       if (missingFields.length > 0) {
-        setError('Please fill in all required fields');
+        setError("Please fill in all required fields");
+        setLoading(false);
         return;
       }
 
       // Validate file upload
       if (!selectedFile) {
-        setError('Please upload a document file');
+        setError("Please upload a document file");
+        setLoading(false);
         return;
       }
 
       // Validate password match
       if (formData.password !== formData.confirmPassword) {
-        setError('Passwords do not match');
+        setError("Passwords do not match");
         return;
       }
 
       // Create FormData for file upload
       const formDataToSend = new FormData();
-      Object.keys(formData).forEach(key => {
+      Object.keys(formData).forEach((key) => {
         formDataToSend.append(key, formData[key]);
       });
-      formDataToSend.append('document', selectedFile);
+      formDataToSend.append("document", selectedFile);
 
-      const { response, data } = await AuthAPI.candidateRegister(formDataToSend);
+      const { response, data } = await AuthAPI.candidateRegister(
+        formDataToSend
+      );
 
       if (response.ok && data.success) {
-        localStorage.setItem('authToken', data.data.token);
-        localStorage.setItem('userType', 'candidate');
-        localStorage.setItem('userData', JSON.stringify(data.data.candidate));
-        
-        navigate('/dashboard');
+        // Navigate to candidate login
+        navigate("/candidate/login");
       } else {
-        setError(data.message || 'Registration failed. Please try again.');
+        setError(data?.message || "Registration failed. Please try again.");
       }
     } catch (error) {
-      console.error('Registration error:', error);
-      setError('Network error. Please check your connection and try again.');
+      console.error("Registration error:", error);
+      setError("Network error. Please check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -129,8 +145,12 @@ const CandidateRegister = () => {
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-2xl">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">Candidate Registration</h1>
-          <p className="mt-2 text-gray-600">Register as a candidate for student elections</p>
+          <h1 className="text-3xl font-bold text-gray-800">
+            Candidate Registration
+          </h1>
+          <p className="mt-2 text-gray-600">
+            Register as a candidate for student elections
+          </p>
         </div>
 
         <div className="bg-white/70 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/20">
@@ -144,7 +164,9 @@ const CandidateRegister = () => {
             {/* Personal Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Full Name *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Full Name *
+                </label>
                 <input
                   name="name"
                   type="text"
@@ -156,9 +178,11 @@ const CandidateRegister = () => {
                   disabled={loading}
                 />
               </div>
-              
+
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Email *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Email *
+                </label>
                 <input
                   name="email"
                   type="email"
@@ -174,7 +198,9 @@ const CandidateRegister = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Phone Number *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Phone Number *
+                </label>
                 <input
                   name="phone"
                   type="tel"
@@ -186,9 +212,11 @@ const CandidateRegister = () => {
                   disabled={loading}
                 />
               </div>
-              
+
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">CGPA</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  CGPA
+                </label>
                 <input
                   name="cgpa"
                   type="number"
@@ -207,7 +235,9 @@ const CandidateRegister = () => {
             {/* Academic Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Branch *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Branch *
+                </label>
                 <select
                   name="branch"
                   value={formData.branch}
@@ -217,14 +247,18 @@ const CandidateRegister = () => {
                   disabled={loading}
                 >
                   <option value="">Select Branch</option>
-                  {branches.map(branch => (
-                    <option key={branch} value={branch}>{branch}</option>
+                  {branches.map((branch) => (
+                    <option key={branch} value={branch}>
+                      {branch}
+                    </option>
                   ))}
                 </select>
               </div>
-              
+
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Year *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Year *
+                </label>
                 <select
                   name="year"
                   value={formData.year}
@@ -234,8 +268,10 @@ const CandidateRegister = () => {
                   disabled={loading}
                 >
                   <option value="">Select Year</option>
-                  {years.map(year => (
-                    <option key={year} value={year}>{year}</option>
+                  {years.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -244,37 +280,32 @@ const CandidateRegister = () => {
             {/* Election Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Position *</label>
-                <input
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Position *
+                </label>
+                <select
                   name="position"
-                  type="text"
                   value={formData.position}
                   onChange={handleInputChange}
-                  placeholder="e.g., President, Secretary"
-                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
                   required
                   disabled={loading}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Election ID *</label>
-                <input
-                  name="electionId"
-                  type="number"
-                  value={formData.electionId}
-                  onChange={handleInputChange}
-                  placeholder="Enter election ID"
-                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
-                  required
-                  disabled={loading}
-                />
+                >
+                  <option value="">Select Position</option>
+                  {positions.map((position) => (
+                    <option key={position} value={position}>
+                      {position}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
             {/* Manifesto */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Manifesto</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Manifesto
+              </label>
               <textarea
                 name="manifesto"
                 value={formData.manifesto}
@@ -288,7 +319,9 @@ const CandidateRegister = () => {
 
             {/* Document Upload */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Document Upload *</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Last Year Marksheet
+              </label>
               <div className="relative">
                 <input
                   type="file"
@@ -300,7 +333,8 @@ const CandidateRegister = () => {
                 />
                 {selectedFile && (
                   <div className="mt-2 text-sm text-green-600">
-                    Selected: {selectedFile.name} ({Math.round(selectedFile.size / 1024)} KB)
+                    Selected: {selectedFile.name} (
+                    {Math.round(selectedFile.size / 1024)} KB)
                   </div>
                 )}
               </div>
@@ -312,7 +346,9 @@ const CandidateRegister = () => {
             {/* Password Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Password *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Password *
+                </label>
                 <input
                   name="password"
                   type="password"
@@ -324,9 +360,11 @@ const CandidateRegister = () => {
                   disabled={loading}
                 />
               </div>
-              
+
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Confirm Password *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Confirm Password *
+                </label>
                 <input
                   name="confirmPassword"
                   type="password"
@@ -352,7 +390,7 @@ const CandidateRegister = () => {
                   Registering...
                 </div>
               ) : (
-                'Register as Candidate'
+                "Register as Candidate"
               )}
             </button>
           </form>
@@ -361,7 +399,7 @@ const CandidateRegister = () => {
             <p className="text-sm text-gray-600">
               Already have an account?
               <button
-                onClick={() => navigate('/candidate/login')}
+                onClick={() => navigate("/candidate/login")}
                 className="ml-1 text-indigo-600 hover:text-indigo-700 font-medium hover:underline transition-colors duration-200"
               >
                 Sign In

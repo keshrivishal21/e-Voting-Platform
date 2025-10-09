@@ -12,8 +12,9 @@ export default function HomeCandidate() {
 
         {/* Subheading */}
         <p className="mt-3 text-gray-700 text-base md:text-lg leading-relaxed">
-          Discover all candidates participating in this election, explore their ideas and manifestos, and make an informed choice.
-Ready to lead? Submit your application and become part of campus leadership.
+          Discover all candidates participating in this election, explore their
+          ideas and manifestos, and make an informed choice. Ready to lead?
+          Submit your application and become part of campus leadership.
         </p>
 
         {/* Buttons */}
@@ -24,14 +25,6 @@ Ready to lead? Submit your application and become part of campus leadership.
             className="bg-indigo-600 text-white px-8 py-3 rounded-full text-lg font-medium hover:bg-indigo-700 transition text-center"
           >
             View Candidates
-          </Link>
-
-          {/* Apply Button */}
-          <Link
-            to="/apply-candidate"
-            className="bg-white text-indigo-700 px-8 py-3 rounded-full text-lg border border-indigo-500 font-medium hover:bg-indigo-200 transition text-center"
-          >
-            Apply for Candidate
           </Link>
         </div>
       </div>
