@@ -165,7 +165,7 @@ export const studentRegister = async (req, res) => {
       });
     }
 
-    // parse scholar number from email assuming format: 123456@stu.maint.ac.in
+    // parse scholar number from email assuming format: 123456@stu.manit.ac.in
     const scholarNo = parseInt(email.split("@")[0]);
 
     // Hash password
@@ -189,14 +189,10 @@ export const studentRegister = async (req, res) => {
       },
     });
 
-    // Generate token
-    const token = generateToken(student.Std_id, "student");
-
     res.status(201).json({
       success: true,
       message: "Student registered successfully",
       data: {
-        token,
         user: {
           scholarNo: student.Std_id,
           userType: "student",
@@ -253,7 +249,7 @@ export const candidateRegister = async (req, res) => {
     }
 
     // Check if candidate already exists
-    const existingCandidate = await prisma.cANDIDATE.findUnique({
+    const existingCandidate = await prisma.cANDIDATE.findFirst({
       where: { Can_email: email },
     });
 

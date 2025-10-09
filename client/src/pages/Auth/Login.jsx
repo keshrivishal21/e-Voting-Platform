@@ -1,34 +1,66 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';   
 import logo from "../../assets/evoting.png"
+import AuthAPI from '../../utils/authAPI';
 // import { toast } from 'react-hot-toast';
 
 function Login() {
-    const Navigate = useNavigate();
+    const navigate = useNavigate();
+    const [formData, setFormData] = useState({
+        email: '',
+        password: ''
+    });
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
-    const collegeEmailRegex = /^(\d+)@maint\.ac\.in$/;
+    const collegeEmailRegex = /^(\d+)@stu\.manit\.ac\.in$/;
 
-    // const match = email.match(collegeEmailRegex);
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+        
+        // Clear error when user starts typing
+        if (error) setError('');
+        
+        // Validate email format in real-time (only for email field)
+        if (name === 'email' && value) {
+            const match = value.match(collegeEmailRegex);
+            if (!match) {
+                setError("Please enter a valid college email (e.g. 123456@stu.manit.ac.in)");
+            }
+        }
+    };
 
-    // if (!match) {
-    //   setError("Please enter a valid college email (e.g. 123456@maint.ac.in)");
-    //   setStudentId(null);
-    //   return;
-    // }
-    const submitHndler = (e) => {
-        // e.preventDefault();
-        // if(e.target.userId.value === "" || e.target.password.value === "" || e.target.userType.value === "") {
-        //     // toast.error("Please fill all the fields")
-        // }
-        // else{
-        //     // toast.success("Login Successful")
-        //     // You can access the form values like this:
-        //     // const userId = e.target.userId.value;
-        //     // const password = e.target.password.value;
-        //     // const userType = e.target.userType.value;
-        // }
-    }
+    const submitHandler = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+
+        try {
+            const { response, data } = await AuthAPI.studentLogin(formData.email, formData.password);
+
+            if (response.ok && data.success) {
+                // Store token in localStorage
+                localStorage.setItem('authToken', data.data.token);
+                localStorage.setItem('userType', 'student');
+                localStorage.setItem('userData', JSON.stringify(data.data.user));
+
+                // Navigate to student dashboard
+                navigate('/student');
+            } else {
+                setError(data.message || 'Login failed. Please try again.');
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            setError('Network error. Please check your connection and try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center px-4 py-8">
       {/* Login Card */}
@@ -48,18 +80,28 @@ function Login() {
 
         {/* Form Card */}
         <div className="bg-white/70 backdrop-blur-lg rounded-2xl p-6 md:p-8 shadow-xl border border-white/20">
-          <form className="space-y-6" onSubmit={submitHndler}>
-            {/* User ID Field */}
+          <form className="space-y-6" onSubmit={submitHandler}>
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+                {error}
+              </div>
+            )}
+
+            {/* Email Field */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Email ID
               </label>
               <input
-                name='userId'
+                name="email"
                 type="email"
+                value={formData.email}
+                onChange={handleInputChange}
                 placeholder="Enter your college email ID"
                 className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
                 required
+                disabled={loading}
               />
             </div>
 
@@ -70,10 +112,13 @@ function Login() {
               </label>
               <input
                 type="password"
-                name='password'
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
                 placeholder="Enter your password"
                 className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
                 required
+                disabled={loading}
               />
             </div>
 
@@ -87,9 +132,17 @@ function Login() {
             {/* Submit Button */}
             <button 
               type="submit" 
-              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl hover:from-indigo-700 hover:to-purple-700 transform hover:scale-[1.02] transition-all duration-300 ease-out"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl hover:from-indigo-700 hover:to-purple-700 transform hover:scale-[1.02] transition-all duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              Sign In
+              {loading ? (
+                <div className="flex items-center justify-center">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Signing In...
+                </div>
+              ) : (
+                'Sign In'
+              )}
             </button>
           </form>
 

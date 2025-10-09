@@ -24,6 +24,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import Signup from './pages/Auth/Signup';
 
+
 function App() {
   // TODO: Replace with real auth logic
   const isAuthenticated = true;
@@ -33,8 +34,8 @@ function App() {
   const location = useLocation();
   
   // Simple approach - just list the routes where you want to hide navbar
-  const noNavbarRoutes = ['/login', '/register', '/404', '/not-found'];
-  const noFooterRoutes = ['/login', '/register'];
+  const noNavbarRoutes = ['/login', '/register', '/signup', '/404', '/not-found'];
+  const noFooterRoutes = ['/login', '/register', '/signup'];
   
   const shouldHideNavbar = noNavbarRoutes.includes(location.pathname);
   const shouldHideFooter = noFooterRoutes.includes(location.pathname);
@@ -46,12 +47,13 @@ function App() {
       <Routes>
         <Route path="/home" element={<Home />} />
         {/* Auth routes */}
-        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path='/signup' element={<Signup />} />
+  
 
         {/* Student Board */}
-        <Route path="/" element={<ProtectedRoute isAuthenticated={isAuthenticated}><StudentHome /></ProtectedRoute>} />
+        <Route path="/student" element={<ProtectedRoute isAuthenticated={isAuthenticated}><StudentHome /></ProtectedRoute>} />
         <Route path="/view-candidates" element={<ProtectedRoute isAuthenticated={isAuthenticated}><CandidateList /></ProtectedRoute>} />
         <Route path="/student/notifications" element={<ProtectedRoute isAuthenticated={isAuthenticated}><StudentNotifications /></ProtectedRoute>} />
         <Route path="/student/application" element={<ProtectedRoute isAuthenticated={isAuthenticated}><StudentApplicationForm /></ProtectedRoute>} />
