@@ -41,7 +41,7 @@ export default function Navbar({ isCandidate, notificationCount = 0 }) {
           <div className="relative group">
             <UserCircleIcon className="h-8 w-8 text-gray-700 hover:text-indigo-600 cursor-pointer transition" />
             <div
-              className="absolute right-0 top-full mt-2 w-44 bg-white border rounded-2xl shadow-lg
+              className="absolute right-0 top-full mt-0 w-44 bg-white border rounded-2xl shadow-lg
                          opacity-0 group-hover:opacity-100 hover:opacity-100
                          scale-95 group-hover:scale-100 hover:scale-100
                          transform transition-all pointer-events-none
