@@ -47,7 +47,6 @@ function Login() {
                 // Store token in localStorage
                 localStorage.setItem('authToken', data.data.token);
                 localStorage.setItem('userType', 'student');
-                localStorage.setItem('userData', JSON.stringify(data.data.user));
 
                 // Navigate to student dashboard
                 navigate('/student');

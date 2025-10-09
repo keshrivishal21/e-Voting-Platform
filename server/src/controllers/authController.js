@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { parse } from "dotenv";
 import jwt from "jsonwebtoken";
+import fs from "fs";
 
 const prisma = new PrismaClient();
 
@@ -213,15 +214,20 @@ export const candidateRegister = async (req, res) => {
   try {
     const {
       name,
-      email,
       phone,
+      email,
       password,
       confirmPassword,
       position,
-      manifesto,
       electionId,
+      manifesto,
+      branch,
+      year,
       cgpa,
     } = req.body;
+
+    // Get uploaded file info
+    const uploadedFile = req.file;
 
     // Validate input
     if (
@@ -231,12 +237,14 @@ export const candidateRegister = async (req, res) => {
       !password ||
       !confirmPassword ||
       !position ||
-      !electionId
+      !electionId ||
+      !branch ||
+      !year
     ) {
       return res.status(400).json({
         success: false,
         message:
-          "Name, email, phone, password, position, and election ID are required",
+          "Name, email, phone, password, position, branch, and year are required",
       });
     }
 
@@ -245,6 +253,14 @@ export const candidateRegister = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Passwords do not match",
+      });
+    }
+
+    // Validate file upload
+    if (!uploadedFile) {
+      return res.status(400).json({
+        success: false,
+        message: "Document file is required",
       });
     }
 
@@ -260,51 +276,129 @@ export const candidateRegister = async (req, res) => {
       });
     }
 
+    // Validate election exists
+    const election = await prisma.eLECTION.findUnique({
+      where: { Election_id: parseInt(electionId) }
+    });
+
+    if (!election) {
+      return res.status(400).json({
+        success: false,
+        message: `Election with ID ${electionId} does not exist`,
+      });
+    }
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
     // Generate candidate ID (you can modify this logic as needed)
-    const candidateId = Date.now();
+    const candidateId = parseInt(email.split("@")[0]);
 
-    // Create candidate
-    const candidate = await prisma.cANDIDATE.create({
-      data: {
-        Can_id: candidateId,
-        Can_name: name,
-        Can_email: email,
-        Can_phone: phone,
-        Can_password: hashedPassword,
-        Position: position,
-        Manifesto: manifesto || "",
-        Election_id: parseInt(electionId),
-        Cgpa: cgpa ? parseFloat(cgpa) : 0.0,
-        Data: Buffer.from(""), // Empty buffer for now
-        user: {
-          create: {
-            User_id: candidateId,
-            User_type: "Candidate",
+    // Read uploaded file and convert to buffer for database storage
+    let fileBuffer = Buffer.from("");
+    if (uploadedFile) {
+      try {
+        fileBuffer = fs.readFileSync(uploadedFile.path);
+      } catch (error) {
+        console.error("Error reading uploaded file:", error);
+        return res.status(500).json({
+          success: false,
+          message: "Error processing uploaded file",
+        });
+      }
+    }
+
+    // Use transaction to ensure data consistency
+    let user, candidate;
+    try {
+      const result = await prisma.$transaction(async (tx) => {
+        // Check if user record already exists for this combination
+        let user = await tx.uSERS.findUnique({
+          where: {
+            User_id_User_type: {
+              User_id: candidateId,
+              User_type: "Candidate"
+            }
+          }
+        });
+
+        if (!user) {
+          // Create new user entry if it doesn't exist
+          user = await tx.uSERS.create({
+            data: {
+              User_id: candidateId,
+              User_type: "Candidate",
+            },
+          });
+        }
+
+        // Create candidate
+        const candidate = await tx.cANDIDATE.create({
+          data: {
+            Can_id: candidateId,
+            Can_name: name,
+            Can_email: email,
+            Can_phone: phone,
+            Can_password: hashedPassword,
+            Position: position,
+            Manifesto: manifesto || "",
+            Election_id: parseInt(electionId),
+            Branch: branch,
+            Year: parseInt(year),
+            Cgpa: cgpa ? parseFloat(cgpa) : 0.0,
+            Data: fileBuffer, // Store uploaded file as buffer
+            User_type: "Candidate", // Add the User_type field
           },
-        },
-      },
-    });
+        });
 
-    // Generate token
-    const token = generateToken(candidate.Can_id, "candidate");
+        return { user, candidate };
+      });
+
+      user = result.user;
+      candidate = result.candidate;
+
+    } catch (dbError) {
+      console.error("Database transaction error:", dbError);
+      
+      // Clean up temporary file in case of database error
+      if (uploadedFile && uploadedFile.path) {
+        try {
+          fs.unlinkSync(uploadedFile.path);
+        } catch (error) {
+          console.error("Error deleting temporary file:", error);
+        }
+      }
+
+      // Handle specific Prisma errors
+      if (dbError.code === 'P2002') {
+        return res.status(409).json({
+          success: false,
+          message: "Candidate with this information already exists",
+        });
+      }
+
+      return res.status(500).json({
+        success: false,
+        message: "Database error during candidate registration",
+      });
+    }
+
+    // Clean up temporary file
+    if (uploadedFile && uploadedFile.path) {
+      try {
+        fs.unlinkSync(uploadedFile.path);
+      } catch (error) {
+        console.error("Error deleting temporary file:", error);
+      }
+    }
 
     res.status(201).json({
       success: true,
       message: "Candidate registration successful",
       data: {
-        token,
         candidate: {
           id: candidate.Can_id,
           name: candidate.Can_name,
-          email: candidate.Can_email,
-          phone: candidate.Can_phone,
-          position: candidate.Position,
-          manifesto: candidate.Manifesto,
-          electionId: candidate.Election_id,
-          cgpa: candidate.Cgpa,
         },
       },
     });
@@ -331,7 +425,7 @@ export const candidateLogin = async (req, res) => {
     }
 
     // Find candidate by email
-    const candidate = await prisma.cANDIDATE.findUnique({
+    const candidate = await prisma.cANDIDATE.findFirst({
       where: { Can_email: email },
     });
 
@@ -355,7 +449,7 @@ export const candidateLogin = async (req, res) => {
     }
 
     // Generate token
-    const token = generateToken(candidate.Can_id, "candidate");
+    const token = generateToken(candidate.Can_id, "Candidate");
 
     res.status(200).json({
       success: true,
@@ -364,12 +458,7 @@ export const candidateLogin = async (req, res) => {
         token,
         user: {
           id: candidate.Can_id,
-          name: candidate.Can_name,
-          email: candidate.Can_email,
-          phone: candidate.Can_phone,
-          position: candidate.Position,
-          manifesto: candidate.Manifesto,
-          userType: "candidate",
+          userType: "Candidate",
         },
       },
     });

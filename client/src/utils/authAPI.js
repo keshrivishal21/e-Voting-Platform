@@ -55,6 +55,22 @@ class AuthAPI {
     }
   }
 
+  // Candidate registration
+  static async candidateRegister(formData) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/candidate/register`, {
+        method: 'POST',
+        // Don't set Content-Type header - browser will set it automatically for FormData
+        body: formData
+      });
+
+      const data = await response.json();
+      return { response, data };
+    } catch (error) {
+      throw new Error(`Network error: ${error.message}`);
+    }
+  }
+
   // Verify token
   static async verifyToken() {
     try {

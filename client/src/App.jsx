@@ -34,11 +34,9 @@ function App() {
   const location = useLocation();
   
   // Simple approach - just list the routes where you want to hide navbar
-  const noNavbarRoutes = ['/login', '/register', '/signup', '/404', '/not-found'];
-  const noFooterRoutes = ['/login', '/register', '/signup'];
+  const noNavbarRoutes = ['/', '/register', '/signup', '/404', '/not-found'];
   
   const shouldHideNavbar = noNavbarRoutes.includes(location.pathname);
-  const shouldHideFooter = noFooterRoutes.includes(location.pathname);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -77,8 +75,8 @@ function App() {
         <Route path="/404" element={<NotFound />} />
         <Route path="*" element={<Navigate to="/404" replace />} />
       </Routes>
-      {/* Conditionally render footer */}
-      {!shouldHideFooter && <Footer />}
+      
+      { <Footer />}
     </div>
   );
 }

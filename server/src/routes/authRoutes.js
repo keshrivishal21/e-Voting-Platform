@@ -15,6 +15,7 @@ import {
   verifyCandidate,
   verifyStudentOrCandidate
 } from "../middlewares/authMiddleware.js";
+import upload from "../middlewares/uploadMiddleware.js";
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -35,7 +36,7 @@ router.post("/candidate/login", candidateLogin); // Candidate-specific login
 
 // Registration Routes
 router.post("/student/register", studentRegister); // Student registration
-router.post("/candidate/register", verifyStudent, candidateRegister); // Candidate registration (requires student login)
+router.post("/candidate/register", upload.single('document'), candidateRegister); // Candidate registration with file upload
 
 // Check student-candidate status
 router.get("/student/candidate-status", verifyStudent, async (req, res) => {

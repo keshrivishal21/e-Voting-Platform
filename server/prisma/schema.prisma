@@ -26,7 +26,7 @@ enum LogType {
 }
 
 model USERS {
-  User_id   Int       @id
+  User_id   Int       
   User_type UserType
 
   student   STUDENT?
@@ -34,6 +34,8 @@ model USERS {
   feedbacks FEEDBACK[]
   logs      SYSTEM_LOGS[]
   notif     NOTIFICATION[]
+
+  @@id([User_id, User_type])
 }
 
 model ADMIN {
@@ -71,9 +73,12 @@ model STUDENT {
   Std_password String   @db.VarChar(255)
   Dob         DateTime  
   Std_email   String    @db.VarChar(50)
+  User_type   UserType  @default(Student)
 
-  user        USERS     @relation(fields: [Std_id], references: [User_id])
+  user        USERS     @relation(fields: [Std_id, User_type], references: [User_id, User_type])
   votes       VOTE[]
+
+  @@unique([Std_id, User_type])
 }
 
 model CANDIDATE {
@@ -85,13 +90,18 @@ model CANDIDATE {
   Can_password String    @db.VarChar(255)
   Manifesto    String
   Election_id  Int
+  Branch       String    @db.VarChar(50)
+  Year         Int
   Cgpa         Float
   Data         Bytes     @db.MediumBlob
+  User_type    UserType  @default(Candidate)
 
   election     ELECTION  @relation(fields: [Election_id], references: [Election_id])
-  user         USERS     @relation(fields: [Can_id], references: [User_id])
+  user         USERS     @relation(fields: [Can_id, User_type], references: [User_id, User_type])
   votes        VOTE[]
   results      RESULT[]
+
+  @@unique([Can_id, User_type])
 }
 
 
@@ -127,34 +137,37 @@ model RESULT {
 model FEEDBACK {
   FB_id     Int       @id
   User_id   Int
+  User_type UserType
   FB_time   DateTime  @db.Timestamp(0)
   Message   String
   Status    String    @db.VarChar(50)
   Admin_id  Int?
 
-  user      USERS     @relation(fields: [User_id], references: [User_id])
+  user      USERS     @relation(fields: [User_id, User_type], references: [User_id, User_type])
   admin     ADMIN?    @relation(fields: [Admin_id], references: [Admin_id])
 }
 
 model SYSTEM_LOGS {
-  Log_id   Int     @id
-  User_id  Int
-  Admin_id Int?
-  Log_time DateTime @db.Timestamp(0)
-  Log_type LogType
-  Action   String
+  Log_id    Int      @id
+  User_id   Int
+  User_type UserType
+  Admin_id  Int?
+  Log_time  DateTime @db.Timestamp(0)
+  Log_type  LogType
+  Action    String
 
-  user     USERS  @relation(fields: [User_id], references: [User_id])
-  admin    ADMIN? @relation(fields: [Admin_id], references: [Admin_id])
+  user      USERS   @relation(fields: [User_id, User_type], references: [User_id, User_type])
+  admin     ADMIN?  @relation(fields: [Admin_id], references: [Admin_id])
 }
 
 model NOTIFICATION {
   N_id          Int      @id
   User_id       Int
+  User_type     UserType
   Notif_time    DateTime @db.Timestamp(0)
   Notif_message String
   Admin_id      Int?
 
-  user          USERS   @relation(fields: [User_id], references: [User_id])
+  user          USERS   @relation(fields: [User_id, User_type], references: [User_id, User_type])
   admin         ADMIN?  @relation(fields: [Admin_id], references: [Admin_id])
 }
