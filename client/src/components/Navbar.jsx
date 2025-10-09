@@ -8,21 +8,28 @@ export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { userType, logout, isStudent, isCandidate, isAdmin } = useAuth();
-  
+
   const isAdminRoute = location.pathname.startsWith("/admin");
   const isCandidateRoute = location.pathname.startsWith("/candidate");
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate(isStudent() ? "/" : isCandidate() ? "/candidate/login" : "/admin");
   };
   return (
     <header className="absolute top-0 left-0 w-full z-50">
       <div className="flex items-center justify-between px-6 py-3 md:py-4 shadow max-w-6xl mx-auto bg-white/70 backdrop-blur-lg rounded-full mt-4">
         {/* Left: Project Name */}
-        
-        <small className="text-2xl font-extrabold text-indigo-600">  e-Voting</small>
-        
+        <Link
+          to={
+            isStudent() ? "/student" : isCandidate() ? "/candidate" : "/admin"
+          }
+        >
+          <small className="text-2xl font-extrabold text-indigo-600">
+            {" "}
+            e-Voting
+          </small>
+        </Link>
 
         {/* Menu for mobile + desktop */}
         <nav
@@ -33,7 +40,11 @@ export default function Navbar() {
           {/* Notifications - Show based on user role */}
           {(isStudent() || isCandidate()) && (
             <Link
-              to={isStudent() ? "/student/notifications" : "/candidate/notifications"}
+              to={
+                isStudent()
+                  ? "/student/notifications"
+                  : "/candidate/notifications"
+              }
               className="relative"
               onClick={() => setMenuOpen(false)}
             >
@@ -66,20 +77,22 @@ export default function Navbar() {
                   Login as {isStudent() ? "Candidate" : "Student"}
                 </Link>
               )}
-              
+
               {/* Profile Link */}
               <Link
                 to={
-                  isStudent() ? "/student/profile" : 
-                  isCandidate() ? "/candidate/profile" : 
-                  "/admin/profile"
+                  isStudent()
+                    ? "/student/profile"
+                    : isCandidate()
+                    ? "/candidate/profile"
+                    : "/admin/profile"
                 }
                 className="block px-4 py-2 text-gray-700 hover:bg-gray-50"
                 onClick={() => setMenuOpen(false)}
               >
                 Edit Profile
               </Link>
-              
+
               {/* Logout */}
               <button
                 onClick={() => {

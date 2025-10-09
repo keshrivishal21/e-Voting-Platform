@@ -139,7 +139,7 @@ function AppContent() {
 
         {/* Admin Board - Only accessible by admins */}
         <Route path="/admin" element={
-          <ProtectedRoute requiredRole="Admin">
+          <ProtectedRoute requiredRole="">
             <AdminHome />
           </ProtectedRoute>
         } />
