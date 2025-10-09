@@ -6,7 +6,6 @@ import StudentHome from './pages/StudentBoard/Home';
 import CandidateList from './pages/StudentBoard/CandidateList';
 import StudentNotifications from './pages/StudentBoard/Notifications';
 import StudentApplicationForm from './pages/StudentBoard/ApplicationForm';
-import StudentVote from './pages/StudentBoard/Vote';
 import CandidateHome from './pages/CandidateBoard/Home';
 import CandidateLiveVotes from './pages/CandidateBoard/LiveVotes';
 import CandidateCampaignOverview from './pages/CandidateBoard/CampaignOverview';
@@ -23,6 +22,9 @@ import NotFound from './pages/NotFound';
 import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import Signup from './pages/Auth/Signup';
+import Elections from './pages/StudentBoard/Elections';
+import Results from './pages/StudentBoard/Results';
+import CastVote from './pages/StudentBoard/CastVote';
 
 
 function App() {
@@ -55,7 +57,10 @@ function App() {
         <Route path="/view-candidates" element={<ProtectedRoute isAuthenticated={isAuthenticated}><CandidateList /></ProtectedRoute>} />
         <Route path="/student/notifications" element={<ProtectedRoute isAuthenticated={isAuthenticated}><StudentNotifications /></ProtectedRoute>} />
         <Route path="/student/application" element={<ProtectedRoute isAuthenticated={isAuthenticated}><StudentApplicationForm /></ProtectedRoute>} />
-        <Route path="/student/vote" element={<ProtectedRoute isAuthenticated={isAuthenticated}><StudentVote /></ProtectedRoute>} />
+        <Route path="/student/elections" element={<ProtectedRoute isAuthenticated={isAuthenticated}><Elections /></ProtectedRoute>} />
+        <Route path="/student/results" element={<ProtectedRoute isAuthenticated={isAuthenticated}><Results /></ProtectedRoute>} />
+        <Route path="/apply-candidate" element={<ProtectedRoute isAuthenticated={isAuthenticated}><StudentApplicationForm /></ProtectedRoute>} />
+        <Route path="/student/cast-vote" element={<ProtectedRoute isAuthenticated={isAuthenticated}><CastVote /></ProtectedRoute>} />
 
         {/* Candidate Board */}
         <Route path="/candidate" element={<ProtectedRoute isAuthenticated={isAuthenticated}><CandidateHome /></ProtectedRoute>} />
