@@ -5,10 +5,10 @@ import { BellIcon, UserCircleIcon } from "@heroicons/react/24/outline";
 export default function Navbar({ isCandidate, notificationCount = 0 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
-  const isAdminRoute = location.pathname.startsWith('/admin');
+  const isAdminRoute = location.pathname.startsWith("/admin");
 
   return (
-    <header className="fixed top-0 left-0 w-full z-50">
+    <header className="absolute top-0 left-0 w-full z-50">
       <div className="flex items-center justify-between px-6 py-3 md:py-4 shadow max-w-6xl mx-auto bg-white/70 backdrop-blur-lg rounded-full mt-4">
         {/* Left: Project Name */}
         <Link to="/" className="text-2xl font-extrabold text-indigo-600">
@@ -21,17 +21,6 @@ export default function Navbar({ isCandidate, notificationCount = 0 }) {
             menuOpen ? "max-md:w-full" : "max-md:w-0"
           } transition-[width] bg-white/90 backdrop-blur flex-col md:flex-row gap-8 text-gray-900 text-sm font-medium`}
         >
-          {/* Candidate Board (hidden for /admin routes) */}
-          {isCandidate && !isAdminRoute && (
-            <Link
-              to="/candidate"
-              className="bg-indigo-600 text-white px-5 py-2 rounded-full text-sm shadow hover:bg-indigo-700 transition"
-              onClick={() => setMenuOpen(false)}
-            >
-              Candidate Dashboard
-            </Link>
-          )}
-
           {/* Notifications (hidden for /admin routes) */}
           {!isAdminRoute && (
             <Link
@@ -51,10 +40,23 @@ export default function Navbar({ isCandidate, notificationCount = 0 }) {
           {/* Profile Dropdown */}
           <div className="relative group">
             <UserCircleIcon className="h-8 w-8 text-gray-700 hover:text-indigo-600 cursor-pointer transition" />
-            <div className="absolute right-0 mt-2 w-44 bg-white border rounded-2xl shadow-lg opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100 transform transition-all pointer-events-none group-hover:pointer-events-auto">
+            <div
+              className="absolute right-0 top-full mt-2 w-44 bg-white border rounded-2xl shadow-lg
+                         opacity-0 group-hover:opacity-100 hover:opacity-100
+                         scale-95 group-hover:scale-100 hover:scale-100
+                         transform transition-all pointer-events-none
+                         group-hover:pointer-events-auto hover:pointer-events-auto"
+            >
+              <Link
+                to="/candidate"
+                className="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-t-2xl"
+                onClick={() => setMenuOpen(false)}
+              >
+                Login as {isCandidate ? "Candidate" : "Student"}
+              </Link>
               <Link
                 to="/student/profile"
-                className="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-t-2xl"
+                className="block px-4 py-2 text-gray-700 hover:bg-gray-50"
                 onClick={() => setMenuOpen(false)}
               >
                 Edit Profile
