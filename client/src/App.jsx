@@ -18,7 +18,7 @@ import AdminNotifications from './pages/AdminBoard/Notifications';
 import AdminResultManagement from './pages/AdminBoard/ResultMangement';
 import AdminStudentManagement from './pages/AdminBoard/StudentMangement';
 import Login from './pages/Auth/Login';
-import Register from './pages/Auth/CandidateRegister';
+import CanRegister from './pages/Auth/CandidateRegister';
 import NotFound from './pages/NotFound';
 import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
@@ -46,7 +46,7 @@ function App() {
         <Route path="/home" element={<Home />} />
         {/* Auth routes */}
         <Route path="/" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/register" element={<CanRegister />} />
         <Route path='/signup' element={<Signup />} />
   
 
