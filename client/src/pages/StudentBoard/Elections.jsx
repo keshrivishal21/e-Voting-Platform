@@ -74,7 +74,7 @@ const Elections = () => {
             >
               <span className="text-indigo-800 font-medium">{election.name}</span>
               <Link
-                to="/apply-candidate"
+                to="/register"
                 className="bg-indigo-600 text-white px-4 py-2 rounded-full hover:bg-indigo-700 transition"
               >
                 Apply as Candidate

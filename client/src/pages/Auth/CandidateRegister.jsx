@@ -361,7 +361,7 @@ const CandidateRegister = () => {
             <p className="text-sm text-gray-600">
               Already have an account?
               <button
-                onClick={() => navigate('/login')}
+                onClick={() => navigate('/candidate/login')}
                 className="ml-1 text-indigo-600 hover:text-indigo-700 font-medium hover:underline transition-colors duration-200"
               >
                 Sign In

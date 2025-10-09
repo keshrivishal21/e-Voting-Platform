@@ -48,7 +48,7 @@ export default function Navbar({ isCandidate, notificationCount = 0 }) {
                          group-hover:pointer-events-auto hover:pointer-events-auto"
             >
               <Link
-                to="/candidate"
+                to={isCandidate ? "/candidate/login" : "/"}
                 className="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-t-2xl"
                 onClick={() => setMenuOpen(false)}
               >

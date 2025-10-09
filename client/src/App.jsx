@@ -25,6 +25,8 @@ import Signup from './pages/Auth/Signup';
 import Elections from './pages/StudentBoard/Elections';
 import Results from './pages/StudentBoard/Results';
 import CastVote from './pages/StudentBoard/CastVote';
+import CandidateLogin from './pages/Auth/CandidateLogin';
+import { useState } from 'react';
 
 
 function App() {
@@ -36,7 +38,7 @@ function App() {
   const location = useLocation();
   
   // Simple approach - just list the routes where you want to hide navbar
-  const noNavbarRoutes = ['/', '/register', '/signup', '/404', '/not-found'];
+  const noNavbarRoutes = ['/', '/register','/candidate/login', '/signup', '/404', '/not-found'];
   
   const shouldHideNavbar = noNavbarRoutes.includes(location.pathname);
 
@@ -50,7 +52,7 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<CanRegister />} />
         <Route path='/signup' element={<Signup />} />
-  
+        <Route path="/candidate/login" element={<CandidateLogin />} />
 
         {/* Student Board */}
         <Route path="/student" element={<ProtectedRoute isAuthenticated={isAuthenticated}><StudentHome /></ProtectedRoute>} />
