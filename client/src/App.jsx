@@ -136,6 +136,11 @@ function AppContent() {
             <Results />
           </ProtectedRoute>
         } />
+        <Route path="/candidate/notifications" element={
+          <ProtectedRoute requiredRole="Candidate">
+            <StudentNotifications />
+          </ProtectedRoute>
+        } />
 
         {/* Admin Board - Only accessible by admins */}
         <Route path="/admin" element={
@@ -144,32 +149,32 @@ function AppContent() {
           </ProtectedRoute>
         } />
         <Route path="/admin/candidates" element={
-          <ProtectedRoute requiredRole="Admin">
+          <ProtectedRoute requiredRole="">
             <AdminCandidateManagement />
           </ProtectedRoute>
         } />
         <Route path="/admin/election" element={
-          <ProtectedRoute requiredRole="Admin">
+          <ProtectedRoute requiredRole="">
             <AdminElectionControl />
           </ProtectedRoute>
         } />
         <Route path="/admin/feedback" element={
-          <ProtectedRoute requiredRole="Admin">
+          <ProtectedRoute requiredRole="">
             <AdminFeedbackManagement />
           </ProtectedRoute>
         } />
         <Route path="/admin/notifications" element={
-          <ProtectedRoute requiredRole="Admin">
+          <ProtectedRoute requiredRole="">
             <AdminNotifications />
           </ProtectedRoute>
         } />
         <Route path="/admin/results" element={
-          <ProtectedRoute requiredRole="Admin">
+          <ProtectedRoute requiredRole="">
             <AdminResultManagement />
           </ProtectedRoute>
         } />
         <Route path="/admin/students" element={
-          <ProtectedRoute requiredRole="Admin">
+          <ProtectedRoute requiredRole="">
             <AdminStudentManagement />
           </ProtectedRoute>
         } />

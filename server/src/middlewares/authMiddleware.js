@@ -32,7 +32,7 @@ export const verifyToken = (req, res, next) => {
 // Middleware to verify admin role
 export const verifyAdmin = (req, res, next) => {
   verifyToken(req, res, () => {
-    if (req.user.userType !== "admin") {
+    if (req.user.userType !== "Admin") {
       return res.status(403).json({ 
         success: false, 
         message: "Access denied. Admin privileges required" 
@@ -45,7 +45,7 @@ export const verifyAdmin = (req, res, next) => {
 // Middleware to verify student role
 export const verifyStudent = (req, res, next) => {
   verifyToken(req, res, () => {
-    if (req.user.userType !== "student") {
+    if (req.user.userType !== "Student") {
       return res.status(403).json({ 
         success: false, 
         message: "Access denied. Student privileges required" 
@@ -58,7 +58,7 @@ export const verifyStudent = (req, res, next) => {
 // Middleware to verify candidate role
 export const verifyCandidate = (req, res, next) => {
   verifyToken(req, res, () => {
-    if (req.user.userType !== "candidate") {
+    if (req.user.userType !== "Candidate") {
       return res.status(403).json({ 
         success: false, 
         message: "Access denied. Candidate privileges required" 
@@ -71,7 +71,7 @@ export const verifyCandidate = (req, res, next) => {
 // Middleware to verify student or candidate role
 export const verifyStudentOrCandidate = (req, res, next) => {
   verifyToken(req, res, () => {
-    if (!["student", "candidate"].includes(req.user.userType)) {
+    if (!["Student", "Candidate"].includes(req.user.userType)) {
       return res.status(403).json({ 
         success: false, 
         message: "Access denied. Student or Candidate privileges required" 

@@ -48,7 +48,7 @@ export const adminLogin = async (req, res) => {
     }
 
     // Generate token
-    const token = generateToken(admin.id, "admin");
+    const token = generateToken(admin.id, "Admin");
 
     res.status(200).json({
       success: true,
@@ -60,7 +60,7 @@ export const adminLogin = async (req, res) => {
           userId: admin.userId,
           name: admin.name,
           role: admin.role,
-          userType: "admin",
+          userType: "Admin",
         },
       },
     });
