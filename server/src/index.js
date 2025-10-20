@@ -4,6 +4,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./routes/authRoutes.js";
 import electionRoutes from "./routes/electionRoutes.js";
+import candidateRoutes from "./routes/candidateRoutes.js";
 import { startElectionScheduler } from "./services/electionScheduler.js";
 
 dotenv.config();
@@ -18,6 +19,7 @@ app.use(express.json());
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/election", electionRoutes);
+app.use("/api/candidate", candidateRoutes);
 
 // Health check route
 app.get("/", async(req, res) => {

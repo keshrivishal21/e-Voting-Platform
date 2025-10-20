@@ -20,6 +20,12 @@ enum ElectionStatus {
   Completed
 }
 
+enum CandidateStatus {
+  Pending
+  Approved
+  Rejected
+}
+
 enum LogType {
   Authentication
   Audit
@@ -45,11 +51,11 @@ model ADMIN {
   Admin_phone   String        @db.VarChar(15)
   Admin_password String       @db.VarChar(255)
 
-  elections     ELECTION[]
-  results       RESULT[]
-  feedbacks     FEEDBACK[]
-  logs          SYSTEM_LOGS[]
-  notifications NOTIFICATION[]
+  elections        ELECTION[]
+  results          RESULT[]
+  feedbacks        FEEDBACK[]
+  logs             SYSTEM_LOGS[]
+  notifications    NOTIFICATION[]
 }
 
 model ELECTION {
@@ -88,13 +94,17 @@ model CANDIDATE {
   Can_email    String    @db.VarChar(50)
   Can_phone    String    @db.VarChar(15)
   Can_password String    @db.VarChar(255)
-  Manifesto    String
+  Manifesto    String    @db.Text
   Election_id  Int
   Branch       String    @db.VarChar(50)
   Year         Int
   Cgpa         Float
   Data         Bytes     @db.MediumBlob
   User_type    UserType  @default(Candidate)
+  
+  // Approval system
+  Status           CandidateStatus @default(Pending)
+  Rejection_reason String?         @db.Text
 
   election     ELECTION  @relation(fields: [Election_id], references: [Election_id])
   user         USERS     @relation(fields: [Can_id, User_type], references: [User_id, User_type])
