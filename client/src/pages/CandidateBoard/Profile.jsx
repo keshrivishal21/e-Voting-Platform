@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { UserIcon, EnvelopeIcon, PhoneIcon, AcademicCapIcon, KeyIcon, DocumentTextIcon, TrophyIcon } from "@heroicons/react/24/outline";
+import toast from "react-hot-toast";
 import AuthAPI from "../../utils/authAPI";
 
 const CandidateProfile = () => {
@@ -90,10 +91,27 @@ const CandidateProfile = () => {
   // Handle password form input changes
   const handlePasswordChange = (e) => {
     const { name, value } = e.target;
+    
+    // Check for whitespace in password fields
+    if (/\s/.test(value)) {
+      const fieldName = name === 'currentPassword' ? 'Current Password' : 
+                       name === 'newPassword' ? 'New Password' : 'Confirm Password';
+      const errorMsg = `${fieldName} cannot contain whitespace`;
+      setMessage({ type: 'error', text: errorMsg });
+      toast.error(errorMsg);
+      // Don't update state - reject the input
+      return;
+    }
+    
     setPasswordData(prev => ({
       ...prev,
       [name]: value
     }));
+    
+    // Clear error when valid input
+    if (message.type === 'error') {
+      setMessage({ type: '', text: '' });
+    }
   };
 
   // Handle profile update
@@ -121,6 +139,7 @@ const CandidateProfile = () => {
       setCandidateData(formData);
       setIsEditing(false);
       setMessage({ type: 'success', text: 'Profile updated successfully!' });
+      toast.success('✅ Profile updated successfully!');
 
       // if (response.ok && data.success) {
       //   setCandidateData(data.data.profile);
@@ -132,7 +151,9 @@ const CandidateProfile = () => {
       // }
     } catch (error) {
       console.error('Profile update error:', error);
-      setMessage({ type: 'error', text: 'Failed to update profile. Please try again.' });
+      const errorMsg = 'Failed to update profile. Please try again.';
+      setMessage({ type: 'error', text: errorMsg });
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -143,12 +164,16 @@ const CandidateProfile = () => {
     e.preventDefault();
     
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setMessage({ type: 'error', text: 'New passwords do not match!' });
+      const errorMsg = 'New passwords do not match!';
+      setMessage({ type: 'error', text: errorMsg });
+      toast.error(errorMsg);
       return;
     }
 
     if (passwordData.newPassword.length < 6) {
-      setMessage({ type: 'error', text: 'Password must be at least 6 characters long!' });
+      const errorMsg = 'Password must be at least 6 characters long!';
+      setMessage({ type: 'error', text: errorMsg });
+      toast.error(errorMsg);
       return;
     }
 
@@ -169,6 +194,7 @@ const CandidateProfile = () => {
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       setShowPasswordForm(false);
       setMessage({ type: 'success', text: 'Password changed successfully!' });
+      toast.success('🔐 Password changed successfully!');
 
       // if (response.ok && data.success) {
       //   setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -179,7 +205,9 @@ const CandidateProfile = () => {
       // }
     } catch (error) {
       console.error('Password change error:', error);
-      setMessage({ type: 'error', text: 'Failed to change password. Please try again.' });
+      const errorMsg = 'Failed to change password. Please try again.';
+      setMessage({ type: 'error', text: errorMsg });
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }

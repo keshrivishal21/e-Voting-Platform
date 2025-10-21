@@ -1,5 +1,6 @@
 // pages/AdminBoard/Home.jsx
 import { useState } from "react";
+import toast from "react-hot-toast";
 import {
   PieChart,
   Pie,
@@ -128,7 +129,9 @@ const Home = () => {
 
     // Validation
     if (!formData.title || !formData.startDate || !formData.endDate) {
-      setError("All fields are required");
+      const errorMsg = "All fields are required";
+      setError(errorMsg);
+      toast.error(errorMsg);
       setLoading(false);
       return;
     }
@@ -137,7 +140,9 @@ const Home = () => {
     const endDate = new Date(formData.endDate);
 
     if (endDate <= startDate) {
-      setError("End date must be after start date");
+      const errorMsg = "End date must be after start date";
+      setError(errorMsg);
+      toast.error(errorMsg);
       setLoading(false);
       return;
     }
@@ -165,16 +170,21 @@ const Home = () => {
 
       if (data.success) {
         setSuccess("Election created successfully!");
+        toast.success("🎉 Election created successfully!");
         setFormData({ title: "", startDate: "", endDate: "" });
         setTimeout(() => {
           setIsModalOpen(false);
           setSuccess("");
         }, 2000);
       } else {
-        setError(data.message || "Failed to create election");
+        const errorMsg = data.message || "Failed to create election";
+        setError(errorMsg);
+        toast.error(errorMsg);
       }
     } catch (err) {
-      setError("Network error. Please try again.");
+      const errorMsg = "Network error. Please try again.";
+      setError(errorMsg);
+      toast.error(errorMsg);
       console.error("Create election error:", err);
     } finally {
       setLoading(false);

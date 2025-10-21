@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';   
+import toast from 'react-hot-toast';
 import logo from "../../assets/evoting.png"
 import AuthAPI from '../../utils/authAPI';
 import { useAuth } from '../../contexts/AuthContext';
-// import { toast } from 'react-hot-toast';
 
 function Login() {
     const navigate = useNavigate();
@@ -21,12 +21,22 @@ function Login() {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
+        
+        // Check for whitespace in email and password fields
+        if ((name === 'email' || name === 'password') && /\s/.test(value)) {
+            const errorMsg = `${name === 'email' ? 'Email' : 'Password'} cannot contain whitespace`;
+            setError(errorMsg);
+            toast.error(errorMsg);
+            // Don't update state - reject the input
+            return;
+        }
+        
         setFormData(prev => ({
             ...prev,
             [name]: value
         }));
         
-        // Clear error when user starts typing
+        // Clear error when user starts typing valid input
         if (error) setError('');
         
         // Validate email format in real-time (only for email field)
@@ -49,17 +59,22 @@ function Login() {
             if (response.ok && data.success) {
                 // Use auth context to login - just token and type
                 login(data.data.token, 'Student');
+                toast.success('Welcome back! 🎓');
 
                 // Navigate to intended page or student dashboard
                 const from = location.state?.from?.pathname || '/student';
                 navigate(from);
                 localStorage.removeItem("candidateToken");
             } else {
-                setError(data.message || 'Login failed. Please try again.');
+                const errorMsg = data.message || 'Login failed. Please try again.';
+                setError(errorMsg);
+                toast.error(errorMsg);
             }
         } catch (error) {
             console.error('Login error:', error);
-            setError('Network error. Please check your connection and try again.');
+            const errorMsg = 'Network error. Please check your connection and try again.';
+            setError(errorMsg);
+            toast.error(errorMsg);
         } finally {
             setLoading(false);
         }
@@ -153,7 +168,7 @@ function Login() {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Dont't have an account? 
-              <a href="/signup" className="ml-1 text-indigo-600 hover:text-indigo-700 font-medium hover:underline transition-colors duration-200">
+              <a href="/student/signup" className="ml-1 text-indigo-600 hover:text-indigo-700 font-medium hover:underline transition-colors duration-200">
                 Sign Up
               </a>
             </p>

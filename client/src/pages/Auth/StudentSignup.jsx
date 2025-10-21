@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import toast from "react-hot-toast";
 import logo from "../../assets/evoting.png";
 import AuthAPI from "../../utils/authAPI";
-// import { toast } from 'react-hot-toast';
 
 function Signup() {
   const navigate = useNavigate();
@@ -22,12 +22,23 @@ function Signup() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    // Check for whitespace in email and password fields
+    if ((name === 'email' || name === 'password' || name === 'confirmPassword') && /\s/.test(value)) {
+      const fieldName = name === 'email' ? 'Email' : name === 'confirmPassword' ? 'Confirm Password' : 'Password';
+      const errorMsg = `${fieldName} cannot contain whitespace`;
+      setError(errorMsg);
+      toast.error(errorMsg);
+      // Don't update state - reject the input
+      return;
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
 
-    // Clear error when user starts typing
+    // Clear error when user starts typing valid input
     if (error) setError('');
 
     // Extract scholar number from email for display purposes
@@ -51,20 +62,26 @@ function Signup() {
     try {
       // Validate required fields
       if (Object.values(formData).some((value) => !value.trim())) {
-        setError("Please fill in all fields");
+        const errorMsg = "Please fill in all fields";
+        setError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
 
       // Validate email format
       const match = formData.email.match(collegeEmailRegex);
       if (!match) {
-        setError("Please enter a valid college email (e.g. 123456@stu.manit.ac.in)");
+        const errorMsg = "Please enter a valid college email (e.g. 123456@stu.manit.ac.in)";
+        setError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
 
       // Validate password match
       if (formData.password !== formData.confirmPassword) {
-        setError("Passwords do not match");
+        const errorMsg = "Passwords do not match";
+        setError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
 
@@ -81,13 +98,18 @@ function Signup() {
       const { response, data } = await AuthAPI.studentRegister(registrationData);
 
       if (response.ok && data.success) {
-        navigate('/');
+        toast.success("🎉 Registration successful! Please login.");
+        navigate('/student/login');
       } else {
-        setError(data.message || 'Registration failed. Please try again.');
+        const errorMsg = data.message || 'Registration failed. Please try again.';
+        setError(errorMsg);
+        toast.error(errorMsg);
       }
     } catch (error) {
       console.error('Registration error:', error);
-      setError('Network error. Please check your connection and try again.');
+      const errorMsg = 'Network error. Please check your connection and try again.';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -258,7 +280,7 @@ function Signup() {
             <p className="text-sm text-gray-600">
               Already have an account?
               <Link
-                to="/"
+                to="/student/login"
                 className="ml-1 text-indigo-600 hover:text-indigo-700 font-medium hover:underline transition-colors duration-200"
               >
                 Sign In

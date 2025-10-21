@@ -17,12 +17,13 @@ import AdminFeedbackManagement from './pages/AdminBoard/FeedbackMangement';
 import AdminNotifications from './pages/AdminBoard/Notifications';
 import AdminResultManagement from './pages/AdminBoard/ResultMangement';
 import AdminStudentManagement from './pages/AdminBoard/StudentMangement';
-import Login from './pages/Auth/Login';
+import Login from './pages/Auth/StudentLogin';
+import AdminLogin from './pages/Auth/AdminLogin';
 import CanRegister from './pages/Auth/CandidateRegister';
 import NotFound from './pages/NotFound';
 import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
-import Signup from './pages/Auth/Signup';
+import Signup from './pages/Auth/StudentSignup';
 import Elections from './pages/StudentBoard/Elections';
 import Results from './pages/StudentBoard/Results';
 import CastVote from './pages/StudentBoard/CastVote';
@@ -38,21 +39,23 @@ function AppContent() {
   const location = useLocation();
   
   // Routes where navbar should be hidden
-  const noNavbarRoutes = ['/', '/register', '/candidate/login', '/signup', '/404', '/not-found'];
+  const noNavbarRoutes = ['/', '/register', '/candidate/login', '/student/login', '/admin/login', '/student/signup', '/404', '/not-found'];
   const shouldHideNavbar = noNavbarRoutes.includes(location.pathname);
+  const noFooterRoutes = ['/'];
+  const shouldHideFooter = noFooterRoutes.includes(location.pathname);
 
   return (
     <div className="flex flex-col min-h-screen">
       {/* Conditionally render navbar */}
       {!shouldHideNavbar && <Navbar />}
       <Routes>
-        <Route path="/home" element={<Home />} />
+        <Route path="/" element={<Home />} />
         
         {/* Dashboard redirect */}
         <Route path="/dashboard" element={<DashboardRedirect />} />
         
         {/* Auth routes */}
-        <Route path="/" element={
+        <Route path="/student/login" element={
           isAuthenticated && userType === 'Student' ? (
             <Navigate to={getUserDashboard(userType)} replace />
           ) : (
@@ -60,12 +63,21 @@ function AppContent() {
           )
         } />
         
+        {/* Admin login page */}
+        <Route path="/admin/login" element={
+          isAuthenticated && userType === 'Admin' ? (
+            <Navigate to="/admin" replace />
+          ) : (
+            <AdminLogin />
+          )
+        } />
+        
         {/* Candidate auth pages - accessible even when logged in as student */}
-        <Route path="/register" element={<CanRegister />} />
+        <Route path="/candidate/register" element={<CanRegister />} />
         <Route path="/candidate/login" element={<CandidateLogin />} />
         
         {/* Student signup - redirect if already authenticated */}
-        <Route path="/signup" element={
+        <Route path="/student/signup" element={
           isAuthenticated ? (
             <Navigate to={getUserDashboard(userType)} replace />
           ) : (
@@ -144,37 +156,37 @@ function AppContent() {
 
         {/* Admin Board - Only accessible by admins */}
         <Route path="/admin" element={
-          <ProtectedRoute requiredRole="">
+          <ProtectedRoute requiredRole="Admin">
             <AdminHome />
           </ProtectedRoute>
         } />
         <Route path="/admin/candidates" element={
-          <ProtectedRoute requiredRole="">
+          <ProtectedRoute requiredRole="Admin">
             <AdminCandidateManagement />
           </ProtectedRoute>
         } />
         <Route path="/admin/election" element={
-          <ProtectedRoute requiredRole="">
+          <ProtectedRoute requiredRole="Admin">
             <AdminElectionControl />
           </ProtectedRoute>
         } />
         <Route path="/admin/feedback" element={
-          <ProtectedRoute requiredRole="">
+          <ProtectedRoute requiredRole="Admin">
             <AdminFeedbackManagement />
           </ProtectedRoute>
         } />
         <Route path="/admin/notifications" element={
-          <ProtectedRoute requiredRole="">
+          <ProtectedRoute requiredRole="Admin">
             <AdminNotifications />
           </ProtectedRoute>
         } />
         <Route path="/admin/results" element={
-          <ProtectedRoute requiredRole="">
+          <ProtectedRoute requiredRole="Admin">
             <AdminResultManagement />
           </ProtectedRoute>
         } />
         <Route path="/admin/students" element={
-          <ProtectedRoute requiredRole="">
+          <ProtectedRoute requiredRole="Admin">
             <AdminStudentManagement />
           </ProtectedRoute>
         } />
@@ -183,8 +195,8 @@ function AppContent() {
         <Route path="/404" element={<NotFound />} />
         <Route path="*" element={<Navigate to="/404" replace />} />
       </Routes>
-      
-      <Footer />
+
+      {!shouldHideFooter && <Footer />}
     </div>
   );
 }

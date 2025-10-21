@@ -1,6 +1,24 @@
 const API_BASE_URL = 'http://localhost:5000/api';
 
 class AuthAPI {
+  // Admin login
+  static async adminLogin(userId, password) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/admin/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId, password })
+      });
+
+      const data = await response.json();
+      return { response, data };
+    } catch (error) {
+      throw new Error(`Network error: ${error.message}`);
+    }
+  }
+
   // Student login
   static async studentLogin(email, password) {
     try {

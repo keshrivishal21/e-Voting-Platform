@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import AuthAPI from "../../utils/authAPI";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -40,10 +41,22 @@ const CandidateRegister = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    // Check for whitespace in email and password fields
+    if ((name === 'email' || name === 'password' || name === 'confirmPassword') && /\s/.test(value)) {
+      const fieldName = name === 'email' ? 'Email' : name === 'confirmPassword' ? 'Confirm Password' : 'Password';
+      const errorMsg = `${fieldName} cannot contain whitespace`;
+      setError(errorMsg);
+      toast.error(errorMsg);
+      // Don't update state - reject the input
+      return;
+    }
+    
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
+    
     if (error) setError("");
   };
 
@@ -52,7 +65,9 @@ const CandidateRegister = () => {
     if (file) {
       // Validate file size (5MB limit)
       if (file.size > 5 * 1024 * 1024) {
-        setError("File size should not exceed 5MB");
+        const errorMsg = "File size should not exceed 5MB";
+        setError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
 
@@ -67,11 +82,14 @@ const CandidateRegister = () => {
       ];
 
       if (!allowedTypes.includes(file.type)) {
-        setError("Only PDF, DOC, DOCX, JPEG, JPG, and PNG files are allowed");
+        const errorMsg = "Only PDF, DOC, DOCX, JPEG, JPG, and PNG files are allowed";
+        setError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
 
       setSelectedFile(file);
+      toast.success("📄 File uploaded successfully");
       if (error) setError("");
     }
   };
@@ -98,21 +116,27 @@ const CandidateRegister = () => {
       );
 
       if (missingFields.length > 0) {
-        setError("Please fill in all required fields");
+        const errorMsg = "Please fill in all required fields";
+        setError(errorMsg);
+        toast.error(errorMsg);
         setLoading(false);
         return;
       }
 
       // Validate file upload
       if (!selectedFile) {
-        setError("Please upload a document file");
+        const errorMsg = "Please upload a document file";
+        setError(errorMsg);
+        toast.error(errorMsg);
         setLoading(false);
         return;
       }
 
       // Validate password match
       if (formData.password !== formData.confirmPassword) {
-        setError("Passwords do not match");
+        const errorMsg = "Passwords do not match";
+        setError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
 
@@ -128,14 +152,19 @@ const CandidateRegister = () => {
       );
 
       if (response.ok && data.success) {
+        toast.success("🎉 Registration successful! Please login.");
         // Navigate to candidate login
         navigate("/candidate/login");
       } else {
-        setError(data?.message || "Registration failed. Please try again.");
+        const errorMsg = data?.message || "Registration failed. Please try again.";
+        setError(errorMsg);
+        toast.error(errorMsg);
       }
     } catch (error) {
       console.error("Registration error:", error);
-      setError("Network error. Please check your connection and try again.");
+      const errorMsg = "Network error. Please check your connection and try again.";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
