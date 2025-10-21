@@ -233,3 +233,71 @@ export const getCandidateStatus = async (req, res) => {
     });
   }
 };
+
+// Get all approved candidates grouped by election (for students to view)
+export const getApprovedCandidates = async (req, res) => {
+  try {
+    // Fetch all approved candidates with their election details
+    const candidates = await prisma.cANDIDATE.findMany({
+      where: { Status: "Approved" },
+      include: {
+        election: {
+          select: {
+            E_id: true,
+            Title: true,
+            Start_date: true,
+            End_date: true,
+            Status: true,
+          },
+        },
+      },
+      orderBy: [
+        { election: { Start_date: "asc" } },
+        { Can_name: "asc" },
+      ],
+    });
+
+    // Group candidates by election
+    const electionMap = new Map();
+
+    candidates.forEach((candidate) => {
+      const electionId = candidate.election.E_id;
+      
+      if (!electionMap.has(electionId)) {
+        electionMap.set(electionId, {
+          id: candidate.election.E_id,
+          title: candidate.election.Title,
+          startDate: candidate.election.Start_date,
+          endDate: candidate.election.End_date,
+          status: candidate.election.Status,
+          candidates: [],
+        });
+      }
+
+      electionMap.get(electionId).candidates.push({
+        id: candidate.Can_id,
+        name: candidate.Can_name,
+        scholarId: candidate.Can_Scholar_id,
+        branch: candidate.Can_branch,
+        year: candidate.Can_year,
+        photo: candidate.Can_photo,
+        manifesto: candidate.Can_manifesto,
+      });
+    });
+
+    // Convert map to array
+    const elections = Array.from(electionMap.values());
+
+    res.status(200).json({
+      success: true,
+      message: "Approved candidates retrieved successfully",
+      data: { elections },
+    });
+  } catch (error) {
+    console.error("Get approved candidates error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};

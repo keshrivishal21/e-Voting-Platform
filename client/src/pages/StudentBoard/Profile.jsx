@@ -7,12 +7,10 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
-
-  // TODO: Get student data from auth context - for now using hardcoded ID
-  const currentStudentId = 202151001;
+  const [currentStudentId, setCurrentStudentId] = useState(null);
   
   const [studentData, setStudentData] = useState({
-    Std_id: currentStudentId,
+    Std_id: null,
     Std_name: "",
     Std_email: "",
     Std_phone: "",
@@ -27,8 +25,40 @@ const Profile = () => {
   });
   const [showPasswordForm, setShowPasswordForm] = useState(false);
 
-  // Load student profile on component mount
+  // Decode JWT token to get student ID
   useEffect(() => {
+    const token = localStorage.getItem('studentToken');
+    if (token) {
+      try {
+        // JWT tokens have 3 parts separated by dots
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map((c) => {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        
+        const decoded = JSON.parse(jsonPayload);
+        console.log('Decoded token:', decoded); // Debug log
+        
+        if (decoded.userId) {
+          setCurrentStudentId(decoded.userId);
+        } else {
+          console.error('Token payload:', decoded);
+          toast.error('Invalid token. Please login again.');
+        }
+      } catch (error) {
+        console.error('Error decoding token:', error);
+        toast.error('Session error. Please login again.');
+      }
+    } else {
+      toast.error('No authentication token found. Please login.');
+    }
+  }, []);
+
+  // Load student profile when ID is available
+  useEffect(() => {
+    if (!currentStudentId) return;
+
     const loadProfile = async () => {
       setLoading(true);
       try {
@@ -43,12 +73,17 @@ const Profile = () => {
           };
           setStudentData(formattedProfile);
           setFormData(formattedProfile);
+          toast.success('Profile loaded successfully');
         } else {
-          setMessage({ type: 'error', text: data.message || 'Failed to load profile' });
+          const errorMsg = data.message || 'Failed to load profile';
+          setMessage({ type: 'error', text: errorMsg });
+          toast.error(errorMsg);
         }
       } catch (error) {
         console.error('Error loading profile:', error);
-        setMessage({ type: 'error', text: 'Failed to load profile. Please try again.' });
+        const errorMsg = 'Failed to load profile. Please try again.';
+        setMessage({ type: 'error', text: errorMsg });
+        toast.error(errorMsg);
       } finally {
         setLoading(false);
       }
@@ -256,17 +291,16 @@ const Profile = () => {
         </div>
 
         {/* Loading State */}
-        {loading && !isEditing && (
+        {(loading && !isEditing) || !currentStudentId ? (
           <div className="flex justify-center items-center py-16">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
             <span className="ml-3 text-gray-600">Loading profile...</span>
           </div>
-        )}
+        ) : (
+          /* Profile Content */
+          <div className="p-8">
 
-        {/* Profile Content */}
-        <div className="p-8">
-
-          {loading && !isEditing ? null : isEditing ? (
+          {isEditing ? (
             /* Edit Form */
             <form onSubmit={handleProfileUpdate} className="space-y-8">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -474,7 +508,8 @@ const Profile = () => {
               </div>
             </div>
           )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Security Section */}

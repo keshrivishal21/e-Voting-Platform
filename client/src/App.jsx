@@ -39,7 +39,7 @@ function AppContent() {
   const location = useLocation();
   
   // Routes where navbar should be hidden
-  const noNavbarRoutes = ['/', '/register', '/candidate/login', '/student/login', '/admin/login', '/student/signup', '/404', '/not-found'];
+  const noNavbarRoutes = ['/', '/candidate/register', '/candidate/login', '/student/login', '/admin/login', '/student/signup', '/404', '/not-found'];
   const shouldHideNavbar = noNavbarRoutes.includes(location.pathname);
   const noFooterRoutes = ['/'];
   const shouldHideFooter = noFooterRoutes.includes(location.pathname);

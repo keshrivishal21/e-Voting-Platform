@@ -192,3 +192,60 @@ export const endElection = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
+
+// Get all elections (filtered by status if provided)
+export const getElections = async (req, res) => {
+  try {
+    const { status } = req.query; // status can be: Upcoming, Ongoing, Completed
+
+    const whereClause = status ? { Status: status } : {};
+
+    const elections = await prisma.eLECTION.findMany({
+      where: whereClause,
+      orderBy: {
+        Start_date: 'asc',
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      data: { elections },
+    });
+  } catch (error) {
+    console.error("Get elections error:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+// Get a single election by ID
+export const getElectionById = async (req, res) => {
+  try {
+    const { electionId } = req.params;
+
+    if (!electionId) {
+      return res.status(400).json({
+        success: false,
+        message: "Election ID is required",
+      });
+    }
+
+    const election = await prisma.eLECTION.findUnique({
+      where: { Election_id: parseInt(electionId) },
+    });
+
+    if (!election) {
+      return res.status(404).json({
+        success: false,
+        message: "Election not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: { election },
+    });
+  } catch (error) {
+    console.error("Get election error:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
