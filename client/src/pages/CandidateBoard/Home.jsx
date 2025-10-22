@@ -1,18 +1,96 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { FileText, User, BarChart3 } from "lucide-react";
-import { Navigate, } from "react-router-dom";
+import { Navigate } from "react-router-dom";
+import AuthAPI from "../../utils/authAPI";
+import toast from "react-hot-toast";
 
 const Home = () => {
+  const [loading, setLoading] = useState(true);
+  const [candidate, setCandidate] = useState(null);
 
-  const candidate = {
-    name: "Aarav Mehta",
-    branch: "CSE",
-    year: "3rd Year",
-    photo: "https://randomuser.me/api/portraits/men/32.jpg",
-    manifesto: "/sample-manifesto.pdf",
-    votes: 128,
-    totalVotes: 250,
+  // Get candidate ID from JWT token
+  const getCandidateIdFromToken = () => {
+    try {
+      const token = AuthAPI.getCurrentToken();
+      if (!token) return null;
+      
+      // Decode JWT token (format: header.payload.signature)
+      const payload = token.split('.')[1];
+      const decodedPayload = JSON.parse(atob(payload));
+      return decodedPayload.userId; // This will be a string after our BigInt fix
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      return null;
+    }
   };
+
+  // Load candidate profile on component mount
+  useEffect(() => {
+    const loadProfile = async () => {
+      const candidateId = getCandidateIdFromToken();
+      
+      if (!candidateId) {
+        toast.error('No candidate ID found. Please login again.');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { response, data } = await AuthAPI.getCandidateProfile(candidateId);
+        
+        if (response.ok && data.success) {
+          const profile = data.data.profile;
+          setCandidate({
+            name: profile.Can_name,
+            branch: profile.Branch,
+            year: profile.Year ? `${profile.Year}${profile.Year === 1 ? 'st' : profile.Year === 2 ? 'nd' : profile.Year === 3 ? 'rd' : 'th'} Year` : 'N/A',
+            photo: "https://randomuser.me/api/portraits/men/32.jpg", // TODO: Store and fetch actual candidate photo from database
+            manifesto: profile.Manifesto,
+            position: profile.Position,
+            cgpa: profile.Cgpa,
+            votes: 0, // TODO: Get from voting results API - GET /api/vote/candidate/:id/count
+            totalVotes: 0, // TODO: Get from voting results API - GET /api/vote/election/:id/total
+          });
+        } else {
+          toast.error(data.message || 'Failed to load profile');
+        }
+      } catch (error) {
+        console.error('Error loading profile:', error);
+        toast.error('Failed to load profile. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading candidate information...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!candidate) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 text-lg">Failed to load candidate information</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gradient-to-b from-indigo-50 to-white p-8">
@@ -37,11 +115,10 @@ const Home = () => {
           </p>
           <div className="mt-4 flex flex-wrap gap-3 justify-center md:justify-start">
             <a
-              href={candidate.manifesto}
-              download
+              href="/candidate/profile"
               className="flex items-center gap-2 bg-indigo-50 text-indigo-700 border border-indigo-300 px-4 py-2 rounded-xl hover:bg-indigo-100 transition"
             >
-              <FileText size={16} /> View Manifesto
+              <FileText size={16} /> View Profile
             </a>
             <a
               className="flex items-center gap-2 bg-indigo-50 text-indigo-700 border border-indigo-300 px-4 py-2 rounded-xl hover:bg-indigo-100 transition"
@@ -63,7 +140,7 @@ const Home = () => {
             {candidate.votes}
           </p>
           <p className="text-gray-600 text-sm mt-1">
-            Out of {candidate.totalVotes} total votes cast
+            {candidate.totalVotes > 0 ? `Out of ${candidate.totalVotes} total votes cast` : 'Voting has not started yet'}
           </p>
         </div>
 
@@ -75,11 +152,11 @@ const Home = () => {
           <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
             <div
               className="bg-indigo-600 h-3"
-              style={{ width: `${(candidate.votes / candidate.totalVotes) * 100}%` }}
+              style={{ width: `${candidate.totalVotes > 0 ? (candidate.votes / candidate.totalVotes) * 100 : 0}%` }}
             ></div>
           </div>
           <p className="text-sm text-gray-600 mt-2">
-            {(candidate.votes / candidate.totalVotes * 100).toFixed(1)}% support
+            {candidate.totalVotes > 0 ? `${(candidate.votes / candidate.totalVotes * 100).toFixed(1)}% support` : 'No votes yet'}
           </p>
         </div>
 
@@ -88,6 +165,7 @@ const Home = () => {
           <h3 className="text-lg font-semibold text-indigo-700 mb-3">
             Recent Notifications
           </h3>
+          {/* TODO: Replace with API call to GET /api/notifications/recent?limit=3 */}
           <ul className="space-y-2 text-sm text-gray-700">
             <li>📢 Election results will be announced at 5 PM</li>
             <li>📝 Manifesto update deadline ends tomorrow</li>

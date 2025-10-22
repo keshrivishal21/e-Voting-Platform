@@ -18,10 +18,12 @@ const CandidateRegister = () => {
     branch: "",
     year: "",
     cgpa: "",
+    electionId: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
+  const [elections, setElections] = useState([]);
 
   const branches = [
     "MCA",
@@ -38,6 +40,35 @@ const CandidateRegister = () => {
   const positions = ["President", "Vice President", "Secretary", "Treasurer"];
 
   const years = [1, 2, 3, 4];
+
+  // Fetch available elections on component mount
+  useEffect(() => {
+    const fetchElections = async () => {
+      try {
+        console.log("Fetching elections from: http://localhost:5000/api/election/public/elections?status=Upcoming");
+        const response = await AuthAPI.getPublicElections();
+        console.log("Elections API response:", response);
+        
+        if (response && response.success) {
+          const electionsList = response.data?.elections || [];
+          console.log("Elections list:", electionsList);
+          setElections(electionsList);
+          
+          if (electionsList.length === 0) {
+            toast.info("No upcoming elections available at the moment");
+          }
+        } else {
+          const errorMsg = response?.message || "Failed to load elections";
+          console.error("API returned error:", errorMsg);
+          toast.error(errorMsg);
+        }
+      } catch (error) {
+        console.error("Error fetching elections:", error);
+        toast.error(`Failed to load elections: ${error.message}`);
+      }
+    };
+    fetchElections();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -308,6 +339,27 @@ const CandidateRegister = () => {
 
             {/* Election Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Election *
+                </label>
+                <select
+                  name="electionId"
+                  value={formData.electionId}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                  required
+                  disabled={loading}
+                >
+                  <option value="">Select Election</option>
+                  {elections.map((election) => (
+                    <option key={election.Election_id} value={election.Election_id}>
+                      {election.Title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Position *

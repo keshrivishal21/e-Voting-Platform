@@ -2,6 +2,19 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+// Helper function to convert BigInt fields to strings
+const serializeCandidate = (candidate) => {
+  if (!candidate) return null;
+  return {
+    ...candidate,
+    Can_id: candidate.Can_id.toString(),
+  };
+};
+
+const serializeCandidates = (candidates) => {
+  return candidates.map(serializeCandidate);
+};
+
 // Get all pending candidate applications (Admin only)
 export const getPendingCandidates = async (req, res) => {
   try {
@@ -19,10 +32,13 @@ export const getPendingCandidates = async (req, res) => {
       orderBy: { Can_id: "desc" },
     });
 
+    // Serialize BigInt fields
+    const serializedCandidates = serializeCandidates(candidates);
+
     res.status(200).json({
       success: true,
       message: "Pending candidates retrieved successfully",
-      data: { candidates },
+      data: { candidates: serializedCandidates },
     });
   } catch (error) {
     console.error("Get pending candidates error:", error);
@@ -55,10 +71,13 @@ export const getAllCandidates = async (req, res) => {
       orderBy: { Can_id: "desc" },
     });
 
+    // Serialize BigInt fields
+    const serializedCandidates = serializeCandidates(candidates);
+
     res.status(200).json({
       success: true,
       message: "Candidates retrieved successfully",
-      data: { candidates, count: candidates.length },
+      data: { candidates: serializedCandidates, count: candidates.length },
     });
   } catch (error) {
     console.error("Get all candidates error:", error);
@@ -115,10 +134,13 @@ export const approveCandidate = async (req, res) => {
       },
     });
 
+    // Serialize BigInt fields
+    const serializedCandidate = serializeCandidate(updatedCandidate);
+
     res.status(200).json({
       success: true,
       message: "Candidate approved successfully",
-      data: { candidate: updatedCandidate },
+      data: { candidate: serializedCandidate },
     });
   } catch (error) {
     console.error("Approve candidate error:", error);
@@ -176,10 +198,13 @@ export const rejectCandidate = async (req, res) => {
       },
     });
 
+    // Serialize BigInt fields
+    const serializedCandidate = serializeCandidate(updatedCandidate);
+
     res.status(200).json({
       success: true,
       message: "Candidate rejected",
-      data: { candidate: updatedCandidate },
+      data: { candidate: serializedCandidate },
     });
   } catch (error) {
     console.error("Reject candidate error:", error);
@@ -220,10 +245,13 @@ export const getCandidateStatus = async (req, res) => {
       });
     }
 
+    // Serialize BigInt fields
+    const serializedCandidate = serializeCandidate(candidate);
+
     res.status(200).json({
       success: true,
       message: "Candidate status retrieved successfully",
-      data: { candidate },
+      data: { candidate: serializedCandidate },
     });
   } catch (error) {
     console.error("Get candidate status error:", error);
@@ -243,7 +271,7 @@ export const getApprovedCandidates = async (req, res) => {
       include: {
         election: {
           select: {
-            E_id: true,
+            Election_id: true,
             Title: true,
             Start_date: true,
             End_date: true,
@@ -261,11 +289,16 @@ export const getApprovedCandidates = async (req, res) => {
     const electionMap = new Map();
 
     candidates.forEach((candidate) => {
-      const electionId = candidate.election.E_id;
+      // Skip candidates without an election assigned
+      if (!candidate.election) {
+        return;
+      }
+
+      const electionId = candidate.election.Election_id;
       
       if (!electionMap.has(electionId)) {
         electionMap.set(electionId, {
-          id: candidate.election.E_id,
+          id: candidate.election.Election_id,
           title: candidate.election.Title,
           startDate: candidate.election.Start_date,
           endDate: candidate.election.End_date,
@@ -275,13 +308,17 @@ export const getApprovedCandidates = async (req, res) => {
       }
 
       electionMap.get(electionId).candidates.push({
-        id: candidate.Can_id,
+        id: candidate.Can_id.toString(), // Convert BigInt to string
+        scholarId: candidate.Can_id.toString(), // Scholar ID
         name: candidate.Can_name,
-        scholarId: candidate.Can_Scholar_id,
-        branch: candidate.Can_branch,
-        year: candidate.Can_year,
-        photo: candidate.Can_photo,
-        manifesto: candidate.Can_manifesto,
+        email: candidate.Can_email,
+        phone: candidate.Can_phone,
+        branch: candidate.Branch,
+        year: `${candidate.Year}${candidate.Year === 1 ? 'st' : candidate.Year === 2 ? 'nd' : candidate.Year === 3 ? 'rd' : 'th'} Year`,
+        cgpa: candidate.Cgpa,
+        position: candidate.Position,
+        manifesto: candidate.Manifesto, // This is text, not a URL
+        photo: null, // No photo field in database yet
       });
     });
 
@@ -295,6 +332,60 @@ export const getApprovedCandidates = async (req, res) => {
     });
   } catch (error) {
     console.error("Get approved candidates error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+// Get candidate document/marksheet (Admin only)
+export const getCandidateDocument = async (req, res) => {
+  try {
+    const { candidateId } = req.params;
+
+    if (!candidateId) {
+      return res.status(400).json({
+        success: false,
+        message: "Candidate ID is required",
+      });
+    }
+
+    // Fetch only the document data
+    const candidate = await prisma.cANDIDATE.findUnique({
+      where: { Can_id: BigInt(candidateId) },
+      select: {
+        Can_id: true,
+        Can_name: true,
+        Data: true,
+      },
+    });
+
+    if (!candidate) {
+      return res.status(404).json({
+        success: false,
+        message: "Candidate not found",
+      });
+    }
+
+    if (!candidate.Data || candidate.Data.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No document found for this candidate",
+      });
+    }
+
+    // Set appropriate headers for PDF
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="marksheet_${candidate.Can_name.replace(/\s+/g, "_")}.pdf"`
+    );
+    
+    // Send the binary data
+    res.send(candidate.Data);
+  } catch (error) {
+    console.error("Get candidate document error:", error);
     res.status(500).json({
       success: false,
       message: "Internal server error",

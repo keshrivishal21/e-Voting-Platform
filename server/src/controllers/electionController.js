@@ -32,6 +32,21 @@ export const createElection = async (req, res) => {
       });
     }
 
+    // Verify admin exists
+    const adminId = req.user && req.user.userId ? req.user.userId : null;
+    if (adminId) {
+      const adminExists = await prisma.aDMIN.findUnique({
+        where: { Admin_id: adminId }
+      });
+      
+      if (!adminExists) {
+        return res.status(401).json({
+          success: false,
+          message: "Admin account not found. Please log in again or contact support.",
+        });
+      }
+    }
+
     // Create election record
     const election = await prisma.eLECTION.create({
       data: {
@@ -39,7 +54,7 @@ export const createElection = async (req, res) => {
         Start_date: start,
         End_date: end,
         Status: "Upcoming",
-        Created_by: req.user && req.user.userId ? req.user.userId : null,
+        Created_by: adminId,
       },
     });
 

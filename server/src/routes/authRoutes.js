@@ -12,7 +12,11 @@ import {
   changeStudentPassword,
   getCandidateProfile,
   updateCandidateProfile,
-  changeCandidatePassword
+  changeCandidatePassword,
+  requestStudentPasswordReset,
+  requestCandidatePasswordReset,
+  resetStudentPassword,
+  resetCandidatePassword
 } from "../controllers/authController.js";
 import { 
   verifyToken, 
@@ -43,6 +47,12 @@ router.post("/candidate/login", candidateLogin); // Candidate-specific login
 // Registration Routes
 router.post("/student/register", studentRegister); // Student registration
 router.post("/candidate/register", upload.single('document'), candidateRegister); // Candidate registration with file upload
+
+// Forgot Password Routes
+router.post("/student/forgot-password", requestStudentPasswordReset); // Request student password reset
+router.post("/student/reset-password", resetStudentPassword); // Reset student password with token
+router.post("/candidate/forgot-password", requestCandidatePasswordReset); // Request candidate password reset
+router.post("/candidate/reset-password", resetCandidatePassword); // Reset candidate password with token
 
 // Student Profile Routes
 router.get("/student/:studentId/profile", verifyToken, getStudentProfile); // Get student profile

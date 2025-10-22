@@ -1,7 +1,12 @@
 import React, { useState } from "react";
 
 const CastVote = () => {
-  // Sample data for a single election
+  // TODO: Replace with API calls:
+  // 1. GET /api/election/ongoing - Fetch ongoing election with candidates
+  // 2. POST /api/vote/cast - Submit vote for selected candidate
+  // 3. GET /api/vote/status - Check if user has already voted
+  
+  // Sample data for a single election (for demonstration only)
   const election = {
     id: 1,
     title: "Student Council Election",

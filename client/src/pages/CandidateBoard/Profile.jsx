@@ -8,8 +8,23 @@ const CandidateProfile = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
-  // TODO: Get candidate data from auth context - for now using hardcoded ID
-  const currentCandidateId = 202151001;
+  // Get candidate ID from JWT token
+  const getCandidateIdFromToken = () => {
+    try {
+      const token = AuthAPI.getCurrentToken();
+      if (!token) return null;
+      
+      // Decode JWT token (format: header.payload.signature)
+      const payload = token.split('.')[1];
+      const decodedPayload = JSON.parse(atob(payload));
+      return decodedPayload.userId; // This will be a string after our BigInt fix
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      return null;
+    }
+  };
+
+  const currentCandidateId = getCandidateIdFromToken();
   
   const [candidateData, setCandidateData] = useState({
     Can_id: currentCandidateId,
@@ -21,7 +36,9 @@ const CandidateProfile = () => {
     Year: 0,
     Cgpa: 0.0,
     Manifesto: "",
-    Election_id: 0,
+    Election_id: null,
+    Status: "Pending",
+    Rejection_reason: null,
   });
 
   const [formData, setFormData] = useState(candidateData);
@@ -35,40 +52,29 @@ const CandidateProfile = () => {
   // Load candidate profile on component mount
   useEffect(() => {
     const loadProfile = async () => {
+      if (!currentCandidateId) {
+        setMessage({ type: 'error', text: 'No candidate ID found. Please login again.' });
+        return;
+      }
+
       setLoading(true);
       try {
-        // TODO: Replace with actual API call when backend is ready
-        // const { response, data } = await AuthAPI.getCandidateProfile(currentCandidateId);
+        const { response, data } = await AuthAPI.getCandidateProfile(currentCandidateId);
         
-        // Simulate API call with mock data
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const mockProfile = {
-          Can_id: currentCandidateId,
-          Can_name: "John Doe",
-          Can_email: "202151001@stu.manit.ac.in",
-          Can_phone: "+91 9876543210",
-          Position: "President",
-          Branch: "Computer Science Engineering",
-          Year: 3,
-          Cgpa: 8.75,
-          Manifesto: "Working towards a better student experience with improved facilities and academic excellence.",
-          Election_id: 1,
-        };
-        
-        setCandidateData(mockProfile);
-        setFormData(mockProfile);
-        
-        // if (response.ok && data.success) {
-        //   const profile = data.data.profile;
-        //   setCandidateData(profile);
-        //   setFormData(profile);
-        // } else {
-        //   setMessage({ type: 'error', text: data.message || 'Failed to load profile' });
-        // }
+        if (response.ok && data.success) {
+          const profile = data.data.profile;
+          setCandidateData(profile);
+          setFormData(profile);
+        } else {
+          const errorMsg = data.message || 'Failed to load profile';
+          setMessage({ type: 'error', text: errorMsg });
+          toast.error(errorMsg);
+        }
       } catch (error) {
         console.error('Error loading profile:', error);
-        setMessage({ type: 'error', text: 'Failed to load profile. Please try again.' });
+        const errorMsg = 'Failed to load profile. Please try again.';
+        setMessage({ type: 'error', text: errorMsg });
+        toast.error(errorMsg);
       } finally {
         setLoading(false);
       }
@@ -121,34 +127,24 @@ const CandidateProfile = () => {
     setMessage({ type: '', text: '' });
 
     try {
-      // TODO: Replace with actual API call
-      // const profileData = {
-      //   name: formData.Can_name,
-      //   phone: formData.Can_phone,
-      //   position: formData.Position,
-      //   branch: formData.Branch,
-      //   year: formData.Year,
-      //   cgpa: formData.Cgpa,
-      //   manifesto: formData.Manifesto
-      // };
-      // const { response, data } = await AuthAPI.updateCandidateProfile(currentCandidateId, profileData);
+      // Only send phone and manifesto (editable fields)
+      const profileData = {
+        phone: formData.Can_phone,
+        manifesto: formData.Manifesto
+      };
+      const { response, data } = await AuthAPI.updateCandidateProfile(currentCandidateId, profileData);
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      setCandidateData(formData);
-      setIsEditing(false);
-      setMessage({ type: 'success', text: 'Profile updated successfully!' });
-      toast.success('✅ Profile updated successfully!');
-
-      // if (response.ok && data.success) {
-      //   setCandidateData(data.data.profile);
-      //   setFormData(data.data.profile);
-      //   setIsEditing(false);
-      //   setMessage({ type: 'success', text: 'Profile updated successfully!' });
-      // } else {
-      //   setMessage({ type: 'error', text: data.message || 'Failed to update profile.' });
-      // }
+      if (response.ok && data.success) {
+        setCandidateData(data.data.profile);
+        setFormData(data.data.profile);
+        setIsEditing(false);
+        setMessage({ type: 'success', text: 'Profile updated successfully!' });
+        toast.success('✅ Profile updated successfully!');
+      } else {
+        const errorMsg = data.message || 'Failed to update profile.';
+        setMessage({ type: 'error', text: errorMsg });
+        toast.error(errorMsg);
+      }
     } catch (error) {
       console.error('Profile update error:', error);
       const errorMsg = 'Failed to update profile. Please try again.';
@@ -181,28 +177,22 @@ const CandidateProfile = () => {
     setMessage({ type: '', text: '' });
 
     try {
-      // TODO: Replace with actual API call
-      // const passwordUpdateData = {
-      //   currentPassword: passwordData.currentPassword,
-      //   newPassword: passwordData.newPassword
-      // };
-      // const { response, data } = await AuthAPI.changeCandidatePassword(currentCandidateId, passwordUpdateData);
+      const passwordUpdateData = {
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
+      };
+      const { response, data } = await AuthAPI.changeCandidatePassword(currentCandidateId, passwordUpdateData);
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      setShowPasswordForm(false);
-      setMessage({ type: 'success', text: 'Password changed successfully!' });
-      toast.success('🔐 Password changed successfully!');
-
-      // if (response.ok && data.success) {
-      //   setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      //   setShowPasswordForm(false);
-      //   setMessage({ type: 'success', text: 'Password changed successfully!' });
-      // } else {
-      //   setMessage({ type: 'error', text: data.message || 'Failed to change password.' });
-      // }
+      if (response.ok && data.success) {
+        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        setShowPasswordForm(false);
+        setMessage({ type: 'success', text: 'Password changed successfully!' });
+        toast.success('🔐 Password changed successfully!');
+      } else {
+        const errorMsg = data.message || 'Failed to change password.';
+        setMessage({ type: 'error', text: errorMsg });
+        toast.error(errorMsg);
+      }
     } catch (error) {
       console.error('Password change error:', error);
       const errorMsg = 'Failed to change password. Please try again.';
@@ -311,10 +301,10 @@ const CandidateProfile = () => {
                   </div>
                 </div>
 
-                {/* Full Name */}
+                {/* Full Name (Read-only) */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    Full Name *
+                    Full Name
                   </label>
                   <div className="relative">
                     <UserIcon className="h-5 w-5 text-purple-400 absolute left-4 top-4" />
@@ -322,10 +312,8 @@ const CandidateProfile = () => {
                       type="text"
                       name="Can_name"
                       value={formData.Can_name}
-                      onChange={handleInputChange}
-                      required
-                      className="pl-12 pr-4 py-3 w-full border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
-                      placeholder="Enter your full name"
+                      disabled
+                      className="pl-12 pr-4 py-3 w-full border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-500 font-medium"
                     />
                   </div>
                 </div>
@@ -346,136 +334,108 @@ const CandidateProfile = () => {
                   </div>
                 </div>
 
-                {/* Phone Number */}
+                {/* Phone Number - EDITABLE */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    Phone Number *
+                    Phone Number * <span className="text-purple-600 text-xs">(Editable)</span>
                   </label>
                   <div className="relative">
-                    <PhoneIcon className="h-5 w-5 text-purple-400 absolute left-4 top-4" />
+                    <PhoneIcon className="h-5 w-5 text-purple-600 absolute left-4 top-4" />
                     <input
                       type="tel"
                       name="Can_phone"
                       value={formData.Can_phone}
                       onChange={handleInputChange}
                       required
-                      className="pl-12 pr-4 py-3 w-full border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                      className="pl-12 pr-4 py-3 w-full border-2 border-purple-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white"
                       placeholder="Enter your phone number"
                     />
                   </div>
                 </div>
 
-                {/* Position */}
+                {/* Position (Read-only) */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    Position *
-                  </label>
-                  <div className="relative">
-                    <TrophyIcon className="h-5 w-5 text-purple-400 absolute left-4 top-4" />
-                    <select
-                      name="Position"
-                      value={formData.Position}
-                      onChange={handleInputChange}
-                      required
-                      className="pl-12 pr-4 py-3 w-full border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
-                    >
-                      <option value="">Select Position</option>
-                      <option value="President">President</option>
-                      <option value="Vice President">Vice President</option>
-                      <option value="Secretary">Secretary</option>
-                      <option value="Treasurer">Treasurer</option>
-                      <option value="Cultural Secretary">Cultural Secretary</option>
-                      <option value="Sports Secretary">Sports Secretary</option>
-                      <option value="Literary Secretary">Literary Secretary</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Branch */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    Branch *
-                  </label>
-                  <div className="relative">
-                    <AcademicCapIcon className="h-5 w-5 text-purple-400 absolute left-4 top-4" />
-                    <select
-                      name="Branch"
-                      value={formData.Branch}
-                      onChange={handleInputChange}
-                      required
-                      className="pl-12 pr-4 py-3 w-full border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
-                    >
-                      <option value="">Select Branch</option>
-                      <option value="Computer Science Engineering">Computer Science Engineering</option>
-                      <option value="Electronics & Communication Engineering">Electronics & Communication Engineering</option>
-                      <option value="Mechanical Engineering">Mechanical Engineering</option>
-                      <option value="Civil Engineering">Civil Engineering</option>
-                      <option value="Electrical Engineering">Electrical Engineering</option>
-                      <option value="Information Technology">Information Technology</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Year */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    Year *
-                  </label>
-                  <div className="relative">
-                    <AcademicCapIcon className="h-5 w-5 text-purple-400 absolute left-4 top-4" />
-                    <select
-                      name="Year"
-                      value={formData.Year}
-                      onChange={handleInputChange}
-                      required
-                      className="pl-12 pr-4 py-3 w-full border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
-                    >
-                      <option value="">Select Year</option>
-                      <option value={1}>1st Year</option>
-                      <option value={2}>2nd Year</option>
-                      <option value={3}>3rd Year</option>
-                      <option value={4}>4th Year</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* CGPA */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    CGPA *
+                    Position
                   </label>
                   <div className="relative">
                     <TrophyIcon className="h-5 w-5 text-purple-400 absolute left-4 top-4" />
                     <input
-                      type="number"
+                      type="text"
+                      name="Position"
+                      value={formData.Position}
+                      disabled
+                      className="pl-12 pr-4 py-3 w-full border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-500 font-medium"
+                    />
+                  </div>
+                </div>
+
+                {/* Branch (Read-only) */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    Branch
+                  </label>
+                  <div className="relative">
+                    <AcademicCapIcon className="h-5 w-5 text-purple-400 absolute left-4 top-4" />
+                    <input
+                      type="text"
+                      name="Branch"
+                      value={formData.Branch}
+                      disabled
+                      className="pl-12 pr-4 py-3 w-full border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-500 font-medium"
+                    />
+                  </div>
+                </div>
+
+                {/* Year (Read-only) */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    Year
+                  </label>
+                  <div className="relative">
+                    <AcademicCapIcon className="h-5 w-5 text-purple-400 absolute left-4 top-4" />
+                    <input
+                      type="text"
+                      name="Year"
+                      value={formData.Year ? `${formData.Year}${formData.Year === 1 ? 'st' : formData.Year === 2 ? 'nd' : formData.Year === 3 ? 'rd' : 'th'} Year` : ''}
+                      disabled
+                      className="pl-12 pr-4 py-3 w-full border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-500 font-medium"
+                    />
+                  </div>
+                </div>
+
+                {/* CGPA (Read-only) */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    CGPA
+                  </label>
+                  <div className="relative">
+                    <TrophyIcon className="h-5 w-5 text-purple-400 absolute left-4 top-4" />
+                    <input
+                      type="text"
                       name="Cgpa"
                       value={formData.Cgpa}
-                      onChange={handleInputChange}
-                      required
-                      min="0"
-                      max="10"
-                      step="0.01"
-                      className="pl-12 pr-4 py-3 w-full border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
-                      placeholder="Enter your CGPA"
+                      disabled
+                      className="pl-12 pr-4 py-3 w-full border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-500 font-medium"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Manifesto */}
+              {/* Manifesto - EDITABLE */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-3">
-                  Manifesto *
+                  Manifesto * <span className="text-purple-600 text-xs">(Editable)</span>
                 </label>
                 <div className="relative">
-                  <DocumentTextIcon className="h-5 w-5 text-purple-400 absolute left-4 top-4" />
+                  <DocumentTextIcon className="h-5 w-5 text-purple-600 absolute left-4 top-4" />
                   <textarea
                     name="Manifesto"
                     value={formData.Manifesto}
                     onChange={handleInputChange}
                     required
                     rows={4}
-                    className="pl-12 pr-4 py-3 w-full border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors resize-none"
+                    className="pl-12 pr-4 py-3 w-full border-2 border-purple-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors resize-none bg-white"
                     placeholder="Describe your vision, goals, and plans for the position..."
                   />
                 </div>
@@ -604,16 +564,52 @@ const CandidateProfile = () => {
                   </div>
                 </div>
 
-                <div className="bg-green-50 rounded-xl p-6 border border-green-200">
+                <div className={`rounded-xl p-6 border ${
+                  candidateData.Status === 'Approved' ? 'bg-green-50 border-green-200' :
+                  candidateData.Status === 'Rejected' ? 'bg-red-50 border-red-200' :
+                  'bg-yellow-50 border-yellow-200'
+                }`}>
                   <div className="flex items-center space-x-4">
-                    <div className="bg-green-100 p-3 rounded-full">
-                      <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <div className={`p-3 rounded-full ${
+                      candidateData.Status === 'Approved' ? 'bg-green-100' :
+                      candidateData.Status === 'Rejected' ? 'bg-red-100' :
+                      'bg-yellow-100'
+                    }`}>
+                      <svg className={`h-6 w-6 ${
+                        candidateData.Status === 'Approved' ? 'text-green-600' :
+                        candidateData.Status === 'Rejected' ? 'text-red-600' :
+                        'text-yellow-600'
+                      }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        {candidateData.Status === 'Approved' ? (
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        ) : candidateData.Status === 'Rejected' ? (
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        ) : (
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        )}
                       </svg>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-green-600 mb-1">Candidacy Status</p>
-                      <p className="text-lg font-semibold text-green-800">Active Candidate</p>
+                      <p className={`text-sm font-medium mb-1 ${
+                        candidateData.Status === 'Approved' ? 'text-green-600' :
+                        candidateData.Status === 'Rejected' ? 'text-red-600' :
+                        'text-yellow-600'
+                      }`}>Candidacy Status</p>
+                      <p className={`text-lg font-semibold ${
+                        candidateData.Status === 'Approved' ? 'text-green-800' :
+                        candidateData.Status === 'Rejected' ? 'text-red-800' :
+                        'text-yellow-800'
+                      }`}>{candidateData.Status}</p>
+                      {candidateData.Status === 'Rejected' && candidateData.Rejection_reason && (
+                        <p className="text-sm text-red-600 mt-2">
+                          Reason: {candidateData.Rejection_reason}
+                        </p>
+                      )}
+                      {candidateData.Status === 'Pending' && (
+                        <p className="text-sm text-yellow-600 mt-1">
+                          Awaiting admin approval
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>

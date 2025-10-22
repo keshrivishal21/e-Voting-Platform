@@ -5,6 +5,8 @@ import toast from 'react-hot-toast';
 import logo from "../../assets/evoting.png"
 import AuthAPI from '../../utils/authAPI';
 import { useAuth } from '../../contexts/AuthContext';
+import { KeyIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { Link } from 'react-router-dom';
 
 function CandidateLogin() {
     const navigate = useNavigate();
@@ -139,14 +141,12 @@ function CandidateLogin() {
                 disabled={loading}
               />
             </div>
-
             {/* Forgot Password Link */}
-            <div className="text-right">
-              <a href="#" className="text-sm text-indigo-600 hover:text-indigo-700 hover:underline transition-colors duration-200">
+            <div className="text-right -mt-2">
+              <a href="/forgot-password" className="text-sm text-indigo-600 hover:text-indigo-700 hover:underline transition-colors duration-200">
                 Forgot your password?
               </a>
             </div>
-
             {/* Submit Button */}
             <button 
               type="submit" 
@@ -165,7 +165,7 @@ function CandidateLogin() {
           </form>
 
           {/* Additional Links */}
-          <div className="mt-6 text-center">
+          <div className="mt-4 text-center">
             <p className="text-sm text-gray-600">
               Dont't have an account? 
               <a href="/candidate/register" className="ml-1 text-indigo-600 hover:text-indigo-700 font-medium hover:underline transition-colors duration-200">
@@ -173,7 +173,17 @@ function CandidateLogin() {
               </a>
             </p>
           </div>
+          <div className="mt-3 text-center">
+            <Link
+              to={`/student/login`}
+              className="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-500"
+            >
+              <ArrowLeftIcon className="h-4 w-4 mr-1" />
+              Back to Student Login
+            </Link>
+          </div>
         </div>
+        
 
         {/* Footer Text */}
         <div className="text-center mt-6">

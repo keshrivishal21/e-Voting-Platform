@@ -2,13 +2,17 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { parse } from "dotenv";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import fs from "fs";
+import { sendPasswordResetEmail, sendPasswordResetConfirmationEmail } from "../utils/emailService.js";
 
 const prisma = new PrismaClient();
 
 // Generate JWT Token
 const generateToken = (userId, userType) => {
-  return jwt.sign({ userId, userType }, process.env.JWT_SECRET, {
+  // Convert BigInt to string for JWT serialization
+  const userIdString = typeof userId === 'bigint' ? userId.toString() : userId;
+  return jwt.sign({ userId: userIdString, userType }, process.env.JWT_SECRET, {
     expiresIn: "24h",
   });
 };
@@ -26,9 +30,9 @@ export const adminLogin = async (req, res) => {
       });
     }
 
-    // Find admin by userId
-    const admin = await prisma.aDMIN.findUnique({
-      where: { userId: userId },
+    // Find admin by email
+    const admin = await prisma.aDMIN.findFirst({
+      where: { Admin_email: userId },
     });
 
     if (!admin) {
@@ -39,8 +43,8 @@ export const adminLogin = async (req, res) => {
     }
 
     // Check password
-    // const isPasswordValid = await bcrypt.compare(password, admin.password);
-    if (password !== admin.password) {
+    // const isPasswordValid = await bcrypt.compare(password, admin.Admin_password);
+    if (password !== admin.Admin_password) {
       return res.status(401).json({
         success: false,
         message: "Invalid credentials",
@@ -48,7 +52,7 @@ export const adminLogin = async (req, res) => {
     }
 
     // Generate token
-    const token = generateToken(admin.id, "Admin");
+    const token = generateToken(admin.Admin_id, "Admin");
 
     res.status(200).json({
       success: true,
@@ -56,10 +60,10 @@ export const adminLogin = async (req, res) => {
       data: {
         token,
         user: {
-          id: admin.id,
-          userId: admin.userId,
-          name: admin.name,
-          role: admin.role,
+          id: admin.Admin_id.toString(),
+          email: admin.Admin_email,
+          name: admin.Admin_name,
+          phone: admin.Admin_phone,
           userType: "Admin",
         },
       },
@@ -119,7 +123,7 @@ export const studentLogin = async (req, res) => {
       data: {
         token,
         user: {
-          scholarNo: student.Std_id,
+          scholarNo: student.Std_id.toString(),
           userType: "Student",
         },
       },
@@ -174,14 +178,14 @@ export const studentRegister = async (req, res) => {
     // Create user entry
     const user = await prisma.uSERS.create({
       data: {
-        User_id: scholarNo,
+        User_id: BigInt(scholarNo),
         User_type: "Student",
       },
     });
     // Create student
     const student = await prisma.sTUDENT.create({
       data: {
-        Std_id: scholarNo,
+        Std_id: BigInt(scholarNo),
         Std_name: name,
         Std_phone: phone,
         Std_password: hashedPassword,
@@ -195,7 +199,7 @@ export const studentRegister = async (req, res) => {
       message: "Student registered successfully",
       data: {
         user: {
-          scholarNo: student.Std_id,
+          scholarNo: student.Std_id.toString(),
           userType: "student",
         },
       },
@@ -223,6 +227,7 @@ export const candidateRegister = async (req, res) => {
       branch,
       year,
       cgpa,
+      electionId,
     } = req.body;
 
     // Get uploaded file info
@@ -237,12 +242,13 @@ export const candidateRegister = async (req, res) => {
       !confirmPassword ||
       !position ||
       !branch ||
-      !year
+      !year ||
+      !electionId
     ) {
       return res.status(400).json({
         success: false,
         message:
-          "Name, email, phone, password, position, branch, and year are required",
+          "Name, email, phone, password, position, branch, year, and election are required",
       });
     }
 
@@ -274,17 +280,17 @@ export const candidateRegister = async (req, res) => {
       });
     }
 
-    // // Validate election exists
-    // const election = await prisma.eLECTION.findUnique({
-    //   where: { Election_id: parseInt(electionId) }
-    // });
+    // Validate election exists
+    const election = await prisma.eLECTION.findUnique({
+      where: { Election_id: parseInt(electionId) }
+    });
 
-    // if (!election) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: `Election with ID ${electionId} does not exist`,
-    //   });
-    // }
+    if (!election) {
+      return res.status(400).json({
+        success: false,
+        message: `Election with ID ${electionId} does not exist`,
+      });
+    }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -340,7 +346,7 @@ export const candidateRegister = async (req, res) => {
             Can_password: hashedPassword,
             Position: position,
             Manifesto: manifesto || "",
-            Election_id: 1,
+            Election_id: parseInt(electionId), // Assign to the selected election
             Branch: branch,
             Year: parseInt(year),
             Cgpa: cgpa ? parseFloat(cgpa) : 0.0,
@@ -395,7 +401,7 @@ export const candidateRegister = async (req, res) => {
       message: "Candidate registration successful",
       data: {
         candidate: {
-          id: candidate.Can_id,
+          id: candidate.Can_id.toString(),
           name: candidate.Can_name,
         },
       },
@@ -455,7 +461,7 @@ export const candidateLogin = async (req, res) => {
       data: {
         token,
         user: {
-          id: candidate.Can_id,
+          id: candidate.Can_id.toString(),
           userType: "Candidate",
         },
       },
@@ -483,7 +489,7 @@ export const getStudentProfile = async (req, res) => {
 
     // Find student by ID
     const student = await prisma.sTUDENT.findUnique({
-      where: { Std_id: parseInt(studentId) },
+      where: { Std_id: BigInt(studentId) },
       select: {
         Std_id: true,
         Std_name: true,
@@ -505,7 +511,10 @@ export const getStudentProfile = async (req, res) => {
       success: true,
       message: "Student profile retrieved successfully",
       data: {
-        profile: student,
+        profile: {
+          ...student,
+          Std_id: student.Std_id.toString(),
+        },
       },
     });
   } catch (error) {
@@ -521,7 +530,7 @@ export const getStudentProfile = async (req, res) => {
 export const updateStudentProfile = async (req, res) => {
   try {
     const { studentId } = req.params;
-    const { name, phone, dob } = req.body;
+    const { phone, dob } = req.body;
 
     if (!studentId) {
       return res.status(400).json({
@@ -530,17 +539,17 @@ export const updateStudentProfile = async (req, res) => {
       });
     }
 
-    // Validate input
-    if (!name || !phone || !dob) {
+    // Validate input - only phone and dob are editable
+    if (!phone || !dob) {
       return res.status(400).json({
         success: false,
-        message: "Name, phone, and date of birth are required",
+        message: "Phone and date of birth are required",
       });
     }
 
     // Check if student exists
     const existingStudent = await prisma.sTUDENT.findUnique({
-      where: { Std_id: parseInt(studentId) },
+      where: { Std_id: BigInt(studentId) },
     });
 
     if (!existingStudent) {
@@ -550,11 +559,10 @@ export const updateStudentProfile = async (req, res) => {
       });
     }
 
-    // Update student profile
+    // Update student profile - only phone and dob
     const updatedStudent = await prisma.sTUDENT.update({
-      where: { Std_id: parseInt(studentId) },
+      where: { Std_id: BigInt(studentId) },
       data: {
-        Std_name: name,
         Std_phone: phone,
         Dob: new Date(dob),
       },
@@ -571,7 +579,10 @@ export const updateStudentProfile = async (req, res) => {
       success: true,
       message: "Profile updated successfully",
       data: {
-        profile: updatedStudent,
+        profile: {
+          ...updatedStudent,
+          Std_id: updatedStudent.Std_id.toString(),
+        },
       },
     });
   } catch (error) {
@@ -613,7 +624,7 @@ export const changeStudentPassword = async (req, res) => {
 
     // Find student
     const student = await prisma.sTUDENT.findUnique({
-      where: { Std_id: parseInt(studentId) },
+      where: { Std_id: BigInt(studentId) },
     });
 
     if (!student) {
@@ -641,7 +652,7 @@ export const changeStudentPassword = async (req, res) => {
 
     // Update password
     await prisma.sTUDENT.update({
-      where: { Std_id: parseInt(studentId) },
+      where: { Std_id: BigInt(studentId) },
       data: {
         Std_password: hashedNewPassword,
       },
@@ -674,7 +685,7 @@ export const getCandidateProfile = async (req, res) => {
 
     // Find candidate by ID
     const candidate = await prisma.cANDIDATE.findUnique({
-      where: { Can_id: parseInt(candidateId) },
+      where: { Can_id: BigInt(candidateId) },
       select: {
         Can_id: true,
         Can_name: true,
@@ -686,6 +697,8 @@ export const getCandidateProfile = async (req, res) => {
         Cgpa: true,
         Manifesto: true,
         Election_id: true,
+        Status: true,
+        Rejection_reason: true,
         // Don't include password or file data in response
       },
     });
@@ -701,7 +714,11 @@ export const getCandidateProfile = async (req, res) => {
       success: true,
       message: "Candidate profile retrieved successfully",
       data: {
-        profile: candidate,
+        profile: {
+          ...candidate,
+          Can_id: candidate.Can_id.toString(),
+          Election_id: candidate.Election_id,
+        },
       },
     });
   } catch (error) {
@@ -717,7 +734,7 @@ export const getCandidateProfile = async (req, res) => {
 export const updateCandidateProfile = async (req, res) => {
   try {
     const { candidateId } = req.params;
-    const { name, phone, position, branch, year, cgpa, manifesto } = req.body;
+    const { phone, manifesto } = req.body;
 
     if (!candidateId) {
       return res.status(400).json({
@@ -726,17 +743,17 @@ export const updateCandidateProfile = async (req, res) => {
       });
     }
 
-    // Validate input
-    if (!name || !phone || !position || !branch || !year) {
+    // Validate input - only phone and manifesto can be updated
+    if (!phone) {
       return res.status(400).json({
         success: false,
-        message: "Name, phone, position, branch, and year are required",
+        message: "Phone number is required",
       });
     }
 
     // Check if candidate exists
     const existingCandidate = await prisma.cANDIDATE.findUnique({
-      where: { Can_id: parseInt(candidateId) },
+      where: { Can_id: BigInt(candidateId) },
     });
 
     if (!existingCandidate) {
@@ -746,16 +763,11 @@ export const updateCandidateProfile = async (req, res) => {
       });
     }
 
-    // Update candidate profile
+    // Update candidate profile - only phone and manifesto
     const updatedCandidate = await prisma.cANDIDATE.update({
-      where: { Can_id: parseInt(candidateId) },
+      where: { Can_id: BigInt(candidateId) },
       data: {
-        Can_name: name,
         Can_phone: phone,
-        Position: position,
-        Branch: branch,
-        Year: parseInt(year),
-        Cgpa: cgpa ? parseFloat(cgpa) : existingCandidate.Cgpa,
         Manifesto: manifesto || existingCandidate.Manifesto,
       },
       select: {
@@ -769,6 +781,8 @@ export const updateCandidateProfile = async (req, res) => {
         Cgpa: true,
         Manifesto: true,
         Election_id: true,
+        Status: true,
+        Rejection_reason: true,
       },
     });
 
@@ -776,7 +790,11 @@ export const updateCandidateProfile = async (req, res) => {
       success: true,
       message: "Profile updated successfully",
       data: {
-        profile: updatedCandidate,
+        profile: {
+          ...updatedCandidate,
+          Can_id: updatedCandidate.Can_id.toString(),
+          Election_id: updatedCandidate.Election_id,
+        },
       },
     });
   } catch (error) {
@@ -818,7 +836,7 @@ export const changeCandidatePassword = async (req, res) => {
 
     // Find candidate
     const candidate = await prisma.cANDIDATE.findUnique({
-      where: { Can_id: parseInt(candidateId) },
+      where: { Can_id: BigInt(candidateId) },
     });
 
     if (!candidate) {
@@ -846,7 +864,7 @@ export const changeCandidatePassword = async (req, res) => {
 
     // Update password
     await prisma.cANDIDATE.update({
-      where: { Can_id: parseInt(candidateId) },
+      where: { Can_id: BigInt(candidateId) },
       data: {
         Can_password: hashedNewPassword,
       },
@@ -858,6 +876,280 @@ export const changeCandidatePassword = async (req, res) => {
     });
   } catch (error) {
     console.error("Change candidate password error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+// ==================== FORGOT PASSWORD FUNCTIONALITY ====================
+
+// Request password reset for Student
+export const requestStudentPasswordReset = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    // Find student by email
+    const student = await prisma.sTUDENT.findFirst({
+      where: { Std_email: email },
+    });
+
+    if (!student) {
+      // Don't reveal if user exists - security best practice
+      return res.status(200).json({
+        success: true,
+        message: "If your email is registered, you will receive a password reset link shortly.",
+      });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    const tokenExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
+
+    // Save hashed token to database
+    await prisma.sTUDENT.update({
+      where: { Std_id: student.Std_id },
+      data: {
+        Reset_token: hashedToken,
+        Reset_token_expiry: tokenExpiry,
+      },
+    });
+
+    // Send reset email
+    try {
+      await sendPasswordResetEmail(student.Std_email, resetToken, student.Std_name, 'student');
+    } catch (emailError) {
+      console.error('Failed to send reset email:', emailError);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to send password reset email. Please try again later.",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "If your email is registered, you will receive a password reset link shortly.",
+    });
+  } catch (error) {
+    console.error("Request student password reset error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+// Request password reset for Candidate
+export const requestCandidatePasswordReset = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    // Find candidate by email
+    const candidate = await prisma.cANDIDATE.findFirst({
+      where: { Can_email: email },
+    });
+
+    if (!candidate) {
+      // Don't reveal if user exists - security best practice
+      return res.status(200).json({
+        success: true,
+        message: "If your email is registered, you will receive a password reset link shortly.",
+      });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    const tokenExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
+
+    // Save hashed token to database
+    await prisma.cANDIDATE.update({
+      where: { Can_id: candidate.Can_id },
+      data: {
+        Reset_token: hashedToken,
+        Reset_token_expiry: tokenExpiry,
+      },
+    });
+
+    // Send reset email
+    try {
+      await sendPasswordResetEmail(candidate.Can_email, resetToken, candidate.Can_name, 'candidate');
+    } catch (emailError) {
+      console.error('Failed to send reset email:', emailError);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to send password reset email. Please try again later.",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "If your email is registered, you will receive a password reset link shortly.",
+    });
+  } catch (error) {
+    console.error("Request candidate password reset error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+// Reset password for Student
+export const resetStudentPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Token and new password are required",
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 6 characters long",
+      });
+    }
+
+    // Hash the token to match with database
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Find student with valid token
+    const student = await prisma.sTUDENT.findFirst({
+      where: {
+        Reset_token: hashedToken,
+        Reset_token_expiry: {
+          gt: new Date(), // Token not expired
+        },
+      },
+    });
+
+    if (!student) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired reset token",
+      });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    // Update password and clear reset token
+    await prisma.sTUDENT.update({
+      where: { Std_id: student.Std_id },
+      data: {
+        Std_password: hashedPassword,
+        Reset_token: null,
+        Reset_token_expiry: null,
+      },
+    });
+
+    // Send confirmation email
+    try {
+      await sendPasswordResetConfirmationEmail(student.Std_email, student.Std_name);
+    } catch (emailError) {
+      console.error('Failed to send confirmation email:', emailError);
+      // Don't fail the request if confirmation email fails
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Password reset successful. You can now login with your new password.",
+    });
+  } catch (error) {
+    console.error("Reset student password error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+// Reset password for Candidate
+export const resetCandidatePassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Token and new password are required",
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 6 characters long",
+      });
+    }
+
+    // Hash the token to match with database
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Find candidate with valid token
+    const candidate = await prisma.cANDIDATE.findFirst({
+      where: {
+        Reset_token: hashedToken,
+        Reset_token_expiry: {
+          gt: new Date(), // Token not expired
+        },
+      },
+    });
+
+    if (!candidate) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired reset token",
+      });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    // Update password and clear reset token
+    await prisma.cANDIDATE.update({
+      where: { Can_id: candidate.Can_id },
+      data: {
+        Can_password: hashedPassword,
+        Reset_token: null,
+        Reset_token_expiry: null,
+      },
+    });
+
+    // Send confirmation email
+    try {
+      await sendPasswordResetConfirmationEmail(candidate.Can_email, candidate.Can_name);
+    } catch (emailError) {
+      console.error('Failed to send confirmation email:', emailError);
+      // Don't fail the request if confirmation email fails
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Password reset successful. You can now login with your new password.",
+    });
+  } catch (error) {
+    console.error("Reset candidate password error:", error);
     res.status(500).json({
       success: false,
       message: "Internal server error",

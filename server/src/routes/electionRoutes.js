@@ -10,7 +10,10 @@ import { verifyAdmin, verifyToken } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-// Get all elections (public or authenticated) - can filter by status via query param
+// Public endpoint - Get upcoming/ongoing elections (for candidate registration)
+router.get("/public/elections", getElections);
+
+// Get all elections (authenticated) - can filter by status via query param
 router.get("/elections", verifyToken, getElections);
 
 // Get a single election by ID

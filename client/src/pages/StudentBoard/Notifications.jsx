@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 
 const Notifications = () => {
+  // TODO: Replace with API call to fetch real notifications from backend
+  // Example API endpoint: GET /api/notifications
+  // The backend should return user-specific notifications
+  
+  // Static notifications data (for demonstration only)
   const [notifications, setNotifications] = useState([
     {
       id: 1,

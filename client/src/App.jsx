@@ -28,6 +28,8 @@ import Elections from './pages/StudentBoard/Elections';
 import Results from './pages/StudentBoard/Results';
 import CastVote from './pages/StudentBoard/CastVote';
 import CandidateLogin from './pages/Auth/CandidateLogin';
+import ForgotPassword from './pages/Auth/ForgotPassword';
+import ResetPassword from './pages/Auth/ResetPassword';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import DashboardRedirect from './components/DashboardRedirect';
 
@@ -39,7 +41,7 @@ function AppContent() {
   const location = useLocation();
   
   // Routes where navbar should be hidden
-  const noNavbarRoutes = ['/', '/candidate/register', '/candidate/login', '/student/login', '/admin/login', '/student/signup', '/404', '/not-found'];
+  const noNavbarRoutes = ['/', '/candidate/register', '/candidate/login', '/student/login', '/admin/login', '/student/signup', '/forgot-password', '/reset-password', '/404', '/not-found'];
   const shouldHideNavbar = noNavbarRoutes.includes(location.pathname);
   const noFooterRoutes = ['/'];
   const shouldHideFooter = noFooterRoutes.includes(location.pathname);
@@ -84,6 +86,10 @@ function AppContent() {
             <Signup />
           )
         } />
+
+        {/* Forgot Password Routes */}
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Student Board - Only accessible by students */}
         <Route path="/student" element={

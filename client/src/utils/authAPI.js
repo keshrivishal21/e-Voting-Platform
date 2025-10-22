@@ -291,6 +291,69 @@ class AuthAPI {
       throw new Error(`Network error: ${error.message}`);
     }
   }
+
+  // ==================== FORGOT PASSWORD METHODS ====================
+
+  // Request password reset
+  static async requestPasswordReset(email, userType = 'student') {
+    try {
+      const endpoint = userType === 'student' 
+        ? `${API_BASE_URL}/auth/student/forgot-password`
+        : `${API_BASE_URL}/auth/candidate/forgot-password`;
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email })
+      });
+
+      const data = await response.json();
+      return { response, data };
+    } catch (error) {
+      throw new Error(`Network error: ${error.message}`);
+    }
+  }
+
+  // Reset password with token
+  static async resetPassword(token, newPassword, userType = 'student') {
+    try {
+      const endpoint = userType === 'student'
+        ? `${API_BASE_URL}/auth/student/reset-password`
+        : `${API_BASE_URL}/auth/candidate/reset-password`;
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token, newPassword })
+      });
+
+      const data = await response.json();
+      return { response, data };
+    } catch (error) {
+      throw new Error(`Network error: ${error.message}`);
+    }
+  }
+
+  // Get public elections (no auth required)
+  static async getPublicElections() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/election/public/elections?status=Upcoming`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      throw new Error(`Network error: ${error.message}`);
+    }
+  }
 }
 
 export default AuthAPI;

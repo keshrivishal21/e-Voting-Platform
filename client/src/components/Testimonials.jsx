@@ -3,6 +3,9 @@ import { useState } from "react";
 
 const Testimonials = () => {
   const [showModal,setShowModal]=useState(false);
+  
+  // Static testimonial data for demonstration
+  // TODO: Replace with API call to fetch real testimonials from database
   const cardsData = [
     {
       image:

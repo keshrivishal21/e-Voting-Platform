@@ -5,6 +5,10 @@ import dotenv from "dotenv";
 import authRoutes from "./routes/authRoutes.js";
 import electionRoutes from "./routes/electionRoutes.js";
 import candidateRoutes from "./routes/candidateRoutes.js";
+import dashboardRoutes from "./routes/dashboardRoutes.js";
+import feedbackRoutes from "./routes/feedbackRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import studentRoutes from "./routes/studentRoutes.js";
 import { startElectionScheduler } from "./services/electionScheduler.js";
 
 dotenv.config();
@@ -20,6 +24,10 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/election", electionRoutes);
 app.use("/api/candidate", candidateRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/feedback", feedbackRoutes);
+app.use("/api/notification", notificationRoutes);
+app.use("/api/student", studentRoutes);
 
 // Health check route
 app.get("/", async(req, res) => {

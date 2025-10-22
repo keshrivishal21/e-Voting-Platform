@@ -5,6 +5,9 @@ import toast from 'react-hot-toast';
 import logo from "../../assets/evoting.png"
 import AuthAPI from '../../utils/authAPI';
 import { useAuth } from '../../contexts/AuthContext';
+import { KeyIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { Link } from 'react-router-dom';
+
 
 function Login() {
     const navigate = useNavigate();
@@ -142,7 +145,7 @@ function Login() {
 
             {/* Forgot Password Link */}
             <div className="text-right">
-              <a href="#" className="text-sm text-indigo-600 hover:text-indigo-700 hover:underline transition-colors duration-200">
+              <a href="/forgot-password" className="text-sm text-indigo-600 hover:text-indigo-700 hover:underline transition-colors duration-200">
                 Forgot your password?
               </a>
             </div>
@@ -172,6 +175,15 @@ function Login() {
                 Sign Up
               </a>
             </p>
+          </div>
+          <div className="mt-3 text-center">
+            <Link
+              to={`/`}
+              className="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-500"
+            >
+              <ArrowLeftIcon className="h-4 w-4 mr-1" />
+              Back to Home page
+            </Link>
           </div>
         </div>
 

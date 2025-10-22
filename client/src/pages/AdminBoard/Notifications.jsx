@@ -1,26 +1,55 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import toast from "react-hot-toast";
+import AdminAPI from "../../utils/adminAPI";
 
 const Notifications = () => {
   const [recipient, setRecipient] = useState("Students");
   const [message, setMessage] = useState("");
-  const [sentNotifications, setSentNotifications] = useState([
-    { id: 1, recipient: "Students", message: "New elections start tomorrow!" },
-    { id: 2, recipient: "Candidates", message: "Submit your campaign materials." },
-  ]);
+  const [sentNotifications, setSentNotifications] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [fetchLoading, setFetchLoading] = useState(true);
 
-  const sendNotification = () => {
+  // Fetch sent notifications
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        setFetchLoading(true);
+        const response = await AdminAPI.getAllNotifications();
+        if (response.success) {
+          setSentNotifications(response.data.notifications);
+        }
+      } catch (error) {
+        console.error("Error fetching notifications:", error);
+        toast.error("Failed to load notifications");
+      } finally {
+        setFetchLoading(false);
+      }
+    };
+
+    fetchNotifications();
+  }, []);
+
+  const sendNotification = async () => {
     if (message.trim() === "") {
-      alert("Please enter a message.");
+      toast.error("Please enter a message.");
       return;
     }
-    const newNotification = {
-      id: sentNotifications.length + 1,
-      recipient,
-      message,
-    };
-    setSentNotifications([newNotification, ...sentNotifications]);
-    setMessage("");
-    alert("Notification sent!");
+
+    try {
+      setLoading(true);
+      const response = await AdminAPI.sendNotification(recipient, message);
+      
+      if (response.success) {
+        toast.success("Notification sent successfully!");
+        setSentNotifications([response.data.notification, ...sentNotifications]);
+        setMessage("");
+      }
+    } catch (error) {
+      console.error("Error sending notification:", error);
+      toast.error(error.message || "Failed to send notification");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -56,9 +85,10 @@ const Notifications = () => {
         </div>
         <button
           onClick={sendNotification}
-          className="bg-indigo-600 text-white px-6 py-2 rounded-2xl shadow hover:bg-indigo-500 transition"
+          disabled={loading}
+          className="bg-indigo-600 text-white px-6 py-2 rounded-2xl shadow hover:bg-indigo-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Send Notification
+          {loading ? "Sending..." : "Send Notification"}
         </button>
       </div>
 
@@ -66,13 +96,24 @@ const Notifications = () => {
       <div className="bg-white shadow rounded-2xl p-6">
         <h2 className="text-2xl font-semibold mb-4 text-indigo-600">Recently Sent Notifications</h2>
         <ul className="space-y-2 max-h-[300px] overflow-y-auto">
-          {sentNotifications.map((note) => (
-            <li key={note.id} className="border-b pb-2 last:border-none text-gray-700">
-              <span className="font-semibold">{note.recipient}:</span> {note.message}
+          {fetchLoading ? (
+            <li className="text-center py-4">
+              <div className="flex items-center justify-center">
+                <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                Loading notifications...
+              </div>
             </li>
-          ))}
-          {sentNotifications.length === 0 && (
+          ) : sentNotifications.length === 0 ? (
             <li className="text-gray-500 text-center">No notifications sent yet</li>
+          ) : (
+            sentNotifications.map((note) => (
+              <li key={note.id} className="border-b pb-2 last:border-none text-gray-700">
+                <span className="font-semibold">{note.recipient}:</span> {note.message}
+                <div className="text-xs text-gray-500 mt-1">
+                  Sent by {note.sentBy} • {new Date(note.sentAt).toLocaleString()}
+                </div>
+              </li>
+            ))
           )}
         </ul>
       </div>

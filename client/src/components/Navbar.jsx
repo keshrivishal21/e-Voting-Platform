@@ -13,8 +13,23 @@ export default function Navbar() {
   const isCandidateRoute = location.pathname.startsWith("/candidate");
 
   const handleLogout = () => {
+    // Save the user type before logout clears it
+    const currentUserType = userType;
+    console.log('Logging out, current user type:', currentUserType);
+    
     logout();
-    navigate(isStudent() ? "/" : isCandidate() ? "/candidate/login" : "/admin");
+    
+    // Use window.location to force full page navigation and avoid race condition with ProtectedRoute
+    if (currentUserType === 'Student') {
+      console.log('Redirecting to /student/login');
+      window.location.href = "/student/login";
+    } else if (currentUserType === 'Candidate') {
+      console.log('Redirecting to /candidate/login');
+      window.location.href = "/candidate/login";
+    } else {
+      console.log('Redirecting to /admin');
+      window.location.href = "/admin";
+    }
   };
   return (
     <header className="absolute top-0 left-0 w-full z-50">

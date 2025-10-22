@@ -22,7 +22,7 @@ export const getApprovedCandidates = async () => {
       throw new Error("No authentication token found");
     }
 
-    const response = await fetch(`${API_BASE_URL}/candidates/approved`, {
+    const response = await fetch(`${API_BASE_URL}/candidate/candidates/approved`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -57,7 +57,7 @@ export const getCandidatesByElection = async (electionId) => {
     }
 
     const response = await fetch(
-      `${API_BASE_URL}/candidates/approved?electionId=${electionId}`,
+      `${API_BASE_URL}/candidate/candidates/approved?electionId=${electionId}`,
       {
         method: "GET",
         headers: {
@@ -94,7 +94,7 @@ export const getCandidateStatus = async (candidateId) => {
     }
 
     const response = await fetch(
-      `${API_BASE_URL}/candidates/${candidateId}/status`,
+      `${API_BASE_URL}/candidate/candidates/${candidateId}/status`,
       {
         method: "GET",
         headers: {

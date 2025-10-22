@@ -1,6 +1,7 @@
 // pages/AdminBoard/Home.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
+import AdminAPI from "../../utils/adminAPI";
 import {
   PieChart,
   Pie,
@@ -38,80 +39,48 @@ const Home = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // Dummy data for demonstration
-  const [stats] = useState({
-    totalStudents: 120,
-    activeElections: 3,
-    pendingCandidates: 4,
-    feedbackCount: 6,
+  const [stats, setStats] = useState({
+    totalStudents: 0,
+    activeElections: 0,
+    pendingCandidates: 0,
+    feedbackCount: 0,
   });
-
-  const electionData = [
-    { name: "Active", value: stats.activeElections },
-    { name: "Completed", value: 7 },
-  ];
-
-  const votingTrends = [
-    { month: "Jan", votes: 45 },
-    { month: "Feb", votes: 52 },
-    { month: "Mar", votes: 38 },
-    { month: "Apr", votes: 65 },
-    { month: "May", votes: 58 },
-    { month: "Jun", votes: 72 },
-  ];
+  const [electionData, setElectionData] = useState([]);
+  const [votingTrends, setVotingTrends] = useState([]);
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [dashboardLoading, setDashboardLoading] = useState(true);
 
   const COLORS = ["#6366F1", "#E5E7EB"]; // Indigo + Gray
 
-  const recentActivity = [
-    {
-      id: 1,
-      message: "Candidate request submitted: John Doe",
-      icon: "📝",
-      time: "2 min ago",
-    },
-    {
-      id: 2,
-      message: "Candidate approved: Priya Sharma",
-      icon: "✅",
-      time: "5 min ago",
-    },
-    {
-      id: 3,
-      message: "Candidate request rejected: Raj Patel",
-      icon: "❌",
-      time: "10 min ago",
-    },
-    {
-      id: 4,
-      message: "New election created: Student Council 2025",
-      icon: "🗳️",
-      time: "15 min ago",
-    },
-    {
-      id: 5,
-      message: "Live voting started for Cultural Committee",
-      icon: "🔴",
-      time: "20 min ago",
-    },
-    {
-      id: 6,
-      message: "Feedback received: 'Improve UI/UX'",
-      icon: "💬",
-      time: "25 min ago",
-    },
-    {
-      id: 7,
-      message: "Results published for Tech Club Head Election",
-      icon: "📊",
-      time: "30 min ago",
-    },
-    {
-      id: 8,
-      message: "Notification sent: 'Elections start tomorrow!'",
-      icon: "🔔",
-      time: "35 min ago",
-    },
-  ];
+  // Fetch dashboard data
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setDashboardLoading(true);
+        const [statsResponse, activityResponse] = await Promise.all([
+          AdminAPI.getDashboardStats(),
+          AdminAPI.getRecentActivity(8),
+        ]);
+
+        if (statsResponse.success) {
+          setStats(statsResponse.data.stats);
+          setElectionData(statsResponse.data.electionData);
+          setVotingTrends(statsResponse.data.votingTrends);
+        }
+
+        if (activityResponse.success) {
+          setRecentActivity(activityResponse.data.activity);
+        }
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+        toast.error("Failed to load dashboard data");
+      } finally {
+        setDashboardLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
 
   // Handle form input changes
   const handleInputChange = (e) => {

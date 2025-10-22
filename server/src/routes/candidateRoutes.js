@@ -6,14 +6,16 @@ import {
   rejectCandidate,
   getCandidateStatus,
   getApprovedCandidates,
+  getCandidateDocument,
 } from "../controllers/candidateController.js";
-import { verifyAdmin, verifyToken } from "../middlewares/authMiddleware.js";
+import { verifyAdmin, verifyToken, verifyAdminForDocument } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
 // Admin routes - manage candidate applications
 router.get("/admin/candidates/pending", verifyAdmin, getPendingCandidates);
 router.get("/admin/candidates", verifyAdmin, getAllCandidates);
+router.get("/admin/candidates/:candidateId/document", verifyAdminForDocument, getCandidateDocument);
 router.post("/admin/candidates/:candidateId/approve", verifyAdmin, approveCandidate);
 router.post("/admin/candidates/:candidateId/reject", verifyAdmin, rejectCandidate);
 

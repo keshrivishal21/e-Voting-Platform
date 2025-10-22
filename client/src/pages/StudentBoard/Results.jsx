@@ -1,7 +1,11 @@
 import React from "react";
 
 const Results = () => {
-  // Sample data for current elections results
+  // TODO: Replace with API call to fetch real election results from backend
+  // Example API endpoint: GET /api/election/results
+  // The backend should return completed elections with winner information
+  
+  // Sample data for current elections results (for demonstration only)
   const electionResults = [
     {
       id: 1,

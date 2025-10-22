@@ -1,6 +1,12 @@
 import React from "react";
 
 const LiveVotes = () => {
+  // TODO: Implement real-time vote tracking with backend API integration
+  // Required APIs:
+  // 1. GET /api/vote/candidate/:id/live - Get real-time vote count for this candidate
+  // 2. WebSocket connection for live updates: ws://localhost:5000/vote/live
+  // 3. GET /api/vote/election/:id/stats - Get election-wide voting statistics
+  
   return (
     <div className="bg-gradient-to-b from-indigo-50 to-white p-8 min-h-screen">
       <div className="max-w-6xl mx-auto mt-20">
@@ -13,7 +19,7 @@ const LiveVotes = () => {
           Current Vote Stats
         </h2>
         <p className="text-gray-600">
-          (Connect this page to your backend API or WebSocket for live updates.)
+          Connect this page to your backend API or WebSocket for live updates.
         </p>
       </div>
       </div>

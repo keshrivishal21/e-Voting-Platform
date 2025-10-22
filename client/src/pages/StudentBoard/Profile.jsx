@@ -140,8 +140,8 @@ const Profile = () => {
     setMessage({ type: '', text: '' });
 
     try {
+      // Only send editable fields (phone and dob)
       const profileData = {
-        name: formData.Std_name,
         phone: formData.Std_phone,
         dob: formData.Dob
       };
@@ -320,10 +320,10 @@ const Profile = () => {
                   </div>
                 </div>
 
-                {/* Full Name */}
+                {/* Full Name (Read-only) */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    Full Name *
+                    Full Name
                   </label>
                   <div className="relative">
                     <UserIcon className="h-5 w-5 text-indigo-400 absolute left-4 top-4" />
@@ -331,10 +331,8 @@ const Profile = () => {
                       type="text"
                       name="Std_name"
                       value={formData.Std_name}
-                      onChange={handleInputChange}
-                      required
-                      className="pl-12 pr-4 py-3 w-full border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                      placeholder="Enter your full name"
+                      disabled
+                      className="pl-12 pr-4 py-3 w-full border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-500 font-medium"
                     />
                   </div>
                 </div>
@@ -355,39 +353,39 @@ const Profile = () => {
                   </div>
                 </div>
 
-                {/* Phone Number */}
+                {/* Phone Number - EDITABLE */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    Phone Number *
+                    Phone Number * <span className="text-indigo-600 text-xs">(Editable)</span>
                   </label>
                   <div className="relative">
-                    <PhoneIcon className="h-5 w-5 text-indigo-400 absolute left-4 top-4" />
+                    <PhoneIcon className="h-5 w-5 text-indigo-600 absolute left-4 top-4" />
                     <input
                       type="tel"
                       name="Std_phone"
                       value={formData.Std_phone}
                       onChange={handleInputChange}
                       required
-                      className="pl-12 pr-4 py-3 w-full border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                      className="pl-12 pr-4 py-3 w-full border-2 border-indigo-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-white"
                       placeholder="Enter your phone number"
                     />
                   </div>
                 </div>
 
-                {/* Date of Birth */}
+                {/* Date of Birth - EDITABLE */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    Date of Birth *
+                    Date of Birth * <span className="text-indigo-600 text-xs">(Editable)</span>
                   </label>
                   <div className="relative">
-                    <CalendarIcon className="h-5 w-5 text-indigo-400 absolute left-4 top-4" />
+                    <CalendarIcon className="h-5 w-5 text-indigo-600 absolute left-4 top-4" />
                     <input
                       type="date"
                       name="Dob"
                       value={formData.Dob}
                       onChange={handleInputChange}
                       required
-                      className="pl-12 pr-4 py-3 w-full border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                      className="pl-12 pr-4 py-3 w-full border-2 border-indigo-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-white"
                     />
                   </div>
                 </div>

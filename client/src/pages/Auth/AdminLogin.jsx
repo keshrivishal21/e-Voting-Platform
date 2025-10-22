@@ -10,7 +10,7 @@ function AdminLogin() {
     const location = useLocation();
     const { login } = useAuth();
     const [formData, setFormData] = useState({
-        userId: '',
+        email: '',
         password: ''
     });
     const [loading, setLoading] = useState(false);
@@ -18,10 +18,10 @@ function AdminLogin() {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        
-        // Check for whitespace in userId and password fields
-        if ((name === 'userId' || name === 'password') && /\s/.test(value)) {
-            const errorMsg = `${name === 'userId' ? 'Admin ID' : 'Password'} cannot contain whitespace`;
+
+        // Check for whitespace in email and password fields
+        if ((name === 'email' || name === 'password') && /\s/.test(value)) {
+            const errorMsg = `${name === 'email' ? 'Email' : 'Password'} cannot contain whitespace`;
             setError(errorMsg);
             toast.error(errorMsg);
             // Don't update state - reject the input
@@ -48,7 +48,7 @@ function AdminLogin() {
             if (response.ok && data.success) {
                 // Use auth context to login - just token and type
                 login(data.data.token, 'Admin');
-                toast.success('Welcome back, Admin! 🎉');
+                toast.success('Welcome back, Admin!');
 
                 // Navigate to admin dashboard
                 const from = location.state?.from?.pathname || '/admin';

@@ -83,3 +83,41 @@ export const verifyStudentOrCandidate = (req, res, next) => {
 
 // Middleware to verify any authenticated user
 export const verifyAnyUser = verifyToken;
+
+// Middleware to verify admin with token from query or header (for document viewing)
+export const verifyAdminForDocument = (req, res, next) => {
+  try {
+    // Try to get token from query params first, then header
+    let token = req.query.token || req.header("Authorization")?.replace("Bearer ", "");
+
+    if (!token) {
+      return res.status(401).json({ 
+        success: false, 
+        message: "Access denied. No token provided" 
+      });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "your-secret-key");
+    
+    if (decoded.userType !== "Admin") {
+      return res.status(403).json({ 
+        success: false, 
+        message: "Access denied. Admin privileges required" 
+      });
+    }
+    
+    req.user = decoded;
+    next();
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({ 
+        success: false, 
+        message: "Token has expired" 
+      });
+    }
+    return res.status(400).json({ 
+      success: false, 
+      message: "Invalid token" 
+    });
+  }
+};
