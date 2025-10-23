@@ -80,8 +80,7 @@ model STUDENT {
   Dob         DateTime  
   Std_email   String    @db.VarChar(50)
   User_type   UserType  @default(Student)
-  
-  // Password reset fields
+  Profile      Bytes?    @db.MediumBlob
   Reset_token String?   @db.VarChar(255)
   Reset_token_expiry DateTime?
 
@@ -131,13 +130,25 @@ model VOTE {
   student   STUDENT   @relation(fields: [Std_id], references: [Std_id])
   candidate CANDIDATE @relation(fields: [Can_id], references: [Can_id])
   election  ELECTION  @relation(fields: [Election_id], references: [Election_id])
+  receipt   VOTE_RECEIPT?
 
   @@unique([Std_id, Election_id, Can_id])
   @@index([Std_id, Election_id])
 }
 
+model VOTE_RECEIPT {
+  Receipt_id        Int       @id @default(autoincrement())
+  Vote_id           Int       @unique
+  Receipt_token     String    @unique @db.VarChar(255)
+  Generated_at      DateTime  @default(now())
+
+  vote              VOTE      @relation(fields: [Vote_id], references: [Vote_id], onDelete: Cascade)
+
+  @@index([Receipt_token])
+}
+
 model RESULT {
-  R_id        Int       @id
+  R_id        Int       @id @default(autoincrement())
   Can_id      BigInt
   Election_id Int
   Vote_count  Int
@@ -151,11 +162,11 @@ model RESULT {
 }
 
 model FEEDBACK {
-  FB_id     Int       @id
+  FB_id     Int       @id @default(autoincrement())
   User_id   BigInt
   User_type UserType
   FB_time   DateTime  @db.Timestamp(0)
-  Message   String
+  Message   String    @db.Text
   Status    String    @db.VarChar(50)
   Admin_id  Int?
 
@@ -164,24 +175,24 @@ model FEEDBACK {
 }
 
 model SYSTEM_LOGS {
-  Log_id    Int      @id
+  Log_id    Int      @id @default(autoincrement())
   User_id   BigInt
   User_type UserType
   Admin_id  Int?
   Log_time  DateTime @db.Timestamp(0)
   Log_type  LogType
-  Action    String
+  Action    String   @db.Text
 
   user      USERS   @relation(fields: [User_id, User_type], references: [User_id, User_type])
   admin     ADMIN?  @relation(fields: [Admin_id], references: [Admin_id])
 }
 
 model NOTIFICATION {
-  N_id          Int      @id
+  N_id          Int      @id @default(autoincrement())
   User_id       BigInt
   User_type     UserType
   Notif_time    DateTime @db.Timestamp(0)
-  Notif_message String
+  Notif_message String   @db.Text
   Admin_id      Int?
 
   user          USERS   @relation(fields: [User_id, User_type], references: [User_id, User_type])

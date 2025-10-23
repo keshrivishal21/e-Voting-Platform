@@ -50,7 +50,10 @@ const Testimonials = ({ userType = "Student" }) => {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify({ feedbackText })
+        body: JSON.stringify({ 
+          studentId: userId,
+          feedbackText 
+        })
       });
 
       const data = await response.json();

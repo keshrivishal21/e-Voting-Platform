@@ -115,7 +115,7 @@ export const studentLogin = async (req, res) => {
     }
 
     // Generate token
-    const token = generateToken(student.Std_id, "student");
+    const token = generateToken(student.Std_id, "Student");
 
     res.status(200).json({
       success: true,
@@ -200,7 +200,7 @@ export const studentRegister = async (req, res) => {
       data: {
         user: {
           scholarNo: student.Std_id.toString(),
-          userType: "student",
+          userType: "Student",
         },
       },
     });
