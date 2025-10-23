@@ -2,6 +2,7 @@ import './App.css';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 import StudentHome from './pages/StudentBoard/Home';
 import CandidateList from './pages/StudentBoard/CandidateList';
 import StudentNotifications from './pages/StudentBoard/Notifications';
@@ -50,8 +51,9 @@ function AppContent() {
     <div className="flex flex-col min-h-screen">
       {/* Conditionally render navbar */}
       {!shouldHideNavbar && <Navbar />}
-      <Routes>
-        <Route path="/" element={<Home />} />
+      <AnimatePresence mode="wait">
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={<Home />} />
         
         {/* Dashboard redirect */}
         <Route path="/dashboard" element={<DashboardRedirect />} />
@@ -201,6 +203,7 @@ function AppContent() {
         <Route path="/404" element={<NotFound />} />
         <Route path="*" element={<Navigate to="/404" replace />} />
       </Routes>
+      </AnimatePresence>
 
       {!shouldHideFooter && <Footer />}
     </div>

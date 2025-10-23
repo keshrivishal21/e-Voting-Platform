@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { getApprovedCandidates } from "../../utils/candidateAPI";
 import toast from "react-hot-toast";
+import { motion, AnimatePresence } from "framer-motion";
 
 const CandidateList = () => {
   const [elections, setElections] = useState([]);
@@ -42,44 +43,95 @@ const CandidateList = () => {
 
   if (loading) {
     return (
-      <div className="px-10 md:px-20 max-w-7xl mt-28 items-center mx-auto mb-20 min-h-screen">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="px-10 md:px-20 max-w-7xl mt-28 items-center mx-auto mb-20 min-h-screen"
+      >
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading candidates...</p>
+          <motion.div 
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            className="rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"
+          />
+          <motion.p 
+            initial={{ y: 10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="mt-4 text-gray-600"
+          >
+            Loading candidates...
+          </motion.p>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="px-10 md:px-20 max-w-7xl mt-28 items-center mx-auto mb-20 min-h-[calc(100vh-200px)]">
-      <h1 className="text-4xl font-bold text-black-600 text-center">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="px-10 md:px-20 max-w-7xl mt-28 items-center mx-auto mb-20 min-h-[calc(100vh-200px)]"
+    >
+      <motion.h1 
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6 }}
+        className="text-4xl font-bold text-black-600 text-center"
+      >
         Candidates List
-      </h1>
+      </motion.h1>
       {/* Tagline */}
-      <p className="text-center text-gray-600 mt-2 px-5">
+      <motion.p 
+        initial={{ y: -10, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.2, duration: 0.6 }}
+        className="text-center text-gray-600 mt-2 px-5"
+      >
        Discover the brilliant candidates running for the elections this year! They are ready to lead, inspire, and make a difference in our college community. <br />
   Choose wisely and cast your vote!
-      </p>
+      </motion.p>
 
       {elections.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-600 text-lg">No approved candidates found</p>
         </div>
       ) : (
-        elections.map((election) => (
-          <div key={election.id} className="space-y-6 mt-12">
-            <h2 className="text-2xl font-semibold text-indigo-800 text-start">
+        elections.map((election, electionIndex) => (
+          <motion.div 
+            key={election.id}
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: electionIndex * 0.1, duration: 0.6 }}
+            className="space-y-6 mt-12"
+          >
+            <motion.h2 
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: electionIndex * 0.1 + 0.2, duration: 0.5 }}
+              className="text-2xl font-semibold text-indigo-800 text-start"
+            >
               {election.title}
-            </h2>
+            </motion.h2>
 
             {/* Flex container: left-aligned with wrap */}
             {election.candidates && election.candidates.length > 0 ? (
               <div className="flex flex-wrap items-start justify-start gap-6">
-                {election.candidates.map((candidate) => (
-                  <div
+                {election.candidates.map((candidate, candidateIndex) => (
+                  <motion.div
                     key={candidate.id}
-                    className="bg-white rounded-2xl pb-5 overflow-hidden border border-gray-300 shadow-sm hover:shadow-md transition-shadow w-64"
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ 
+                      delay: electionIndex * 0.1 + candidateIndex * 0.1, 
+                      duration: 0.4 
+                    }}
+                    whileHover={{ 
+                      y: -8, 
+                      boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)"
+                    }}
+                    className="bg-white rounded-2xl pb-5 overflow-hidden border border-gray-300 shadow-sm transition-shadow w-64"
                   >
                     <img
                       className="w-64 h-52 object-cover object-top"
@@ -99,18 +151,20 @@ const CandidateList = () => {
                       </p>
 
                       {candidate.manifesto && (
-                        <button
+                        <motion.button
                           onClick={() => {
                             setSelectedCandidate(candidate);
                             setShowManifestoModal(true);
                           }}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
                           className="border text-sm text-gray-600 border-gray-400 w-28 h-8 rounded-full mt-4 flex items-center justify-center hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition"
                         >
                           View Details
-                        </button>
+                        </motion.button>
                       )}
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             ) : (
@@ -118,16 +172,32 @@ const CandidateList = () => {
                 No approved candidates for this election yet
               </p>
             )}
-          </div>
+          </motion.div>
         ))
       )}
 
       {/* Manifesto Modal */}
-      {showManifestoModal && selectedCandidate && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
+      <AnimatePresence>
+        {showManifestoModal && selectedCandidate && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            onClick={() => {
+              setShowManifestoModal(false);
+              setSelectedCandidate(null);
+            }}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
               <h2 className="text-2xl font-bold text-gray-900">Candidate Details</h2>
               <button
                 onClick={() => {
@@ -194,22 +264,25 @@ const CandidateList = () => {
               </div>
             </div>
 
-            {/* Modal Footer */}
-            <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
-              <button
+              {/* Modal Footer */}
+              <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
+              <motion.button
                 onClick={() => {
                   setShowManifestoModal(false);
                   setSelectedCandidate(null);
                 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 className="px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition"
               >
                 Close
-              </button>
+              </motion.button>
             </div>
-          </div>
-        </div>
-      )}
-    </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 };
 

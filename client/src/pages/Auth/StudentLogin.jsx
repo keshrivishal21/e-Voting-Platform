@@ -7,6 +7,7 @@ import AuthAPI from '../../utils/authAPI';
 import { useAuth } from '../../contexts/AuthContext';
 import { KeyIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
 
 function Login() {
@@ -83,24 +84,63 @@ function Login() {
         }
     };
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center px-4 py-8">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center px-4 py-8"
+    >
       {/* Login Card */}
-      <div className="w-full max-w-md">
+      <motion.div 
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.1, duration: 0.5 }}
+        className="w-full max-w-md"
+      >
         {/* Logo Section */}
-        <div className="text-center mb-8">
+        <motion.div 
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="text-center mb-8"
+        >
           <div className="inline-flex items-center justify-center">
-            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-1.5 rounded-full shadow-2xl border-2 border-white/30">
+            <motion.div 
+              whileHover={{ scale: 1.05, rotate: 5 }}
+              transition={{ type: "spring", stiffness: 300 }}
+              className="bg-gradient-to-br from-indigo-500 to-purple-600 p-1.5 rounded-full shadow-2xl border-2 border-white/30"
+            >
               <div className="bg-white rounded-full p-0.5">
                 <img src={logo} alt="e-Voting theme" className="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover object-center" />
               </div>
-            </div>
+            </motion.div>
           </div>
-          <h1 className="mt-4 text-2xl md:text-3xl font-bold text-gray-800">Welcome Back</h1>
-          <p className="mt-2 text-sm text-gray-600">Sign in to your e-Voting account</p>
-        </div>
+          <motion.h1 
+            initial={{ y: 10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="mt-4 text-2xl md:text-3xl font-bold text-gray-800"
+          >
+            Welcome Back
+          </motion.h1>
+          <motion.p 
+            initial={{ y: 10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.5 }}
+            className="mt-2 text-sm text-gray-600"
+          >
+            Sign in to your e-Voting account
+          </motion.p>
+        </motion.div>
 
         {/* Form Card */}
-        <div className="bg-white/70 backdrop-blur-lg rounded-2xl p-6 md:p-8 shadow-xl border border-white/20">
+        <motion.div 
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
+          className="bg-white/70 backdrop-blur-lg rounded-2xl p-6 md:p-8 shadow-xl border border-white/20"
+        >
           <form className="space-y-6" onSubmit={submitHandler}>
             {/* Error Message */}
             {error && (
@@ -151,10 +191,12 @@ function Login() {
             </div>
 
             {/* Submit Button */}
-            <button 
+            <motion.button 
               type="submit" 
               disabled={loading}
-              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl hover:from-indigo-700 hover:to-purple-700 transform hover:scale-[1.02] transition-all duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <div className="flex items-center justify-center">
@@ -164,7 +206,7 @@ function Login() {
               ) : (
                 'Sign In'
               )}
-            </button>
+            </motion.button>
           </form>
 
           {/* Additional Links */}
@@ -185,16 +227,21 @@ function Login() {
               Back to Home page
             </Link>
           </div>
-        </div>
+        </motion.div>
 
         {/* Footer Text */}
-        <div className="text-center mt-6">
+        <motion.div 
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.6, duration: 0.5 }}
+          className="text-center mt-6"
+        >
           <p className="text-xs text-gray-500">
             Secure • Transparent • Reliable
           </p>
-        </div>
-      </div>
-    </div>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 }
 
