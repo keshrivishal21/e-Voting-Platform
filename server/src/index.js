@@ -9,6 +9,7 @@ import dashboardRoutes from "./routes/dashboardRoutes.js";
 import feedbackRoutes from "./routes/feedbackRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
+import voteRoutes from "./routes/voteRoutes.js";
 import { startElectionScheduler } from "./services/electionScheduler.js";
 
 dotenv.config();
@@ -28,6 +29,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/notification", notificationRoutes);
 app.use("/api/student", studentRoutes);
+app.use("/api/vote", voteRoutes);
 
 // Health check route
 app.get("/", async(req, res) => {

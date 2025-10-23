@@ -230,8 +230,9 @@ export const candidateRegister = async (req, res) => {
       electionId,
     } = req.body;
 
-    // Get uploaded file info
-    const uploadedFile = req.file;
+    // Get uploaded files info
+    const documentFile = req.files?.document?.[0];
+    const profileFile = req.files?.profile?.[0];
 
     // Validate input
     if (
@@ -252,6 +253,14 @@ export const candidateRegister = async (req, res) => {
       });
     }
 
+    // Specifically validate election selection
+    if (!electionId || electionId === '' || electionId === 'undefined') {
+      return res.status(400).json({
+        success: false,
+        message: "Please select an election to contest. Candidate registration requires election selection.",
+      });
+    }
+
     // Check if passwords match
     if (password !== confirmPassword) {
       return res.status(400).json({
@@ -260,11 +269,11 @@ export const candidateRegister = async (req, res) => {
       });
     }
 
-    // Validate file upload
-    if (!uploadedFile) {
+    // Validate document file upload
+    if (!documentFile) {
       return res.status(400).json({
         success: false,
-        message: "Document file is required",
+        message: "Document file (marksheet) is required",
       });
     }
 
@@ -298,16 +307,30 @@ export const candidateRegister = async (req, res) => {
     // Generate candidate ID (you can modify this logic as needed)
     const candidateId = parseInt(email.split("@")[0]);
 
-    // Read uploaded file and convert to buffer for database storage
-    let fileBuffer = Buffer.from("");
-    if (uploadedFile) {
+    // Read uploaded files and convert to buffer for database storage
+    let documentBuffer = Buffer.from("");
+    let profileBuffer = null;
+    
+    if (documentFile) {
       try {
-        fileBuffer = fs.readFileSync(uploadedFile.path);
+        documentBuffer = fs.readFileSync(documentFile.path);
       } catch (error) {
-        console.error("Error reading uploaded file:", error);
+        console.error("Error reading document file:", error);
         return res.status(500).json({
           success: false,
-          message: "Error processing uploaded file",
+          message: "Error processing document file",
+        });
+      }
+    }
+
+    if (profileFile) {
+      try {
+        profileBuffer = fs.readFileSync(profileFile.path);
+      } catch (error) {
+        console.error("Error reading profile picture:", error);
+        return res.status(500).json({
+          success: false,
+          message: "Error processing profile picture",
         });
       }
     }
@@ -350,7 +373,8 @@ export const candidateRegister = async (req, res) => {
             Branch: branch,
             Year: parseInt(year),
             Cgpa: cgpa ? parseFloat(cgpa) : 0.0,
-            Data: fileBuffer, // Store uploaded file as buffer
+            Data: documentBuffer, // Store marksheet as buffer
+            Profile: profileBuffer, // Store profile picture as buffer (can be null)
             User_type: "Candidate", // Add the User_type field
           },
         });
@@ -364,12 +388,19 @@ export const candidateRegister = async (req, res) => {
     } catch (dbError) {
       console.error("Database transaction error:", dbError);
       
-      // Clean up temporary file in case of database error
-      if (uploadedFile && uploadedFile.path) {
+      // Clean up temporary files in case of database error
+      if (documentFile && documentFile.path) {
         try {
-          fs.unlinkSync(uploadedFile.path);
+          fs.unlinkSync(documentFile.path);
         } catch (error) {
-          console.error("Error deleting temporary file:", error);
+          console.error("Error deleting temporary document file:", error);
+        }
+      }
+      if (profileFile && profileFile.path) {
+        try {
+          fs.unlinkSync(profileFile.path);
+        } catch (error) {
+          console.error("Error deleting temporary profile file:", error);
         }
       }
 
@@ -387,12 +418,19 @@ export const candidateRegister = async (req, res) => {
       });
     }
 
-    // Clean up temporary file
-    if (uploadedFile && uploadedFile.path) {
+    // Clean up temporary files
+    if (documentFile && documentFile.path) {
       try {
-        fs.unlinkSync(uploadedFile.path);
+        fs.unlinkSync(documentFile.path);
       } catch (error) {
-        console.error("Error deleting temporary file:", error);
+        console.error("Error deleting temporary document file:", error);
+      }
+    }
+    if (profileFile && profileFile.path) {
+      try {
+        fs.unlinkSync(profileFile.path);
+      } catch (error) {
+        console.error("Error deleting temporary profile file:", error);
       }
     }
 

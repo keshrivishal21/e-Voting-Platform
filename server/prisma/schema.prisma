@@ -99,22 +99,19 @@ model CANDIDATE {
   Can_phone    String    @db.VarChar(15)
   Can_password String    @db.VarChar(255)
   Manifesto    String    @db.Text
-  Election_id  Int?
+  Election_id  Int
   Branch       String    @db.VarChar(50)
   Year         Int
   Cgpa         Float
   Data         Bytes     @db.MediumBlob
+  Profile      Bytes?    @db.MediumBlob
   User_type    UserType  @default(Candidate)
-  
-  // Approval system
   Status           CandidateStatus @default(Pending)
   Rejection_reason String?         @db.Text
-  
-  // Password reset fields
   Reset_token String?   @db.VarChar(255)
   Reset_token_expiry DateTime?
 
-  election     ELECTION?  @relation(fields: [Election_id], references: [Election_id])
+  election     ELECTION   @relation(fields: [Election_id], references: [Election_id])
   user         USERS     @relation(fields: [Can_id, User_type], references: [User_id, User_type])
   votes        VOTE[]
   results      RESULT[]
@@ -124,18 +121,19 @@ model CANDIDATE {
 
 
 model VOTE {
-  Vote_id       Int       @id
+  Vote_id       Int       @id @default(autoincrement())
   Std_id        BigInt
   Can_id        BigInt
   Election_id   Int
-  Vote_time     DateTime  @db.Timestamp
-  Encrypted_vote String
+  Vote_time     DateTime  @default(now())
+  Encrypted_vote String   @db.Text
 
   student   STUDENT   @relation(fields: [Std_id], references: [Std_id])
   candidate CANDIDATE @relation(fields: [Can_id], references: [Can_id])
   election  ELECTION  @relation(fields: [Election_id], references: [Election_id])
 
-  @@unique([Std_id, Election_id])
+  @@unique([Std_id, Election_id, Can_id])
+  @@index([Std_id, Election_id])
 }
 
 model RESULT {

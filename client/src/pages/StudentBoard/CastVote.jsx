@@ -1,148 +1,573 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { CheckCircleIcon, XCircleIcon, LockClosedIcon, ShieldCheckIcon } from "@heroicons/react/24/solid";
+import VoteAPI from "../../utils/voteAPI";
+import toast from "react-hot-toast";
 
 const CastVote = () => {
-  // TODO: Replace with API calls:
-  // 1. GET /api/election/ongoing - Fetch ongoing election with candidates
-  // 2. POST /api/vote/cast - Submit vote for selected candidate
-  // 3. GET /api/vote/status - Check if user has already voted
-  
-  // Sample data for a single election (for demonstration only)
-  const election = {
-    id: 1,
-    title: "Student Council Election",
-    candidates: [
-      {
-        id: 1,
-        name: "Aarav Mehta",
-        scholarId: "20210123",
-        branch: "CSE",
-        year: "3rd Year",
-        photo: "https://randomuser.me/api/portraits/men/32.jpg",
-        manifesto: "/sample-manifesto.pdf",
-      },
-      {
-        id: 2,
-        name: "Priya Sharma",
-        scholarId: "20210456",
-        branch: "ECE",
-        year: "2nd Year",
-        photo: "https://randomuser.me/api/portraits/women/45.jpg",
-        manifesto: "/sample-manifesto.pdf",
-      },
-      {
-        id: 3,
-        name: "Anshika Reddy",
-        scholarId: "20210912",
-        branch: "CSE",
-        year: "2nd Year",
-        photo: "https://randomuser.me/api/portraits/women/30.jpg",
-        manifesto: "/sample-manifesto.pdf",
-      },
-    ],
+  const [step, setStep] = useState("elections"); // elections, otp-request, otp-verify, ballot, confirmation
+  const [elections, setElections] = useState([]);
+  const [selectedElection, setSelectedElection] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [otp, setOtp] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [ballot, setBallot] = useState(null);
+  const [selectedVotes, setSelectedVotes] = useState({});
+  const [publicKey, setPublicKey] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [voteReceipts, setVoteReceipts] = useState(null);
+  const [otpTimer, setOtpTimer] = useState(0);
+
+  useEffect(() => {
+    fetchOngoingElections();
+  }, []);
+
+  useEffect(() => {
+    if (otpTimer > 0) {
+      const timer = setTimeout(() => setOtpTimer(otpTimer - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [otpTimer]);
+
+  const fetchOngoingElections = async () => {
+    try {
+      setLoading(true);
+      const { response, data } = await VoteAPI.getOngoingElections();
+      
+      if (response.ok) {
+        setElections(data.elections || []);
+      } else {
+        toast.error(data.message || "Failed to fetch elections");
+      }
+    } catch (error) {
+      console.error("Error fetching elections:", error);
+      toast.error("Failed to load elections");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const [hasVoted, setHasVoted] = useState(false);
-  const [selectedCandidate, setSelectedCandidate] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-
-  const handleVoteClick = (candidate) => {
-    setSelectedCandidate(candidate);
-    setShowModal(true);
+  const handleElectionSelect = (election) => {
+    if (election.hasVoted) {
+      toast.error("You have already voted in this election");
+      return;
+    }
+    setSelectedElection(election);
+    setStep("otp-request");
   };
 
-  const confirmVote = () => {
-    setHasVoted(true);
-    setShowModal(false);
+  const requestOTP = async () => {
+    try {
+      setOtpLoading(true);
+      const { response, data } = await VoteAPI.requestVotingOTP(selectedElection.Election_id);
+      
+      if (response.ok) {
+        toast.success(data.message);
+        setOtpTimer(data.expiresIn || 600);
+        setStep("otp-verify");
+      } else {
+        toast.error(data.message || "Failed to send OTP");
+      }
+    } catch (error) {
+      console.error("Error requesting OTP:", error);
+      toast.error("Failed to send OTP");
+    } finally {
+      setOtpLoading(false);
+    }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6 ">
-        <div className="mt-20 max-w-6xl mx-auto mb-18">
-      <h1 className="text-4xl font-bold text-indigo-600 text-center">
-        {election.title}
-      </h1>
-      <p className="text-center text-gray-600 mt-2 px-5">
-        Cast your vote for the candidate you think will best lead and represent your college community.
-      </p>
+  const verifyOTP = async () => {
+    if (!otp || otp.length !== 6) {
+      toast.error("Please enter a valid 6-digit OTP");
+      return;
+    }
 
-      {hasVoted && (
-        <div className="mt-6 p-4 bg-green-100 text-green-800 rounded-lg font-medium text-center">
-          You have voted for <strong>{selectedCandidate.name}</strong>. You cannot vote again.
-        </div>
-      )}
+    try {
+      setOtpLoading(true);
+      const { response, data } = await VoteAPI.verifyOTP(selectedElection.Election_id, otp);
+      
+      if (response.ok) {
+        toast.success("OTP verified successfully");
+        await loadBallotAndPublicKey();
+      } else {
+        toast.error(data.message || "Invalid OTP");
+      }
+    } catch (error) {
+      console.error("Error verifying OTP:", error);
+      toast.error("OTP verification failed");
+    } finally {
+      setOtpLoading(false);
+    }
+  };
 
-      {/* Candidate Cards */}
-      <div className="flex flex-wrap justify-start gap-6 mt-8">
-        {election.candidates.map((candidate) => (
-          <div
-            key={candidate.id}
-            className="bg-white rounded-2xl pb-5 overflow-hidden border border-gray-300 shadow-sm hover:shadow-md transition-shadow w-64"
-          >
-            <img
-              className="w-64 h-52 object-cover object-top"
-              src={candidate.photo}
-              alt={candidate.name}
-            />
+  const loadBallotAndPublicKey = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch ballot and public key in parallel
+      const [ballotResult, keyResult] = await Promise.all([
+        VoteAPI.getBallot(selectedElection.Election_id),
+        VoteAPI.getElectionPublicKey(selectedElection.Election_id)
+      ]);
 
-            <div className="flex flex-col items-center px-3">
-              <p className="font-semibold mt-3 text-gray-800">{candidate.name}</p>
-              <p className="text-gray-500 text-sm">
-                Scholar ID: {candidate.scholarId}
-              </p>
-              <p className="text-gray-500 text-sm">
-                {candidate.branch} • {candidate.year}
-              </p>
+      if (ballotResult.response.ok && keyResult.response.ok) {
+        setBallot(ballotResult.data);
+        setPublicKey(keyResult.data.publicKey);
+        setStep("ballot");
+      } else {
+        toast.error("Failed to load ballot");
+      }
+    } catch (error) {
+      console.error("Error loading ballot:", error);
+      toast.error("Failed to load ballot");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-              <a
-                href={candidate.manifesto}
-                download
-                className="border text-sm text-gray-600 border-gray-400 w-28 h-8 rounded-full mt-4 flex items-center justify-center hover:bg-gray-100 transition"
-              >
-                Manifesto
-              </a>
+  const handleVoteSelection = (position, candidateId) => {
+    setSelectedVotes({
+      ...selectedVotes,
+      [position]: candidateId
+    });
+  };
 
-              <button
-                onClick={() => handleVoteClick(candidate)}
-                className={`mt-3 bg-indigo-600 text-white w-28 h-10 rounded-full hover:bg-indigo-700 transition ${
-                  hasVoted ? "opacity-50 cursor-not-allowed" : ""
-                }`}
-                disabled={hasVoted}
-              >
-                Vote
-              </button>
-            </div>
-          </div>
-        ))}
+  const submitVote = async () => {
+    // Check if all positions have been voted for
+    const positions = Object.keys(ballot.positions);
+    const votedPositions = Object.keys(selectedVotes);
+
+    if (votedPositions.length !== positions.length) {
+      toast.error("Please vote for all positions");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      
+      // Encrypt votes
+      const encryptedVotes = {};
+      for (const [position, candidateId] of Object.entries(selectedVotes)) {
+        const encryptedVote = await VoteAPI.encryptVote(candidateId, publicKey);
+        encryptedVotes[position] = {
+          candidateId,
+          encryptedVote
+        };
+      }
+
+      // Submit encrypted votes
+      const { response, data } = await VoteAPI.castVote(selectedElection.Election_id, encryptedVotes);
+
+      if (response.ok) {
+        toast.success("Vote cast successfully!");
+        setVoteReceipts(data.receipts);
+        setStep("confirmation");
+      } else {
+        toast.error(data.message || "Failed to cast vote");
+      }
+    } catch (error) {
+      console.error("Error casting vote:", error);
+      toast.error("Failed to cast vote");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const resetVoting = () => {
+    setStep("elections");
+    setSelectedElection(null);
+    setOtp("");
+    setBallot(null);
+    setSelectedVotes({});
+    setPublicKey(null);
+    setVoteReceipts(null);
+    fetchOngoingElections();
+  };
+
+  // Step 1: Elections List
+  const renderElectionsList = () => (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="max-w-4xl mx-auto"
+    >
+      <div className="text-center mb-8">
+        <h1 className="text-4xl font-bold text-indigo-600 mb-2">Cast Your Vote</h1>
+        <p className="text-gray-600">Select an election to participate in</p>
       </div>
 
-      {/* Confirmation Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-white/30 bg-opacity-40 flex justify-center items-center z-50 backdrop-blur-sm">
-          <div className="bg-white rounded-lg p-6 w-96 shadow-lg">
-            <h2 className="text-xl font-bold text-indigo-600 mb-4">
-              Confirm Your Vote
-            </h2>
-            <p className="mb-4">
-              Are you sure you want to vote for{" "}
-              <strong>{selectedCandidate.name}</strong>? You cannot change your choice later.
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      ) : elections.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-gray-500 text-lg">No ongoing elections available</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {elections.map((election, index) => (
+            <motion.div
+              key={election.Election_id}
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: index * 0.1 }}
+              className={`bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow ${
+                election.hasVoted ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
+              }`}
+              onClick={() => !election.hasVoted && handleElectionSelect(election)}
+            >
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-2">{election.Title}</h3>
+                  <div className="space-y-1 text-sm text-gray-600">
+                    <p>📅 Ends: {new Date(election.End_date).toLocaleString()}</p>
+                    <p>👥 {election.candidateCount} candidates across {election.positions.length} positions</p>
+                    <p>📋 Positions: {election.positions.join(", ")}</p>
+                  </div>
+                </div>
+                <div>
+                  {election.hasVoted ? (
+                    <div className="flex items-center gap-2 text-green-600 bg-green-50 px-4 py-2 rounded-full">
+                      <CheckCircleIcon className="w-5 h-5" />
+                      <span className="font-medium">Voted</span>
+                    </div>
+                  ) : (
+                    <div className="bg-indigo-600 text-white px-6 py-2 rounded-full hover:bg-indigo-700 transition">
+                      Vote Now
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
+    </motion.div>
+  );
+
+  // Step 2: OTP Request
+  const renderOTPRequest = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="max-w-md mx-auto"
+    >
+      <div className="bg-white rounded-2xl p-8 shadow-xl">
+        <div className="text-center mb-6">
+          <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <ShieldCheckIcon className="w-10 h-10 text-indigo-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Verify Your Identity</h2>
+          <p className="text-gray-600">
+            We'll send a One-Time Password (OTP) to your registered email address
+          </p>
+        </div>
+
+        <div className="bg-indigo-50 rounded-xl p-4 mb-6">
+          <h3 className="font-semibold text-indigo-900 mb-2">{selectedElection?.Title}</h3>
+          <p className="text-sm text-indigo-700">
+            {selectedElection?.positions.length} positions • {selectedElection?.candidateCount} candidates
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          <button
+            onClick={requestOTP}
+            disabled={otpLoading}
+            className="w-full bg-indigo-600 text-white py-3 rounded-xl font-medium hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {otpLoading ? (
+              <span className="flex items-center justify-center">
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                Sending OTP...
+              </span>
+            ) : (
+              "Send OTP"
+            )}
+          </button>
+
+          <button
+            onClick={() => setStep("elections")}
+            className="w-full bg-gray-200 text-gray-700 py-3 rounded-xl font-medium hover:bg-gray-300 transition"
+          >
+            Back to Elections
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+
+  // Step 3: OTP Verification
+  const renderOTPVerification = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="max-w-md mx-auto"
+    >
+      <div className="bg-white rounded-2xl p-8 shadow-xl">
+        <div className="text-center mb-6">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <LockClosedIcon className="w-10 h-10 text-green-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Enter OTP</h2>
+          <p className="text-gray-600">
+            We've sent a 6-digit code to your email
+          </p>
+          {otpTimer > 0 && (
+            <p className="text-sm text-indigo-600 mt-2">
+              Code expires in {Math.floor(otpTimer / 60)}:{(otpTimer % 60).toString().padStart(2, '0')}
             </p>
-            <div className="flex justify-end space-x-4">
-              <button
-                onClick={() => setShowModal(false)}
-                className="px-4 py-2 rounded-full bg-gray-200 hover:bg-gray-300 transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmVote}
-                className="px-4 py-2 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 transition"
-              >
-                Confirm
-              </button>
+          )}
+        </div>
+
+        <div className="mb-6">
+          <input
+            type="text"
+            maxLength={6}
+            value={otp}
+            onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+            placeholder="Enter 6-digit OTP"
+            className="w-full text-center text-3xl font-bold tracking-widest border-2 border-gray-300 rounded-xl px-4 py-4 focus:outline-none focus:border-indigo-600"
+          />
+        </div>
+
+        <div className="space-y-4">
+          <button
+            onClick={verifyOTP}
+            disabled={otpLoading || otp.length !== 6}
+            className="w-full bg-indigo-600 text-white py-3 rounded-xl font-medium hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {otpLoading ? (
+              <span className="flex items-center justify-center">
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                Verifying...
+              </span>
+            ) : (
+              "Verify & Continue"
+            )}
+          </button>
+
+          <button
+            onClick={requestOTP}
+            disabled={otpLoading || otpTimer > 540}
+            className="w-full bg-gray-200 text-gray-700 py-3 rounded-xl font-medium hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Resend OTP
+          </button>
+
+          <button
+            onClick={() => {
+              setStep("elections");
+              setOtp("");
+            }}
+            className="w-full text-gray-600 py-2 text-sm hover:text-gray-800 transition"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+
+  // Step 4: Ballot
+  const renderBallot = () => (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="max-w-6xl mx-auto"
+    >
+      <div className="bg-white rounded-2xl p-6 shadow-xl mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800">{ballot?.election.Title}</h2>
+            <p className="text-gray-600">Select one candidate for each position</p>
+          </div>
+          <div className="text-right">
+            <div className="flex items-center gap-2 text-green-600">
+              <ShieldCheckIcon className="w-5 h-5" />
+              <span className="text-sm font-medium">Verified</span>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">End-to-end encrypted</p>
+          </div>
+        </div>
+
+        <div className="bg-indigo-50 rounded-xl p-4">
+          <p className="text-sm text-indigo-800">
+            <strong>Privacy Notice:</strong> Your votes are encrypted on your device before being sent. 
+            Only you know who you voted for until results are decrypted by election administrators.
+          </p>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      ) : (
+        <div className="space-y-8">
+          {Object.entries(ballot?.positions || {}).map(([position, candidates]) => (
+            <div key={position} className="bg-white rounded-2xl p-6 shadow-md">
+              <h3 className="text-xl font-bold text-gray-800 mb-4 pb-2 border-b-2 border-indigo-200">
+                {position}
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {candidates.map((candidate) => (
+                  <motion.div
+                    key={candidate.Can_id}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className={`relative border-2 rounded-xl p-4 cursor-pointer transition ${
+                      selectedVotes[position] === candidate.Can_id
+                        ? "border-indigo-600 bg-indigo-50"
+                        : "border-gray-300 hover:border-indigo-400"
+                    }`}
+                    onClick={() => handleVoteSelection(position, candidate.Can_id)}
+                  >
+                    {selectedVotes[position] === candidate.Can_id && (
+                      <div className="absolute top-2 right-2">
+                        <CheckCircleIcon className="w-6 h-6 text-indigo-600" />
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-4">
+                      {candidate.profileImage ? (
+                        <img
+                          src={candidate.profileImage}
+                          alt={candidate.Can_name}
+                          className="w-16 h-16 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
+                          <span className="text-2xl font-bold text-gray-500">
+                            {candidate.Can_name.charAt(0)}
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-800">{candidate.Can_name}</h4>
+                        <p className="text-sm text-gray-600">{candidate.Branch} • Year {candidate.Year}</p>
+                        <p className="text-xs text-gray-500">CGPA: {candidate.Cgpa}</p>
+                      </div>
+                    </div>
+
+                    {candidate.Manifesto && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <p className="text-sm text-gray-700 line-clamp-2">{candidate.Manifesto}</p>
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          <div className="sticky bottom-0 bg-white rounded-2xl p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-sm text-gray-600">
+                  Selected {Object.keys(selectedVotes).length} of {Object.keys(ballot?.positions || {}).length} positions
+                </p>
+              </div>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => {
+                    setStep("elections");
+                    setSelectedVotes({});
+                  }}
+                  className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-300 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitVote}
+                  disabled={submitting || Object.keys(selectedVotes).length !== Object.keys(ballot?.positions || {}).length}
+                  className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? (
+                    <span className="flex items-center">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Submitting...
+                    </span>
+                  ) : (
+                    "Submit Vote"
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
+    </motion.div>
+  );
+
+  // Step 5: Confirmation
+  const renderConfirmation = () => (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="max-w-2xl mx-auto"
+    >
+      <div className="bg-white rounded-2xl p-8 shadow-xl text-center">
+        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <CheckCircleIcon className="w-14 h-14 text-green-600" />
+        </div>
+
+        <h2 className="text-3xl font-bold text-gray-800 mb-2">Vote Cast Successfully!</h2>
+        <p className="text-gray-600 mb-8">
+          Your vote has been encrypted and recorded. Here are your vote receipts:
+        </p>
+
+        <div className="bg-gray-50 rounded-xl p-6 mb-8">
+          <h3 className="font-semibold text-gray-800 mb-4">Vote Receipts</h3>
+          <div className="space-y-4">
+            {voteReceipts?.map((receipt, index) => (
+              <div key={index} className="bg-white rounded-lg p-4 border border-gray-200">
+                <div className="flex justify-between items-start mb-2">
+                  <span className="font-medium text-gray-700">{receipt.position}</span>
+                  <span className="text-xs text-gray-500">
+                    {new Date(receipt.timestamp).toLocaleString()}
+                  </span>
+                </div>
+                <div className="bg-gray-100 rounded p-2 mt-2">
+                  <p className="text-xs font-mono text-gray-600 break-all">
+                    {receipt.receiptHash}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-indigo-50 rounded-xl p-4 mb-6">
+          <p className="text-sm text-indigo-800">
+            <strong>Important:</strong> Save these receipt hashes. They can be used to verify that your vote 
+            was counted after the election results are published.
+          </p>
+        </div>
+
+        <button
+          onClick={resetVoting}
+          className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition"
+        >
+          Back to Elections
+        </button>
+      </div>
+    </motion.div>
+  );
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6">
+      <div className="mt-20 mb-18">
+        <AnimatePresence mode="wait">
+          {step === "elections" && renderElectionsList()}
+          {step === "otp-request" && renderOTPRequest()}
+          {step === "otp-verify" && renderOTPVerification()}
+          {step === "ballot" && renderBallot()}
+          {step === "confirmation" && renderConfirmation()}
+        </AnimatePresence>
       </div>
     </div>
   );

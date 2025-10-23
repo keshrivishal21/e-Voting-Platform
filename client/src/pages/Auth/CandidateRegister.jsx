@@ -24,6 +24,7 @@ const CandidateRegister = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedProfile, setSelectedProfile] = useState(null);
   const [elections, setElections] = useState([]);
 
   const branches = [
@@ -121,7 +122,34 @@ const CandidateRegister = () => {
       }
 
       setSelectedFile(file);
-      toast.success("📄 File uploaded successfully");
+      toast.success("📄 Document uploaded successfully");
+      if (error) setError("");
+    }
+  };
+
+  const handleProfileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file size (2MB limit for images)
+      if (file.size > 2 * 1024 * 1024) {
+        const errorMsg = "Profile picture size should not exceed 2MB";
+        setError(errorMsg);
+        toast.error(errorMsg);
+        return;
+      }
+
+      // Validate file type (only images)
+      const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
+
+      if (!allowedTypes.includes(file.type)) {
+        const errorMsg = "Only JPEG, JPG, and PNG images are allowed for profile picture";
+        setError(errorMsg);
+        toast.error(errorMsg);
+        return;
+      }
+
+      setSelectedProfile(file);
+      toast.success("📷 Profile picture uploaded successfully");
       if (error) setError("");
     }
   };
@@ -142,6 +170,7 @@ const CandidateRegister = () => {
         "position",
         "branch",
         "year",
+        "electionId",
       ];
       const missingFields = requiredFields.filter(
         (field) => !formData[field].trim()
@@ -155,9 +184,18 @@ const CandidateRegister = () => {
         return;
       }
 
+      // Validate election selection specifically
+      if (!formData.electionId) {
+        const errorMsg = "Please select an election to contest";
+        setError(errorMsg);
+        toast.error(errorMsg);
+        setLoading(false);
+        return;
+      }
+
       // Validate file upload
       if (!selectedFile) {
-        const errorMsg = "Please upload a document file";
+        const errorMsg = "Please upload a document file (marksheet)";
         setError(errorMsg);
         toast.error(errorMsg);
         setLoading(false);
@@ -178,6 +216,11 @@ const CandidateRegister = () => {
         formDataToSend.append(key, formData[key]);
       });
       formDataToSend.append("document", selectedFile);
+      
+      // Add profile picture if selected (optional)
+      if (selectedProfile) {
+        formDataToSend.append("profile", selectedProfile);
+      }
 
       const { response, data } = await AuthAPI.candidateRegister(
         formDataToSend
@@ -369,17 +412,26 @@ const CandidateRegister = () => {
                   name="electionId"
                   value={formData.electionId}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                  className={`w-full px-4 py-3 bg-white border ${!formData.electionId && error ? 'border-red-300' : 'border-gray-200'} rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200`}
                   required
                   disabled={loading}
                 >
-                  <option value="">Select Election</option>
-                  {elections.map((election) => (
-                    <option key={election.Election_id} value={election.Election_id}>
-                      {election.Title}
-                    </option>
-                  ))}
+                  <option value="">Select Election (Required)</option>
+                  {elections.length === 0 ? (
+                    <option value="" disabled>No elections available</option>
+                  ) : (
+                    elections.map((election) => (
+                      <option key={election.Election_id} value={election.Election_id}>
+                        {election.Title} - {election.Status}
+                      </option>
+                    ))
+                  )}
                 </select>
+                {elections.length === 0 && (
+                  <p className="mt-1 text-xs text-red-500">
+                    No upcoming elections available. Please contact admin.
+                  </p>
+                )}
               </div>
 
               <div>
@@ -423,7 +475,7 @@ const CandidateRegister = () => {
             {/* Document Upload */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Last Year Marksheet
+                Last Year Marksheet *
               </label>
               <div className="relative">
                 <input
@@ -443,6 +495,31 @@ const CandidateRegister = () => {
               </div>
               <p className="mt-1 text-xs text-gray-500">
                 Upload PDF, DOC, DOCX, JPG, JPEG, or PNG files (Max: 5MB)
+              </p>
+            </div>
+
+            {/* Profile Picture Upload */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Profile Picture (Optional)
+              </label>
+              <div className="relative">
+                <input
+                  type="file"
+                  onChange={handleProfileChange}
+                  accept=".jpg,.jpeg,.png"
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+                  disabled={loading}
+                />
+                {selectedProfile && (
+                  <div className="mt-2 text-sm text-green-600">
+                    Selected: {selectedProfile.name} (
+                    {Math.round(selectedProfile.size / 1024)} KB)
+                  </div>
+                )}
+              </div>
+              <p className="mt-1 text-xs text-gray-500">
+                Upload JPG, JPEG, or PNG image (Max: 2MB)
               </p>
             </div>
 
@@ -484,7 +561,7 @@ const CandidateRegister = () => {
             {/* Submit Button */}
             <motion.button
               type="submit"
-              disabled={loading}
+              disabled={loading || !formData.electionId || elections.length === 0}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
@@ -494,10 +571,17 @@ const CandidateRegister = () => {
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
                   Registering...
                 </div>
+              ) : !formData.electionId ? (
+                "Select an Election to Continue"
               ) : (
                 "Register as Candidate"
               )}
             </motion.button>
+            {!formData.electionId && !loading && (
+              <p className="mt-2 text-sm text-center text-red-500">
+                ⚠️ Please select an election before registering
+              </p>
+            )}
           </form>
 
           <motion.div 

@@ -46,7 +46,10 @@ router.post("/candidate/login", candidateLogin); // Candidate-specific login
 
 // Registration Routes
 router.post("/student/register", studentRegister); // Student registration
-router.post("/candidate/register", upload.single('document'), candidateRegister); // Candidate registration with file upload
+router.post("/candidate/register", upload.fields([
+  { name: 'document', maxCount: 1 },
+  { name: 'profile', maxCount: 1 }
+]), candidateRegister); // Candidate registration with file uploads
 
 // Forgot Password Routes
 router.post("/student/forgot-password", requestStudentPasswordReset); // Request student password reset

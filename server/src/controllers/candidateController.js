@@ -318,7 +318,7 @@ export const getApprovedCandidates = async (req, res) => {
         cgpa: candidate.Cgpa,
         position: candidate.Position,
         manifesto: candidate.Manifesto, // This is text, not a URL
-        photo: null, // No photo field in database yet
+        photo: candidate.Profile ? `data:image/jpeg;base64,${candidate.Profile.toString('base64')}` : null, // Convert profile picture to base64
       });
     });
 
