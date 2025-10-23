@@ -38,7 +38,6 @@ const Profile = () => {
         }).join(''));
         
         const decoded = JSON.parse(jsonPayload);
-        console.log('Decoded token:', decoded); // Debug log
         
         if (decoded.userId) {
           setCurrentStudentId(decoded.userId);

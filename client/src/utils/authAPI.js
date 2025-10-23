@@ -354,6 +354,33 @@ class AuthAPI {
       throw new Error(`Network error: ${error.message}`);
     }
   }
+
+  // Submit feedback (Candidate)
+  static async submitCandidateFeedback(feedbackText) {
+    try {
+      const token = this.getCurrentToken();
+      
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      const response = await fetch(`${API_BASE_URL}/feedback/candidate/feedbacks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ 
+          feedbackText 
+        })
+      });
+
+      const data = await response.json();
+      return { response, data };
+    } catch (error) {
+      throw new Error(`Network error: ${error.message}`);
+    }
+  }
 }
 
 export default AuthAPI;

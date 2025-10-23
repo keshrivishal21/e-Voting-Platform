@@ -337,7 +337,7 @@ const CandidateProfile = () => {
                 {/* Phone Number - EDITABLE */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    Phone Number * <span className="text-purple-600 text-xs">(Editable)</span>
+                    Phone Number *
                   </label>
                   <div className="relative">
                     <PhoneIcon className="h-5 w-5 text-purple-600 absolute left-4 top-4" />
@@ -425,7 +425,7 @@ const CandidateProfile = () => {
               {/* Manifesto - EDITABLE */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-3">
-                  Manifesto * <span className="text-purple-600 text-xs">(Editable)</span>
+                  Manifesto *
                 </label>
                 <div className="relative">
                   <DocumentTextIcon className="h-5 w-5 text-purple-600 absolute left-4 top-4" />

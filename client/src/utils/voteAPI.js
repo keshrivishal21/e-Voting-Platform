@@ -183,13 +183,26 @@ class VoteAPI {
   // Encrypt vote using public key (RSA encryption)
   static async encryptVote(candidateId, publicKey) {
     try {
-      // Convert the PEM public key to a format usable by WebCrypto
+      
+      // Remove PEM headers and footers, and all whitespace
       const pemHeader = "-----BEGIN PUBLIC KEY-----";
       const pemFooter = "-----END PUBLIC KEY-----";
-      const pemContents = publicKey.substring(
-        pemHeader.length,
-        publicKey.length - pemFooter.length
-      ).replace(/\s/g, '');
+      
+      // Clean the public key string
+      let cleanKey = publicKey.trim();
+      
+      // Remove headers if present
+      if (cleanKey.includes(pemHeader)) {
+        cleanKey = cleanKey.replace(pemHeader, '');
+      }
+      if (cleanKey.includes(pemFooter)) {
+        cleanKey = cleanKey.replace(pemFooter, '');
+      }
+      
+      // Remove all whitespace (spaces, newlines, tabs, etc.)
+      const pemContents = cleanKey.replace(/\s/g, '');
+      
+     
       
       // Convert base64 to ArrayBuffer
       const binaryDer = atob(pemContents);
@@ -197,6 +210,8 @@ class VoteAPI {
       for (let i = 0; i < binaryDer.length; i++) {
         binaryDerArray[i] = binaryDer.charCodeAt(i);
       }
+
+      
 
       // Import the public key
       const cryptoKey = await window.crypto.subtle.importKey(
@@ -209,6 +224,7 @@ class VoteAPI {
         false,
         ['encrypt']
       );
+
 
       // Encrypt the candidate ID
       const encoder = new TextEncoder();

@@ -284,7 +284,7 @@ const StudentManagement = () => {
 
       {/* Student Details Modal */}
       {showDetailsModal && selectedStudent && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-opacity-20 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b-2 border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
@@ -373,16 +373,14 @@ const StudentManagement = () => {
                             <h4 className="font-bold text-lg text-gray-900 mb-2">{vote.election.title}</h4>
                             <div className="space-y-1">
                               <p className="text-sm text-gray-600">
-                                Voted for: <span className="font-semibold text-green-700">{vote.candidate.name}</span>
+                                Status: <span className="font-semibold text-green-700">Vote Cast Successfully</span>
                               </p>
-                              <p className="text-sm text-gray-600">
-                                Position: <span className="font-semibold text-gray-900">{vote.candidate.position}</span>
-                              </p>
+                              
                             </div>
                           </div>
                           <div className="text-right">
                             <span className="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
-                              Voted
+                              Participated
                             </span>
                             <p className="text-xs text-gray-500 mt-2">{formatDateTime(vote.voteTime)}</p>
                           </div>

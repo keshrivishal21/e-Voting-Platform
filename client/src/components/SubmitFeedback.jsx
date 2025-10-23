@@ -11,8 +11,6 @@ export default function SubmitFeedback({ onSubmit }) {
     try {
       if (onSubmit) {
         await onSubmit(feedback);
-      } else {
-        console.log("Feedback submitted:", feedback);
       }
       setFeedback("");
     } catch (error) {

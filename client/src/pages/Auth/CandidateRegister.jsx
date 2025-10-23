@@ -47,13 +47,10 @@ const CandidateRegister = () => {
   useEffect(() => {
     const fetchElections = async () => {
       try {
-        console.log("Fetching elections from: http://localhost:5000/api/election/public/elections?status=Upcoming");
         const response = await AuthAPI.getPublicElections();
-        console.log("Elections API response:", response);
         
         if (response && response.success) {
           const electionsList = response.data?.elections || [];
-          console.log("Elections list:", electionsList);
           setElections(electionsList);
           
           if (electionsList.length === 0) {

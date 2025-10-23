@@ -1,8 +1,74 @@
 import React from "react";
 import { useState } from "react";
+import toast from "react-hot-toast";
 
-const Testimonials = () => {
-  const [showModal,setShowModal]=useState(false);
+const Testimonials = ({ userType = "Student" }) => {
+  const [showModal, setShowModal] = useState(false);
+  const [feedbackText, setFeedbackText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  // Get user ID from JWT token based on userType
+  const getUserIdFromToken = () => {
+    try {
+      const tokenKey = userType === "Student" ? "studentToken" : "candidateToken";
+      const token = localStorage.getItem(tokenKey);
+      if (!token) return null;
+      
+      const payload = token.split('.')[1];
+      const decodedPayload = JSON.parse(atob(payload));
+      return decodedPayload.userId;
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      return null;
+    }
+  };
+
+  // Submit feedback to API
+  const handleSubmitFeedback = async () => {
+    if (!feedbackText.trim()) {
+      toast.error("Please enter your feedback");
+      return;
+    }
+
+    const userId = getUserIdFromToken();
+    if (!userId) {
+      toast.error("Please login to submit feedback");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const tokenKey = userType === "Student" ? "studentToken" : "candidateToken";
+      const token = localStorage.getItem(tokenKey);
+      const endpoint = userType === "Student" 
+        ? "http://localhost:5000/api/feedback/feedbacks"
+        : "http://localhost:5000/api/feedback/candidate/feedbacks";
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ feedbackText })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast.success("Feedback submitted successfully!");
+        setFeedbackText("");
+        setShowModal(false);
+      } else {
+        toast.error(data.message || "Failed to submit feedback");
+      }
+    } catch (error) {
+      console.error("Error submitting feedback:", error);
+      toast.error("Failed to submit feedback. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
   
   // Static testimonial data for demonstration
   // TODO: Replace with API call to fetch real testimonials from database
@@ -75,10 +141,10 @@ const Testimonials = () => {
     <section className="bg-gradient-to-b from-[#E6EFFF] via-[#fffbee] to-[#F5F7FF] py-36">
       <div className="max-w-6xl mx-auto px-6">
         <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-800">
-          What Students Say
+          What {userType === "Student" ? "Students" : "Candidates"} Say
         </h2>
         <p className="text-gray-600 text-center mt-3 max-w-2xl mx-auto">
-          Hear from students who used our platform to vote and stay engaged with
+          Hear from {userType === "Student" ? "students" : "candidates"} who used our platform to {userType === "Student" ? "vote" : "contest"} and stay engaged with
           their campus elections.
         </p>
 
@@ -123,28 +189,54 @@ const Testimonials = () => {
 </button>
 
 {showModal && (
-        <div className="fixed inset-0 bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowModal(false)}>
+        <div className="fixed inset-0 bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => {
+          setShowModal(false);
+          setFeedbackText("");
+        }}>
           <div className="bg-white rounded-2xl w-96 p-6 relative" onClick={(e)=>e.stopPropagation()}>
             <button
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-800 font-bold text-xl"
-              onClick={() => setShowModal(false)}
+              onClick={() => {
+                setShowModal(false);
+                setFeedbackText("");
+              }}
             >
               &times;
             </button>
             <h3 className="text-xl font-semibold mb-4">Submit Your Feedback</h3>
             <textarea
-              className="w-full h-32 border border-gray-300 rounded-md p-2 mb-4"
-              placeholder="Write your feedback here..."
+              className="w-full h-32 border border-gray-300 rounded-md p-2 mb-4 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="Share your thoughts, suggestions, or concerns about the e-voting platform..."
+              value={feedbackText}
+              onChange={(e) => setFeedbackText(e.target.value)}
+              disabled={submitting}
             ></textarea>
-            <button
-              className="bg-indigo-500 text-white font-medium py-2 px-4 rounded-xl hover:bg-indigo-600 transition-colors"
-              onClick={() => {
-                alert("Feedback submitted!");
-                setShowModal(false);
-              }}
-            >
-              Submit
-            </button>
+            <div className="flex justify-end gap-3">
+              <button
+                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition"
+                onClick={() => {
+                  setShowModal(false);
+                  setFeedbackText("");
+                }}
+                disabled={submitting}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-6 py-2 bg-indigo-500 text-white rounded-xl hover:bg-indigo-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                onClick={handleSubmitFeedback}
+                disabled={submitting}
+              >
+                {submitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit"
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

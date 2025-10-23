@@ -116,3 +116,40 @@ export const getCandidateStatus = async (candidateId) => {
     throw error;
   }
 };
+
+/**
+ * Get total vote count for the election a candidate is registered in
+ * @param {number} candidateId - The ID of the candidate
+ * @returns {Promise} Response with election vote count
+ */
+export const getElectionVoteCount = async (candidateId) => {
+  try {
+    const token = localStorage.getItem("candidateToken");
+    
+    if (!token) {
+      throw new Error("No candidate authentication token found");
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/candidate/candidates/${candidateId}/election-votes`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to fetch election vote count");
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Error fetching election vote count:", error);
+    throw error;
+  }
+};

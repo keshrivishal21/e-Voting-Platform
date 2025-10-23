@@ -19,10 +19,7 @@ const CandidateList = () => {
         setLoading(true);
         const response = await getApprovedCandidates();
         
-        console.log("API Response:", response); // Debug log
-        
         if (response.success) {
-          console.log("Elections data:", response.data.elections); // Debug log
           setElections(response.data.elections);
           if (response.data.elections.length > 0) {
             toast.success(`Loaded ${response.data.elections.length} election(s) with candidates`);
@@ -183,7 +180,7 @@ const CandidateList = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            className="fixed inset-0 bg-opacity-20 backdrop-blur-sm flex items-center justify-center p-4 z-50"
             onClick={() => {
               setShowManifestoModal(false);
               setSelectedCandidate(null);
