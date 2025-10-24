@@ -247,10 +247,21 @@ const getBallot = async (req, res) => {
         positions[candidate.Position] = [];
       }
       
-      // Convert profile picture buffer to base64 (use Profile field, fallback to Data for backward compatibility)
-      const imageBase64 = candidate.Profile ? 
-        `data:image/jpeg;base64,${candidate.Profile.toString('base64')}` : 
-        (candidate.Data ? `data:image/jpeg;base64,${candidate.Data.toString('base64')}` : null);
+      // Convert profile picture buffer to base64 with proper handling
+      let profileBase64 = null;
+      if (candidate.Profile) {
+        let profileBuffer = candidate.Profile;
+        
+        // Handle if Profile is already a Buffer object
+        if (profileBuffer instanceof Buffer) {
+          profileBase64 = `data:image/jpeg;base64,${profileBuffer.toString('base64')}`;
+        } 
+        // Handle if Profile is serialized as object with numeric keys
+        else if (typeof profileBuffer === 'object' && !Array.isArray(profileBuffer)) {
+          profileBuffer = Buffer.from(Object.values(profileBuffer));
+          profileBase64 = `data:image/jpeg;base64,${profileBuffer.toString('base64')}`;
+        }
+      }
 
       positions[candidate.Position].push({
         Can_id: candidate.Can_id.toString(),
@@ -261,7 +272,7 @@ const getBallot = async (req, res) => {
         Year: candidate.Year,
         Cgpa: candidate.Cgpa,
         Manifesto: candidate.Manifesto,
-        profileImage: imageBase64
+        profileImage: profileBase64
       });
     });
 
@@ -293,7 +304,7 @@ const castVote = async (req, res) => {
       return res.status(401).json({ message: 'OTP verification required' });
     }
 
-    // Check if student has already voted
+    // Check if student has already voted in this election
     const existingVote = await prisma.vOTE.findFirst({
       where: {
         Std_id: studentId,
@@ -318,18 +329,80 @@ const castVote = async (req, res) => {
       return res.status(400).json({ message: 'Election is not currently ongoing' });
     }
 
-    // Verify all candidates exist and are approved
+    // Verify all candidates exist, are approved, and belong to correct election
     const candidateIds = Object.values(encryptedVotes).map(v => BigInt(v.candidateId));
     const candidates = await prisma.cANDIDATE.findMany({
       where: {
         Can_id: { in: candidateIds },
         Election_id: electionIdInt,
         Status: 'Approved'
+      },
+      select: {
+        Can_id: true,
+        Position: true
       }
     });
 
     if (candidates.length !== candidateIds.length) {
       return res.status(400).json({ message: 'Invalid candidate selection' });
+    }
+
+    // Create a map of candidateId -> position for validation
+    const candidatePositionMap = new Map();
+    candidates.forEach(c => {
+      candidatePositionMap.set(c.Can_id.toString(), c.Position);
+    });
+
+    // Validate that each position has exactly one vote and matches candidate's position
+    const positionsVoted = new Set();
+    for (const [position, voteData] of Object.entries(encryptedVotes)) {
+      const candidateId = BigInt(voteData.candidateId);
+      const candidatePosition = candidatePositionMap.get(candidateId.toString());
+
+      // Check if candidate's actual position matches the position being voted for
+      if (candidatePosition !== position) {
+        return res.status(400).json({ 
+          message: `Candidate does not belong to position: ${position}` 
+        });
+      }
+
+      // Check for duplicate position voting
+      if (positionsVoted.has(position)) {
+        return res.status(400).json({ 
+          message: `Cannot vote for multiple candidates in the same position: ${position}` 
+        });
+      }
+
+      positionsVoted.add(position);
+    }
+
+    // Get all positions in this election to ensure all are voted
+    const allPositions = await prisma.cANDIDATE.findMany({
+      where: {
+        Election_id: electionIdInt,
+        Status: 'Approved'
+      },
+      select: {
+        Position: true
+      },
+      distinct: ['Position']
+    });
+
+    const requiredPositions = new Set(allPositions.map(p => p.Position));
+    
+    // Check if all positions have been voted for
+    if (requiredPositions.size !== positionsVoted.size) {
+      return res.status(400).json({ 
+        message: 'You must vote for all positions in this election' 
+      });
+    }
+
+    for (const position of requiredPositions) {
+      if (!positionsVoted.has(position)) {
+        return res.status(400).json({ 
+          message: `Missing vote for position: ${position}` 
+        });
+      }
     }
 
     // Store encrypted votes for each position
@@ -348,19 +421,40 @@ const castVote = async (req, res) => {
         }
       });
 
-      // Generate receipt hash
+      // Generate receipt hash with all critical information
       const receiptHash = crypto
         .createHash('sha256')
-        .update(`${vote.Vote_id}-${studentId}-${candidateId}-${electionIdInt}-${vote.Vote_time.toISOString()}`)
+        .update(`${vote.Vote_id}-${studentId}-${candidateId}-${electionIdInt}-${position}-${vote.Vote_time.toISOString()}`)
         .digest('hex');
+
+      // Save receipt in VOTE_RECEIPT table
+      const voteReceipt = await prisma.vOTE_RECEIPT.create({
+        data: {
+          Vote_id: vote.Vote_id,
+          Receipt_token: receiptHash,
+          Generated_at: new Date()
+        }
+      });
 
       voteReceipts.push({
         position,
         voteId: vote.Vote_id,
+        receiptId: voteReceipt.Receipt_id,
         receiptHash,
         timestamp: vote.Vote_time
       });
     }
+
+    // Create audit log for vote casting
+    await prisma.sYSTEM_LOGS.create({
+      data: {
+        User_id: studentId,
+        User_type: 'Student',
+        Log_time: new Date(),
+        Log_type: 'Audit',
+        Action: `Student cast ${voteReceipts.length} vote(s) in election ID ${electionIdInt} (${election.Title}). Positions: ${[...positionsVoted].join(', ')}`
+      }
+    });
 
     // Delete OTP after successful vote
     otpStore.delete(`${studentId}-${electionIdInt}`);

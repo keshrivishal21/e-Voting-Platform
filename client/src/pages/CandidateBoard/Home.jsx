@@ -63,6 +63,8 @@ const Home = () => {
           // Load election vote count
           try {
             const voteCountData = await getElectionVoteCount(candidateId);
+            console.log('Vote count data received:', voteCountData);
+            
             if (voteCountData.success) {
               setCandidate(prev => ({
                 ...prev,
@@ -72,9 +74,13 @@ const Home = () => {
                 studentsVoted: voteCountData.data.studentsVoted || 0,
                 totalStudents: voteCountData.data.totalStudents || 0,
               }));
+            } else {
+              console.error('Vote count API returned error:', voteCountData.message);
+              toast.error('Could not load election statistics');
             }
           } catch (voteError) {
             console.error('Error loading vote count:', voteError);
+            toast.error(`Failed to load election data: ${voteError.message}`);
             // Not a critical error, continue without vote count
           }
         } else {

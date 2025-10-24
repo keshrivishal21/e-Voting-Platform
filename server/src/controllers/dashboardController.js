@@ -5,8 +5,6 @@ const prisma = new PrismaClient();
 // Get dashboard statistics (Admin only)
 export const getDashboardStats = async (req, res) => {
   try {
-    console.log("Fetching dashboard stats...");
-    
     // Get counts for different entities
     const [
       totalStudents,
@@ -21,14 +19,6 @@ export const getDashboardStats = async (req, res) => {
       prisma.fEEDBACK.count(),
       prisma.eLECTION.count({ where: { Status: "Completed" } }),
     ]);
-
-    console.log("Dashboard Stats:", {
-      totalStudents,
-      activeElections,
-      pendingCandidates,
-      totalFeedbacks,
-      completedElections,
-    });
 
     // Get voting trends for the last 6 months
     const sixMonthsAgo = new Date();
@@ -102,7 +92,6 @@ export const getDashboardStats = async (req, res) => {
 // Get recent activity logs (Admin only)
 export const getRecentActivity = async (req, res) => {
   try {
-    console.log("Fetching recent activity...");
     const limit = parseInt(req.query.limit) || 20;
 
     const logs = await prisma.sYSTEM_LOGS.findMany({
@@ -116,8 +105,6 @@ export const getRecentActivity = async (req, res) => {
         },
       },
     });
-
-    console.log("Found logs:", logs.length);
 
     // Format logs for display
     const formattedLogs = logs.map((log) => {

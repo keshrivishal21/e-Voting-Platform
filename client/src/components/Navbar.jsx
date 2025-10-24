@@ -89,20 +89,20 @@ export default function Navbar() {
                 </Link>
               )}
 
-              {/* Profile Link */}
-              <Link
-                to={
-                  isStudent()
-                    ? "/student/profile"
-                    : isCandidate()
-                    ? "/candidate/profile"
-                    : "/admin/profile"
-                }
-                className="block px-4 py-2 text-gray-700 hover:bg-gray-50"
-                onClick={() => setMenuOpen(false)}
-              >
-                Edit Profile
-              </Link>
+              {/* Profile Link - only show for students/candidates */}
+              {(isStudent() || isCandidate()) && (
+                <Link
+                  to={
+                    isStudent()
+                      ? "/student/profile"
+                      : "/candidate/profile"
+                  }
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-50"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Edit Profile
+                </Link>
+              )}
 
               {/* Logout */}
               <button

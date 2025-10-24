@@ -7,8 +7,9 @@ import {
   getCandidateStatus,
   getApprovedCandidates,
   getCandidateDocument,
+  getElectionVoteCount,
 } from "../controllers/candidateController.js";
-import { verifyAdmin, verifyToken, verifyAdminForDocument } from "../middlewares/authMiddleware.js";
+import { verifyAdmin, verifyToken, verifyAdminForDocument, verifyCandidate } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
@@ -22,7 +23,8 @@ router.post("/admin/candidates/:candidateId/reject", verifyAdmin, rejectCandidat
 // Public routes - view approved candidates
 router.get("/candidates/approved", verifyToken, getApprovedCandidates);
 
-// Candidate routes - check own application status
+// Candidate routes - check own application status and election data
 router.get("/candidates/:candidateId/status", verifyToken, getCandidateStatus);
+router.get("/candidates/:candidateId/election-votes", verifyCandidate, getElectionVoteCount);
 
 export default router;

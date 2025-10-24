@@ -408,3 +408,100 @@ export const getCandidateDocument = async (req, res) => {
     });
   }
 };
+
+// Get election vote count for a candidate
+export const getElectionVoteCount = async (req, res) => {
+  try {
+    const { candidateId } = req.params;
+
+    if (!candidateId) {
+      return res.status(400).json({
+        success: false,
+        message: "Candidate ID is required",
+      });
+    }
+
+    // Get candidate with election details
+    const candidate = await prisma.cANDIDATE.findUnique({
+      where: { Can_id: BigInt(candidateId) },
+      select: {
+        Can_id: true,
+        Can_name: true,
+        Position: true,
+        Election_id: true,
+        Status: true,
+        election: {
+          select: {
+            Election_id: true,
+            Title: true,
+            Status: true,
+            Start_date: true,
+            End_date: true,
+          }
+        }
+      }
+    });
+
+    if (!candidate) {
+      return res.status(404).json({
+        success: false,
+        message: "Candidate not found",
+      });
+    }
+
+    if (!candidate.Election_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Candidate is not assigned to an election",
+      });
+    }
+
+    // Get total votes in the election
+    const totalVotesInElection = await prisma.vOTE.count({
+      where: {
+        Election_id: candidate.Election_id
+      }
+    });
+
+    // Get count of unique students who voted in this election
+    const studentsVoted = await prisma.vOTE.groupBy({
+      by: ['Std_id'],
+      where: {
+        Election_id: candidate.Election_id
+      }
+    });
+
+    // Get total number of students (eligible voters)
+    const totalStudents = await prisma.sTUDENT.count();
+
+    res.status(200).json({
+      success: true,
+      message: "Election vote count retrieved successfully",
+      data: {
+        candidate: {
+          id: candidate.Can_id.toString(),
+          name: candidate.Can_name,
+          position: candidate.Position,
+          status: candidate.Status
+        },
+        election: {
+          id: candidate.election.Election_id,
+          title: candidate.election.Title,
+          status: candidate.election.Status,
+          startDate: candidate.election.Start_date,
+          endDate: candidate.election.End_date
+        },
+        totalVotesInElection,
+        studentsVoted: studentsVoted.length,
+        totalStudents,
+        turnoutPercentage: totalStudents > 0 ? ((studentsVoted.length / totalStudents) * 100).toFixed(2) : 0
+      }
+    });
+  } catch (error) {
+    console.error("Get election vote count error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
