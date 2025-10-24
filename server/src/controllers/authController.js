@@ -862,7 +862,8 @@ export const getCandidateProfile = async (req, res) => {
         Election_id: true,
         Status: true,
         Rejection_reason: true,
-        // Don't include password or file data in response
+        Profile: true,
+        
       },
     });
 
@@ -873,6 +874,22 @@ export const getCandidateProfile = async (req, res) => {
       });
     }
 
+    // Convert profile to base64 if exists
+    let profileBase64 = null;
+    if (candidate.Profile) {
+      let profileBuffer = candidate.Profile;
+      
+      // Handle if Profile is already a Buffer object
+      if (profileBuffer instanceof Buffer) {
+        profileBase64 = `data:image/jpeg;base64,${profileBuffer.toString('base64')}`;
+      } 
+      // Handle if Profile is serialized as object with numeric keys
+      else if (typeof profileBuffer === 'object' && !Array.isArray(profileBuffer)) {
+        profileBuffer = Buffer.from(Object.values(profileBuffer));
+        profileBase64 = `data:image/jpeg;base64,${profileBuffer.toString('base64')}`;
+      }
+    }
+
     res.status(200).json({
       success: true,
       message: "Candidate profile retrieved successfully",
@@ -881,6 +898,7 @@ export const getCandidateProfile = async (req, res) => {
           ...candidate,
           Can_id: candidate.Can_id.toString(),
           Election_id: candidate.Election_id,
+          Profile: profileBase64,
         },
       },
     });

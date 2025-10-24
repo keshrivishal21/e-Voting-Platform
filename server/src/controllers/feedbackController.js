@@ -73,6 +73,42 @@ export const submitFeedback = async (req, res) => {
   }
 };
 
+// Submit feedback (Candidate only)
+export const submitCandidateFeedback = async (req, res) => {
+  try {
+    const { studentId, feedbackText } = req.body;
+
+    if (!studentId || !feedbackText) {
+      return res.status(400).json({
+        success: false,
+        message: "Candidate ID and feedback text are required",
+      });
+    }
+
+    const feedback = await prisma.fEEDBACK.create({
+      data: {
+        User_id: BigInt(studentId),
+        User_type: "Candidate",
+        Message: feedbackText,
+        FB_time: new Date(),
+        Status: "Pending",
+      },
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Feedback submitted successfully",
+      data: { feedback: { ...feedback, User_id: feedback.User_id.toString() } },
+    });
+  } catch (error) {
+    console.error("Submit candidate feedback error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
 // Delete feedback (Admin only)
 export const deleteFeedback = async (req, res) => {
   try {

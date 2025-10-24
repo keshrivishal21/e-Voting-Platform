@@ -307,6 +307,22 @@ export const getApprovedCandidates = async (req, res) => {
         });
       }
 
+      // Convert profile to base64 if exists
+      let profileBase64 = null;
+      if (candidate.Profile) {
+        let profileBuffer = candidate.Profile;
+        
+        // Handle if Profile is already a Buffer object
+        if (profileBuffer instanceof Buffer) {
+          profileBase64 = `data:image/jpeg;base64,${profileBuffer.toString('base64')}`;
+        } 
+        // Handle if Profile is serialized as object with numeric keys
+        else if (typeof profileBuffer === 'object' && !Array.isArray(profileBuffer)) {
+          profileBuffer = Buffer.from(Object.values(profileBuffer));
+          profileBase64 = `data:image/jpeg;base64,${profileBuffer.toString('base64')}`;
+        }
+      }
+
       electionMap.get(electionId).candidates.push({
         id: candidate.Can_id.toString(), // Convert BigInt to string
         scholarId: candidate.Can_id.toString(), // Scholar ID
@@ -318,7 +334,7 @@ export const getApprovedCandidates = async (req, res) => {
         cgpa: candidate.Cgpa,
         position: candidate.Position,
         manifesto: candidate.Manifesto, // This is text, not a URL
-        photo: candidate.Profile ? `data:image/jpeg;base64,${candidate.Profile.toString('base64')}` : null, // Convert profile picture to base64
+        photo: profileBase64, // Base64 encoded profile picture or null
       });
     });
 

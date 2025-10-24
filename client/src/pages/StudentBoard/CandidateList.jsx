@@ -235,18 +235,6 @@ const CandidateList = () => {
                     <p className="text-sm text-gray-600">Year</p>
                     <p className="font-semibold text-gray-900">{selectedCandidate.year}</p>
                   </div>
-                  {selectedCandidate.cgpa && (
-                    <div>
-                      <p className="text-sm text-gray-600">CGPA</p>
-                      <p className="font-semibold text-gray-900">{selectedCandidate.cgpa}/10</p>
-                    </div>
-                  )}
-                  {selectedCandidate.email && (
-                    <div>
-                      <p className="text-sm text-gray-600">Email</p>
-                      <p className="font-semibold text-gray-900 text-sm">{selectedCandidate.email}</p>
-                    </div>
-                  )}
                 </div>
               </div>
 

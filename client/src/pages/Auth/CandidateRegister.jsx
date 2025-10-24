@@ -54,7 +54,7 @@ const CandidateRegister = () => {
           setElections(electionsList);
           
           if (electionsList.length === 0) {
-            toast.info("No upcoming elections available at the moment");
+            toast("No upcoming elections available at the moment", { icon: 'ℹ️' });
           }
         } else {
           const errorMsg = response?.message || "Failed to load elections";
