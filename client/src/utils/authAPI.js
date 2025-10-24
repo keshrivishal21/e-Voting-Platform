@@ -42,10 +42,8 @@ class AuthAPI {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/student/register`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData)
+        // Don't set Content-Type header when sending FormData - browser sets it automatically with boundary
+        body: formData
       });
 
       const data = await response.json();
@@ -181,13 +179,22 @@ class AuthAPI {
         throw new Error('No token found');
       }
 
+      // Check if profileData is FormData (contains file) or plain object
+      const isFormData = profileData instanceof FormData;
+
+      const headers = {
+        'Authorization': `Bearer ${token}`
+      };
+
+      // Only set Content-Type for JSON; let browser set it for FormData (includes boundary)
+      if (!isFormData) {
+        headers['Content-Type'] = 'application/json';
+      }
+
       const response = await fetch(`${API_BASE_URL}/auth/student/${studentId}/profile`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(profileData)
+        headers,
+        body: isFormData ? profileData : JSON.stringify(profileData)
       });
 
       const data = await response.json();

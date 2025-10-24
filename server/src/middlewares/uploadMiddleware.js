@@ -2,19 +2,32 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 
-// Create uploads directory if it doesn't exist
-const uploadDir = 'uploads/candidates';
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+// Create uploads directories if they don't exist
+const candidateUploadDir = 'uploads/candidates';
+const studentUploadDir = 'uploads/students';
+
+if (!fs.existsSync(candidateUploadDir)) {
+  fs.mkdirSync(candidateUploadDir, { recursive: true });
+}
+if (!fs.existsSync(studentUploadDir)) {
+  fs.mkdirSync(studentUploadDir, { recursive: true });
 }
 
 // Configure storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
+    // Determine upload directory based on route or field
+    let uploadDir = candidateUploadDir;
+    
+    // If it's a student profile upload
+    if (req.route && req.route.path.includes('student')) {
+      uploadDir = studentUploadDir;
+    }
+    
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    // Generate unique filename: candidateId_timestamp_originalname
+    // Generate unique filename: timestamp_random_originalname
     const uniqueName = `${Date.now()}_${Math.round(Math.random() * 1E9)}${path.extname(file.originalname)}`;
     cb(null, uniqueName);
   }

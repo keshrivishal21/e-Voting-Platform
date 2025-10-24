@@ -45,7 +45,7 @@ router.post("/student/login", studentLogin); // Student-specific login
 router.post("/candidate/login", candidateLogin); // Candidate-specific login
 
 // Registration Routes
-router.post("/student/register", studentRegister); // Student registration
+router.post("/student/register", upload.single('profile'), studentRegister); // Student registration with optional profile picture
 router.post("/candidate/register", upload.fields([
   { name: 'document', maxCount: 1 },
   { name: 'profile', maxCount: 1 }
@@ -59,7 +59,7 @@ router.post("/candidate/reset-password", resetCandidatePassword); // Reset candi
 
 // Student Profile Routes
 router.get("/student/:studentId/profile", verifyToken, getStudentProfile); // Get student profile
-router.put("/student/:studentId/profile", verifyToken, updateStudentProfile); // Update student profile
+router.put("/student/:studentId/profile", verifyToken, upload.single('profile'), updateStudentProfile); // Update student profile with optional photo
 router.put("/student/:studentId/change-password", verifyToken, changeStudentPassword); // Change student password
 
 // Candidate Profile Routes

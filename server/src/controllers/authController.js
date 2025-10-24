@@ -142,8 +142,19 @@ export const studentRegister = async (req, res) => {
   try {
     const { name, email, dob, phone, password, confirmPassword } = req.body;
 
+    // Get uploaded profile picture if exists
+    const profileFile = req.file;
+
     // Validate input
     if (!name || !email || !dob || !phone || !password || !confirmPassword) {
+      // Clean up uploaded file if validation fails
+      if (profileFile && profileFile.path) {
+        try {
+          fs.unlinkSync(profileFile.path);
+        } catch (error) {
+          console.error("Error deleting temporary file:", error);
+        }
+      }
       return res.status(400).json({
         success: false,
         message: "All fields are required",
@@ -152,6 +163,14 @@ export const studentRegister = async (req, res) => {
 
     // Check if passwords match
     if (password !== confirmPassword) {
+      // Clean up uploaded file if validation fails
+      if (profileFile && profileFile.path) {
+        try {
+          fs.unlinkSync(profileFile.path);
+        } catch (error) {
+          console.error("Error deleting temporary file:", error);
+        }
+      }
       return res.status(400).json({
         success: false,
         message: "Passwords do not match",
@@ -164,6 +183,14 @@ export const studentRegister = async (req, res) => {
     });
 
     if (existingStudent) {
+      // Clean up uploaded file if student exists
+      if (profileFile && profileFile.path) {
+        try {
+          fs.unlinkSync(profileFile.path);
+        } catch (error) {
+          console.error("Error deleting temporary file:", error);
+        }
+      }
       return res.status(409).json({
         success: false,
         message: "Student with this email already exist",
@@ -175,6 +202,21 @@ export const studentRegister = async (req, res) => {
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
+
+    // Read profile picture and convert to buffer if uploaded
+    let profileBuffer = null;
+    if (profileFile) {
+      try {
+        profileBuffer = fs.readFileSync(profileFile.path);
+      } catch (error) {
+        console.error("Error reading profile picture:", error);
+        return res.status(500).json({
+          success: false,
+          message: "Error processing profile picture",
+        });
+      }
+    }
+
     // Create user entry
     const user = await prisma.uSERS.create({
       data: {
@@ -191,8 +233,18 @@ export const studentRegister = async (req, res) => {
         Std_password: hashedPassword,
         Dob: new Date(dob),
         Std_email: email,
+        Profile: profileBuffer, // Store profile picture as buffer (can be null)
       },
     });
+
+    // Clean up temporary file after saving to database
+    if (profileFile && profileFile.path) {
+      try {
+        fs.unlinkSync(profileFile.path);
+      } catch (error) {
+        console.error("Error deleting temporary file:", error);
+      }
+    }
 
     res.status(201).json({
       success: true,
@@ -206,6 +258,16 @@ export const studentRegister = async (req, res) => {
     });
   } catch (error) {
     console.error("Student registration error:", error);
+    
+    // Clean up uploaded file in case of error
+    if (req.file && req.file.path) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (error) {
+        console.error("Error deleting temporary file:", error);
+      }
+    }
+    
     res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -534,6 +596,7 @@ export const getStudentProfile = async (req, res) => {
         Std_email: true,
         Std_phone: true,
         Dob: true,
+        Profile: true,
         // Don't include password in response
       },
     });
@@ -545,13 +608,44 @@ export const getStudentProfile = async (req, res) => {
       });
     }
 
+    // Convert profile buffer to base64 if exists
+    let profileBase64 = null;
+    if (student.Profile) {
+      try {
+        // Handle different possible formats
+        let buffer;
+        if (Buffer.isBuffer(student.Profile)) {
+          buffer = student.Profile;
+        } else if (student.Profile.type === 'Buffer' && Array.isArray(student.Profile.data)) {
+          // Prisma sometimes returns Buffer as {type: 'Buffer', data: [...]}
+          buffer = Buffer.from(student.Profile.data);
+        } else if (typeof student.Profile === 'object') {
+          // If it's an object with numeric keys, convert to array first
+          buffer = Buffer.from(Object.values(student.Profile));
+        } else {
+          buffer = Buffer.from(student.Profile);
+        }
+        
+        profileBase64 = `data:image/jpeg;base64,${buffer.toString('base64')}`;
+        console.log('Profile image converted successfully, length:', profileBase64.length);
+      } catch (error) {
+        console.error('Error converting profile image:', error);
+        console.error('Profile type:', typeof student.Profile);
+        console.error('Profile sample:', JSON.stringify(student.Profile).substring(0, 200));
+      }
+    }
+
     res.status(200).json({
       success: true,
       message: "Student profile retrieved successfully",
       data: {
         profile: {
-          ...student,
           Std_id: student.Std_id.toString(),
+          Std_name: student.Std_name,
+          Std_email: student.Std_email,
+          Std_phone: student.Std_phone,
+          Dob: student.Dob,
+          Profile: profileBase64,
         },
       },
     });
@@ -569,6 +663,7 @@ export const updateStudentProfile = async (req, res) => {
   try {
     const { studentId } = req.params;
     const { phone, dob } = req.body;
+    const profileFile = req.file; // Get uploaded profile picture if any
 
     if (!studentId) {
       return res.status(400).json({
@@ -597,21 +692,50 @@ export const updateStudentProfile = async (req, res) => {
       });
     }
 
-    // Update student profile - only phone and dob
+    // Prepare update data
+    const updateData = {
+      Std_phone: phone,
+      Dob: new Date(dob),
+    };
+
+    // Add profile picture if uploaded
+    if (profileFile) {
+      const profileBuffer = fs.readFileSync(profileFile.path);
+      updateData.Profile = profileBuffer;
+
+      // Clean up uploaded file after reading
+      fs.unlinkSync(profileFile.path);
+    }
+
+    // Update student profile - phone, dob, and optionally profile picture
     const updatedStudent = await prisma.sTUDENT.update({
       where: { Std_id: BigInt(studentId) },
-      data: {
-        Std_phone: phone,
-        Dob: new Date(dob),
-      },
+      data: updateData,
       select: {
         Std_id: true,
         Std_name: true,
         Std_email: true,
         Std_phone: true,
         Dob: true,
+        Profile: true,
       },
     });
+
+    // Convert profile to base64 if exists
+    let profileBase64 = null;
+    if (updatedStudent.Profile) {
+      let profileBuffer = updatedStudent.Profile;
+      
+      // Handle if Profile is already a Buffer object
+      if (profileBuffer instanceof Buffer) {
+        profileBase64 = `data:image/jpeg;base64,${profileBuffer.toString('base64')}`;
+      } 
+      // Handle if Profile is serialized as object with numeric keys
+      else if (typeof profileBuffer === 'object' && !Array.isArray(profileBuffer)) {
+        profileBuffer = Buffer.from(Object.values(profileBuffer));
+        profileBase64 = `data:image/jpeg;base64,${profileBuffer.toString('base64')}`;
+      }
+    }
 
     res.status(200).json({
       success: true,
@@ -620,6 +744,7 @@ export const updateStudentProfile = async (req, res) => {
         profile: {
           ...updatedStudent,
           Std_id: updatedStudent.Std_id.toString(),
+          Profile: profileBase64,
         },
       },
     });

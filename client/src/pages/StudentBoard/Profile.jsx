@@ -15,9 +15,12 @@ const Profile = () => {
     Std_email: "",
     Std_phone: "",
     Dob: "",
+    Profile: null,
   });
 
   const [formData, setFormData] = useState(studentData);
+  const [newProfilePicture, setNewProfilePicture] = useState(null);
+  const [profilePreview, setProfilePreview] = useState(null);
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -65,11 +68,14 @@ const Profile = () => {
         
         if (response.ok && data.success) {
           const profile = data.data.profile;
+          
           // Format date for form input (YYYY-MM-DD)
           const formattedProfile = {
             ...profile,
-            Dob: profile.Dob ? profile.Dob.split('T')[0] : ''
+            Dob: profile.Dob ? profile.Dob.split('T')[0] : '',
+            Profile: profile.Profile // Explicitly preserve the Profile field
           };
+      
           setStudentData(formattedProfile);
           setFormData(formattedProfile);
           toast.success('Profile loaded successfully');
@@ -132,6 +138,43 @@ const Profile = () => {
     }
   };
 
+  // Handle profile picture change
+  const handleProfilePictureChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+      if (!allowedTypes.includes(file.type)) {
+        const errorMsg = "Only JPEG, JPG, and PNG files are allowed";
+        setMessage({ type: 'error', text: errorMsg });
+        toast.error(errorMsg);
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        const errorMsg = "Profile picture must be less than 5MB";
+        setMessage({ type: 'error', text: errorMsg });
+        toast.error(errorMsg);
+        return;
+      }
+
+      setNewProfilePicture(file);
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfilePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+      setMessage({ type: '', text: '' });
+    }
+  };
+
+  const removeNewProfilePicture = () => {
+    setNewProfilePicture(null);
+    setProfilePreview(null);
+  };
+
   // Handle profile update
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
@@ -139,13 +182,22 @@ const Profile = () => {
     setMessage({ type: '', text: '' });
 
     try {
-      // Only send editable fields (phone and dob)
-      const profileData = {
-        phone: formData.Std_phone,
-        dob: formData.Dob
-      };
+      // Create FormData if profile picture is being updated
+      let updateData;
+      if (newProfilePicture) {
+        updateData = new FormData();
+        updateData.append('phone', formData.Std_phone);
+        updateData.append('dob', formData.Dob);
+        updateData.append('profile', newProfilePicture);
+      } else {
+        // Only send editable fields (phone and dob)
+        updateData = {
+          phone: formData.Std_phone,
+          dob: formData.Dob
+        };
+      }
 
-      const { response, data } = await AuthAPI.updateStudentProfile(currentStudentId, profileData);
+      const { response, data } = await AuthAPI.updateStudentProfile(currentStudentId, updateData, !!newProfilePicture);
 
       if (response.ok && data.success) {
         const updatedProfile = {
@@ -155,8 +207,10 @@ const Profile = () => {
         setStudentData(updatedProfile);
         setFormData(updatedProfile);
         setIsEditing(false);
+        setNewProfilePicture(null);
+        setProfilePreview(null);
         setMessage({ type: 'success', text: 'Profile updated successfully!' });
-        toast.success('✅ Profile updated successfully!');
+        toast.success('Profile updated successfully!');
       } else {
         const errorMsg = data.message || 'Failed to update profile.';
         setMessage({ type: 'error', text: errorMsg });
@@ -225,6 +279,8 @@ const Profile = () => {
   const cancelEdit = () => {
     setFormData(studentData);
     setIsEditing(false);
+    setNewProfilePicture(null);
+    setProfilePreview(null);
     setMessage({ type: '', text: '' });
   };
 
@@ -267,9 +323,23 @@ const Profile = () => {
         <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-8 py-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="bg-indigo-100 p-3 rounded-full">
-                <UserIcon className="h-8 w-8 text-indigo-600" />
-              </div>
+              {/* Debug: Show what we have */}
+              {console.log('Rendering header - Profile value:', studentData.Profile ? 'exists' : 'null/undefined')}
+              {studentData.Profile ? (
+                <img
+                  src={studentData.Profile}
+                  alt="Profile"
+                  className="h-16 w-16 rounded-full object-cover border-2 border-indigo-200"
+                  onError={(e) => {
+                    console.error('Image failed to load:', e);
+                    console.error('Image src:', studentData.Profile);
+                  }}
+                />
+              ) : (
+                <div className="bg-indigo-100 p-3 rounded-full">
+                  <UserIcon className="h-8 w-8 text-indigo-600" />
+                </div>
+              )}
               <div>
                 <h2 className="text-2xl font-semibold text-indigo-800">Personal Information</h2>
                 <p className="text-gray-600">View and update your profile details</p>
@@ -302,6 +372,76 @@ const Profile = () => {
           {isEditing ? (
             /* Edit Form */
             <form onSubmit={handleProfileUpdate} className="space-y-8">
+              {/* Profile Picture Update Section */}
+              <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-100">
+                <h3 className="text-lg font-semibold text-indigo-800 mb-4">Update Profile Picture</h3>
+                <div className="flex flex-col md:flex-row items-center gap-6">
+                  {/* Current/Preview Picture */}
+                  <div className="flex-shrink-0">
+                    {profilePreview || studentData.Profile ? (
+                      <img
+                        src={profilePreview || studentData.Profile}
+                        alt="Profile"
+                        className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
+                      />
+                    ) : (
+                      <div className="w-32 h-32 rounded-full bg-indigo-100 flex items-center justify-center border-4 border-white shadow-lg">
+                        <UserIcon className="h-16 w-16 text-indigo-600" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Upload Controls */}
+                  <div className="flex-1 w-full">
+                    {newProfilePicture ? (
+                      <div className="space-y-3">
+                        <p className="text-sm text-gray-700">
+                          <span className="font-semibold">New picture selected:</span> {newProfilePicture.name}
+                        </p>
+                        <div className="flex gap-3">
+                          <button
+                            type="button"
+                            onClick={removeNewProfilePicture}
+                            className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition text-sm font-medium"
+                          >
+                            Remove
+                          </button>
+                          <label className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition text-sm font-medium cursor-pointer">
+                            Choose Different
+                            <input
+                              type="file"
+                              className="hidden"
+                              accept="image/jpeg,image/jpg,image/png"
+                              onChange={handleProfilePictureChange}
+                              disabled={loading}
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-indigo-300 border-dashed rounded-xl cursor-pointer bg-white hover:bg-indigo-50 transition-colors">
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                          <svg className="w-8 h-8 mb-2 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                          </svg>
+                          <p className="mb-1 text-sm text-gray-600">
+                            <span className="font-semibold">Click to upload</span> new picture
+                          </p>
+                          <p className="text-xs text-gray-400">PNG, JPG or JPEG (MAX. 5MB)</p>
+                        </div>
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept="image/jpeg,image/jpg,image/png"
+                          onChange={handleProfilePictureChange}
+                          disabled={loading}
+                        />
+                      </label>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Student ID (Read-only) */}
                 <div>
@@ -355,7 +495,7 @@ const Profile = () => {
                 {/* Phone Number - EDITABLE */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    Phone Number * <span className="text-indigo-600 text-xs">(Editable)</span>
+                    Phone Number * 
                   </label>
                   <div className="relative">
                     <PhoneIcon className="h-5 w-5 text-indigo-600 absolute left-4 top-4" />
@@ -374,7 +514,7 @@ const Profile = () => {
                 {/* Date of Birth - EDITABLE */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    Date of Birth * <span className="text-indigo-600 text-xs">(Editable)</span>
+                    Date of Birth * 
                   </label>
                   <div className="relative">
                     <CalendarIcon className="h-5 w-5 text-indigo-600 absolute left-4 top-4" />

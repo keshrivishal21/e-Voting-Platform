@@ -14,6 +14,8 @@ function Signup() {
     password: '',
     confirmPassword: ''
   });
+  const [profilePicture, setProfilePicture] = useState(null);
+  const [profilePreview, setProfilePreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [scholarNo, setScholarNo] = useState('');
@@ -54,6 +56,42 @@ function Signup() {
     }
   };
 
+  const handleProfilePictureChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+      if (!allowedTypes.includes(file.type)) {
+        const errorMsg = "Only JPEG, JPG, and PNG files are allowed for profile picture";
+        setError(errorMsg);
+        toast.error(errorMsg);
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        const errorMsg = "Profile picture must be less than 5MB";
+        setError(errorMsg);
+        toast.error(errorMsg);
+        return;
+      }
+
+      setProfilePicture(file);
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfilePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+      setError('');
+    }
+  };
+
+  const removeProfilePicture = () => {
+    setProfilePicture(null);
+    setProfilePreview(null);
+  };
+
   const submitHandler = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -86,14 +124,18 @@ function Signup() {
       }
 
       // Prepare data for API (backend extracts scholarNo from email)
-      const registrationData = {
-        name: formData.name.trim(),
-        email: formData.email.trim(),
-        dob: formData.dob,
-        phone: formData.phone.trim(),
-        password: formData.password,
-        confirmPassword: formData.confirmPassword
-      };
+      const registrationData = new FormData();
+      registrationData.append('name', formData.name.trim());
+      registrationData.append('email', formData.email.trim());
+      registrationData.append('dob', formData.dob);
+      registrationData.append('phone', formData.phone.trim());
+      registrationData.append('password', formData.password);
+      registrationData.append('confirmPassword', formData.confirmPassword);
+      
+      // Add profile picture if selected
+      if (profilePicture) {
+        registrationData.append('profile', profilePicture);
+      }
 
       const { response, data } = await AuthAPI.studentRegister(registrationData);
 
@@ -172,6 +214,54 @@ function Signup() {
                 required
                 disabled={loading}
               />
+            </div>
+
+            {/* Profile Picture Upload */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Profile Picture <span className="text-gray-400 font-normal">(Optional)</span>
+              </label>
+              {profilePreview ? (
+                <div className="flex items-center space-x-4">
+                  <img
+                    src={profilePreview}
+                    alt="Profile Preview"
+                    className="w-20 h-20 rounded-full object-cover border-2 border-indigo-200"
+                  />
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-600 mb-2">{profilePicture?.name}</p>
+                    <button
+                      type="button"
+                      onClick={removeProfilePicture}
+                      className="text-sm text-red-600 hover:text-red-700 font-medium"
+                      disabled={loading}
+                    >
+                      Remove Picture
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center w-full">
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <svg className="w-8 h-8 mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      <p className="mb-1 text-sm text-gray-500">
+                        <span className="font-semibold">Click to upload</span> or drag and drop
+                      </p>
+                      <p className="text-xs text-gray-400">PNG, JPG or JPEG (MAX. 5MB)</p>
+                    </div>
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/jpeg,image/jpg,image/png"
+                      onChange={handleProfilePictureChange}
+                      disabled={loading}
+                    />
+                  </label>
+                </div>
+              )}
             </div>
 
             {/* Email Field */}
