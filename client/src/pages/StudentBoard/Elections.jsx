@@ -7,6 +7,7 @@ const Elections = () => {
   const [activeTab, setActiveTab] = useState('current');
   const [currentElections, setCurrentElections] = useState([]);
   const [upcomingElections, setUpcomingElections] = useState([]);
+  const [completedElections, setCompletedElections] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const hasLoadedRef = useRef(false);
@@ -30,6 +31,9 @@ const Elections = () => {
       // Fetch upcoming elections
       const { response: upcomingResponse, data: upcomingData } = await ElectionAPI.getUpcomingElections();
 
+      // Fetch completed elections
+      const { response: completedResponse, data: completedData } = await ElectionAPI.getCompletedElections();
+
       let hasSuccess = false;
       let hasError = false;
 
@@ -51,12 +55,21 @@ const Elections = () => {
         hasError = true;
       }
 
+      if (completedResponse.ok && completedData.success) {
+        setCompletedElections(completedData.data.elections || []);
+        hasSuccess = true;
+      } else {
+        const errorMsg = completedData.message || 'Failed to fetch completed elections';
+        console.error('Failed to fetch completed elections:', errorMsg);
+        hasError = true;
+      }
+
       // Show single success toast if at least one request succeeded
       if (hasSuccess) {
         toast.success('Elections loaded successfully');
       }
       
-      // Show error toast only if both failed
+      // Show error toast only if all failed
       if (!hasSuccess && hasError) {
         toast.error('Failed to load elections');
       }
@@ -109,6 +122,16 @@ const Elections = () => {
           }`}
         >
           Upcoming Elections
+        </button>
+        <button
+          onClick={() => setActiveTab('completed')}
+          className={`px-4 py-2 rounded-full font-medium transition ${
+            activeTab === 'completed'
+              ? 'bg-indigo-600 text-white'
+              : 'bg-indigo-100 text-indigo-600'
+          }`}
+        >
+          Completed Elections
         </button>
       </div>
 
@@ -182,6 +205,40 @@ const Elections = () => {
                         className="bg-indigo-600 text-white px-6 py-3 rounded-full hover:bg-indigo-700 transition font-medium shadow-md hover:shadow-lg"
                       >
                         Apply as Candidate
+                      </Link>
+                    </div>
+                  ))
+                )}
+              </>
+            )}
+
+            {activeTab === 'completed' && (
+              <>
+                {completedElections.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-gray-500 text-lg">No completed elections yet</p>
+                  </div>
+                ) : (
+                  completedElections.map((election) => (
+                    <div
+                      key={election.Election_id}
+                      className="flex flex-col md:flex-row justify-between items-start md:items-center p-6 bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow"
+                    >
+                      <div className="mb-4 md:mb-0">
+                        <h3 className="text-indigo-800 font-semibold text-lg mb-2">{election.Title}</h3>
+                        <div className="text-sm text-gray-600 space-y-1">
+                          <p>Started: {formatDate(election.Start_date)}</p>
+                          <p>Ended: {formatDate(election.End_date)}</p>
+                          <span className="inline-block px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">
+                            ✅ Completed
+                          </span>
+                        </div>
+                      </div>
+                      <Link
+                        to="/student/results"
+                        className="bg-indigo-600 text-white px-6 py-3 rounded-full hover:bg-indigo-700 transition font-medium shadow-md hover:shadow-lg"
+                      >
+                        View Results
                       </Link>
                     </div>
                   ))
