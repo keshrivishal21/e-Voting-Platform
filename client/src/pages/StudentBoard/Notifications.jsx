@@ -1,129 +1,82 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import toast from "react-hot-toast";
+import { useAuth } from "../../contexts/AuthContext";
 
-const Notifications = () => {
-  // TODO: Replace with API call to fetch real notifications from backend
-  // Example API endpoint: GET /api/notifications
-  // The backend should return user-specific notifications
-  
-  // Static notifications data (for demonstration only)
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      title: "Presidential Election Results",
-      message: "The results of the Presidential Election have been announced. Check the winner in the results section!",
-      date: "2025-09-17",
-    },
-    {
-      id: 2,
-      title: "Upcoming Cultural Secretary Election",
-      message: "The Cultural Secretary election will start from 25th September. Cast your votes on time!",
-      date: "2025-09-15",
-    },
-    {
-      id: 3,
-      title: "Sports Secretary Election Open",
-      message: "The Sports Secretary election nominations are now open for students. Submit your candidature before 20th September.",
-      date: "2025-09-14",
-    },
-    {
-      id: 4,
-      title: "Vice Presidential Election Results",
-      message: "The Vice Presidential election results are now live. Congratulations to the winners!",
-      date: "2025-09-13",
-    },
-    {
-      id: 5,
-      title: "Literary Secretary Election Announcement",
-      message: "Literary Secretary elections will begin next week. Prepare to cast your votes!",
-      date: "2025-09-12",
-    },
-    {
-      id: 6,
-      title: "Maintenance Notice",
-      message: "The e-voting platform will be under maintenance on 20th September from 12 AM to 4 AM. Plan your voting accordingly.",
-      date: "2025-09-11",
-    },
-    {
-      id: 7,
-      title: "Candidate Profile Update",
-      message: "Candidate Aarav Mehta has updated his manifesto. Check out the latest version before voting.",
-      date: "2025-09-10",
-    },
-    {
-      id: 8,
-      title: "Voting Guidelines",
-      message: "Remember to read the voting guidelines carefully. Only registered students can cast votes.",
-      date: "2025-09-09",
-    },
-    {
-      id: 9,
-      title: "Election Awareness Campaign",
-      message: "Join the election awareness webinar on 22nd September to understand the voting process and candidate details.",
-      date: "2025-09-08",
-    },
-    {
-      id: 10,
-      title: "System Upgrade Completed",
-      message: "The e-voting platform upgrade is completed successfully. Enjoy a faster and more secure voting experience!",
-      date: "2025-09-07",
-    },
-  ]);
+const StudentNotifications = () => {
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { getCurrentToken } = useAuth();
 
-  // const [notifications, setNotifications] = useState([]);
-  // const [loading, setLoading] = useState(true);
-  // const [error, setError] = useState(null);
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+  // Get token from AuthContext (tokens are stored per-role, e.g. studentToken)
+  const token = getCurrentToken();
 
-  // // Function to fetch notifications from backend
-  // const fetchNotifications = async () => {
-  //   try {
-  //     setLoading(true);
-  //     setError(null);
+      if (!token) {
+        toast.error("Not authenticated. Please log in.");
+        setNotifications([]);
+        setLoading(false);
+        return;
+      }
 
-  //     // Replace this URL with your backend route
-  //     const response = await axios.get("http://localhost:5000/api/notifications");
+      const response = await axios.get("http://localhost:5000/api/notification/notifications", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-  //     // Assuming your backend returns an array of notifications
-  //     setNotifications(response.data);
-  //   } catch (err) {
-  //     console.error("Error fetching notifications:", err);
-  //     setError("Failed to load notifications. Please try again later.");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+      if (response.data.success) {
+        setNotifications(response.data.data.notifications);
+      } else {
+        toast.error("Failed to load notifications");
+      }
+    } catch (err) {
+      console.error("Error fetching notifications:", err);
+      toast.error("Failed to load notifications");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // // Fetch notifications when component mounts
-  // useEffect(() => {
-  //   fetchNotifications();
-  // }, []);
-
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-12 mt-20">
-      <h1 className="text-3xl font-bold text-black-700 mb-6 text-center">
-        Notifications
-      </h1>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6">
+  <div className="mt-20 max-w-7xl mx-auto mb-18">
+    <h1 className="text-3xl font-bold mb-6 text-center text-indigo-700">
+    Notifications
+  </h1>
 
-      {/* Notification List */}
-      <div className="space-y-4">
-        {notifications.length === 0 && (
-          <p className="text-gray-500 text-center">No notifications yet.</p>
-        )}
-        {notifications.map((notif) => (
-          <div
-            key={notif.id}
-            className="bg-indigo-50 border-l-4 border-indigo-500 rounded-md p-4 shadow-sm"
-          >
-            <div className="flex justify-between items-center">
-              <h3 className="font-semibold text-indigo-700">{notif.title}</h3>
-              <span className="text-sm text-gray-500">{notif.date}</span>
-            </div>
-            <p className="text-gray-700 mt-2">{notif.message}</p>
+  {loading ? (
+    <p className="text-center text-gray-500">Loading notifications...</p>
+  ) : notifications.length === 0 ? (
+    <p className="text-center text-gray-500">No notifications yet.</p>
+  ) : (
+    <div className="flex flex-col items-center space-y-4">
+      {notifications.map((notif) => (
+        <div
+          key={notif.id}
+          className="w-full max-w-xl bg-indigo-50 border-l-4 border-indigo-500 rounded-md p-4 shadow-sm"
+        >
+          <div className="flex justify-between items-center">
+            <h3 className="font-semibold text-indigo-700">Message</h3>
+            <span className="text-sm text-gray-500">
+              {new Date(notif.time).toLocaleString()}
+            </span>
           </div>
-        ))}
-      </div>
+          <p className="text-gray-700 mt-2">{notif.message}</p>
+        </div>
+      ))}
     </div>
+  )}
+  </div>
+</div>
+
   );
 };
 
-export default Notifications;
+export default StudentNotifications;

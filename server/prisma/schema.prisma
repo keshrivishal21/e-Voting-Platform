@@ -12,6 +12,7 @@ datasource db {
 enum UserType {
   Student
   Candidate
+  Admin
 }
 
 enum ElectionStatus {
@@ -176,14 +177,14 @@ model FEEDBACK {
 
 model SYSTEM_LOGS {
   Log_id    Int      @id @default(autoincrement())
-  User_id   BigInt
+  User_id   BigInt?
   User_type UserType
   Admin_id  Int?
   Log_time  DateTime @db.Timestamp(0)
   Log_type  LogType
   Action    String   @db.Text
 
-  user      USERS   @relation(fields: [User_id, User_type], references: [User_id, User_type])
+  user      USERS?   @relation(fields: [User_id, User_type], references: [User_id, User_type])
   admin     ADMIN?  @relation(fields: [Admin_id], references: [Admin_id])
 }
 

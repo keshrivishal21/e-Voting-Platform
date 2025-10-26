@@ -106,7 +106,7 @@ export const sendNotification = async (req, res) => {
     // Log the action - need to provide User_id and User_type for SYSTEM_LOGS
     await prisma.sYSTEM_LOGS.create({
       data: {
-        User_id: BigInt(adminId),
+        User_id: null,
         User_type: "Admin",
         Admin_id: parseInt(adminId),
         Log_type: "Audit",
