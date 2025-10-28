@@ -103,17 +103,9 @@ export const sendNotification = async (req, res) => {
       )
     );
 
-    // Log the action - need to provide User_id and User_type for SYSTEM_LOGS
-    await prisma.sYSTEM_LOGS.create({
-      data: {
-        User_id: null,
-        User_type: "Admin",
-        Admin_id: parseInt(adminId),
-        Log_type: "Audit",
-        Action: `Notification sent to ${recipientType}: "${message.substring(0, 50)}..."`,
-        Log_time: new Date(),
-      },
-    });
+    // Logging for notification sends is disabled by configuration/user request.
+    // Previous behavior created a SYSTEM_LOGS entry here, but per project
+    // preference we avoid persisting logs for sending notifications.
 
     res.status(201).json({
       success: true,

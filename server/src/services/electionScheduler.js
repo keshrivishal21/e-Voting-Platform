@@ -66,7 +66,33 @@ async function cleanupSpecificElection(electionId) {
     const candidateIds = election.candidates.map(c => c.Can_id);
     
     await prisma.$transaction(async (tx) => {
-      // 1. Delete results for these candidates
+      // IMPORTANT: There are foreign key constraints from VOTE -> CANDIDATE
+      // and VOTE_RECEIPT -> VOTE. To safely remove candidate records we must
+      // delete dependent records in the correct order. Policy chosen here:
+      //  - remove vote receipts for votes cast for these candidates
+      //  - remove votes for these candidates
+      //  - remove results for these candidates
+      //  - remove the candidate entries
+      //  - remove the user records for these candidates
+
+      // 0. Delete vote receipts for votes belonging to these candidates
+      await tx.vOTE_RECEIPT.deleteMany({
+        where: {
+          vote: {
+            Can_id: { in: candidateIds }
+          }
+        }
+      });
+
+      // 1. Delete votes for these candidates
+      await tx.vOTE.deleteMany({
+        where: {
+          Can_id: { in: candidateIds },
+          Election_id: electionId
+        }
+      });
+
+      // 2. Delete results for these candidates
       await tx.rESULT.deleteMany({
         where: {
           Can_id: { in: candidateIds },
@@ -74,7 +100,7 @@ async function cleanupSpecificElection(electionId) {
         }
       });
 
-      // 2. Delete candidates
+      // 3. Delete candidates
       const deletedCandidates = await tx.cANDIDATE.deleteMany({
         where: {
           Can_id: { in: candidateIds },
@@ -82,7 +108,27 @@ async function cleanupSpecificElection(electionId) {
         }
       });
 
-      // 3. Delete USER records for these candidates
+      // 4. Delete USER records for these candidates
+      // Remove related user-scoped data that reference USERS (to avoid FK violations)
+      await tx.fEEDBACK.deleteMany({
+        where: {
+          User_id: { in: candidateIds },
+          User_type: "Candidate"
+        }
+      });
+      await tx.nOTIFICATION.deleteMany({
+        where: {
+          User_id: { in: candidateIds },
+          User_type: "Candidate"
+        }
+      });
+      await tx.sYSTEM_LOGS.deleteMany({
+        where: {
+          User_id: { in: candidateIds },
+          User_type: "Candidate"
+        }
+      });
+
       await tx.uSERS.deleteMany({
         where: {
           User_id: { in: candidateIds },
@@ -140,9 +186,27 @@ async function cleanupCompletedElectionCandidates() {
       try {
         // Delete in transaction to maintain referential integrity
         await prisma.$transaction(async (tx) => {
-          // 1. Delete all votes for these candidates (preserve vote records in archive if needed)
-          // Note: We keep votes for result verification, so we DON'T delete them
-          
+          // NOTE: We must delete dependent records in order to satisfy FK constraints.
+          // This removes vote receipts and votes for the candidates, then results,
+          // then deletes candidate records and their user accounts.
+
+          // 0. Delete vote receipts for votes belonging to these candidates
+          await tx.vOTE_RECEIPT.deleteMany({
+            where: {
+              vote: {
+                Can_id: { in: candidateIds }
+              }
+            }
+          });
+
+          // 1. Delete votes for these candidates
+          await tx.vOTE.deleteMany({
+            where: {
+              Can_id: { in: candidateIds },
+              Election_id: election.Election_id
+            }
+          });
+
           // 2. Delete results for these candidates
           await tx.rESULT.deleteMany({
             where: {
@@ -151,11 +215,31 @@ async function cleanupCompletedElectionCandidates() {
             }
           });
 
-          // 3. Delete candidates
-          const deletedCandidates = await tx.cANDIDATE.deleteMany({
+          // 4. Remove related user-scoped data (feedback, notifications, logs) to avoid FK violations
+          await tx.fEEDBACK.deleteMany({
             where: {
-              Can_id: { in: candidateIds },
-              Election_id: election.Election_id
+              User_id: { in: candidateIds },
+              User_type: "Candidate"
+            }
+          });
+          await tx.nOTIFICATION.deleteMany({
+            where: {
+              User_id: { in: candidateIds },
+              User_type: "Candidate"
+            }
+          });
+          await tx.sYSTEM_LOGS.deleteMany({
+            where: {
+              User_id: { in: candidateIds },
+              User_type: "Candidate"
+            }
+          });
+
+          // 5. Delete USER records for these candidates
+          await tx.uSERS.deleteMany({
+            where: {
+              User_id: { in: candidateIds },
+              User_type: "Candidate"
             }
           });
 
@@ -168,7 +252,7 @@ async function cleanupCompletedElectionCandidates() {
           });
 
           totalDeleted += deletedCandidates.count;
-          
+
           console.log(`   ✅ Deleted ${deletedCandidates.count} candidates from election ${election.Election_id}`);
         });
       } catch (error) {
