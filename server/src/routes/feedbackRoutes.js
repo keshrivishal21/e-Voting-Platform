@@ -1,6 +1,8 @@
 import express from "express";
 import {
   getAllFeedbacks,
+  getPublicFeedbacks,
+  approveFeedback,
   submitFeedback,
   submitCandidateFeedback,
   deleteFeedback,
@@ -9,8 +11,12 @@ import { verifyAdmin, verifyStudent, verifyCandidate } from "../middlewares/auth
 
 const router = express.Router();
 
+// Public routes - view feedbacks
+router.get('/feedbacks', getPublicFeedbacks);
+
 // Admin routes - manage feedbacks
 router.get("/admin/feedbacks", verifyAdmin, getAllFeedbacks);
+router.post('/admin/feedbacks/:feedbackId/approve', verifyAdmin, approveFeedback);
 router.delete("/admin/feedbacks/:feedbackId", verifyAdmin, deleteFeedback);
 
 // Student routes - submit feedback

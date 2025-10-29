@@ -1,14 +1,7 @@
-// Candidate API utility functions
-const API_BASE_URL = "http://localhost:5000/api";
+import { apiFetch } from './apiClient';
 
-// Get current authentication token from localStorage
-const getCurrentToken = () => {
-  return (
-    localStorage.getItem("adminToken") ||
-    localStorage.getItem("studentToken") ||
-    localStorage.getItem("candidateToken")
-  );
-};
+// Keep API_BASE_URL for document URL generation
+const API_BASE_URL = "http://localhost:5000/api";
 
 /**
  * Get all approved candidates grouped by election
@@ -16,26 +9,7 @@ const getCurrentToken = () => {
  */
 export const getApprovedCandidates = async () => {
   try {
-    const token = getCurrentToken();
-    
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
-
-    const response = await fetch(`${API_BASE_URL}/candidate/candidates/approved`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to fetch approved candidates");
-    }
-
+    const { data } = await apiFetch('/candidate/candidates/approved', { method: 'GET' });
     return data;
   } catch (error) {
     console.error("Error fetching approved candidates:", error);
@@ -50,29 +24,7 @@ export const getApprovedCandidates = async () => {
  */
 export const getCandidatesByElection = async (electionId) => {
   try {
-    const token = getCurrentToken();
-    
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
-
-    const response = await fetch(
-      `${API_BASE_URL}/candidate/candidates/approved?electionId=${electionId}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to fetch candidates");
-    }
-
+    const { data } = await apiFetch(`/candidate/candidates/approved?electionId=${electionId}`, { method: 'GET' });
     return data;
   } catch (error) {
     console.error("Error fetching candidates by election:", error);
@@ -87,29 +39,7 @@ export const getCandidatesByElection = async (electionId) => {
  */
 export const getCandidateStatus = async (candidateId) => {
   try {
-    const token = getCurrentToken();
-    
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
-
-    const response = await fetch(
-      `${API_BASE_URL}/candidate/candidates/${candidateId}/status`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to fetch candidate status");
-    }
-
+    const { data } = await apiFetch(`/candidate/candidates/${candidateId}/status`, { method: 'GET' });
     return data;
   } catch (error) {
     console.error("Error fetching candidate status:", error);
@@ -124,29 +54,7 @@ export const getCandidateStatus = async (candidateId) => {
  */
 export const getElectionVoteCount = async (candidateId) => {
   try {
-    const token = localStorage.getItem("candidateToken");
-    
-    if (!token) {
-      throw new Error("No candidate authentication token found");
-    }
-
-    const response = await fetch(
-      `${API_BASE_URL}/candidate/candidates/${candidateId}/election-votes`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to fetch election vote count");
-    }
-
+    const { data } = await apiFetch(`/candidate/candidates/${candidateId}/election-votes`, { method: 'GET' });
     return data;
   } catch (error) {
     console.error("Error fetching election vote count:", error);

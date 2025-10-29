@@ -37,6 +37,61 @@ export const getAllFeedbacks = async (req, res) => {
   }
 };
 
+// Public: Get approved feedbacks for testimonials (no auth required)
+export const getPublicFeedbacks = async (req, res) => {
+  try {
+    const feedbacks = await prisma.fEEDBACK.findMany({
+      where: { Status: 'Approved' },
+      orderBy: { FB_time: 'desc' },
+      include: {
+        user: {
+          include: {
+            student: true,
+            candidate: true,
+          },
+        },
+      },
+    });
+
+    const formatted = feedbacks.map((fb) => {
+      // Default avatar
+      let avatar = null;
+      let name = fb.User_type === 'Student' ? fb.user.student?.Std_name : fb.user.candidate?.Can_name;
+
+      try {
+        if (fb.user) {
+          if (fb.User_type === 'Student' && fb.user.student && fb.user.student.Profile) {
+            avatar = `data:image/jpeg;base64,${Buffer.from(fb.user.student.Profile).toString('base64')}`;
+          } else if (fb.User_type === 'Candidate' && fb.user.candidate) {
+            const candidateProfile = fb.user.candidate.Profile || fb.user.candidate.Data;
+            if (candidateProfile) {
+              avatar = `data:image/jpeg;base64,${Buffer.from(candidateProfile).toString('base64')}`;
+            }
+          }
+        }
+      } catch (err) {
+        // If conversion fails, ignore and fall back to null
+        console.warn('Failed to convert profile blob to base64 for feedback avatar', err?.message || err);
+      }
+
+      return {
+        id: fb.FB_id,
+        name: name || fb.user?.User_id?.toString() || 'Anonymous',
+        role: fb.User_type,
+        message: fb.Message,
+        date: fb.FB_time ? fb.FB_time.toISOString().split('T')[0] : null,
+        fullDate: fb.FB_time,
+        avatar,
+      };
+    });
+
+    res.status(200).json({ success: true, message: 'Public feedbacks retrieved', data: { feedbacks: formatted } });
+  } catch (error) {
+    console.error('Get public feedbacks error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
 // Submit feedback (Student only)
 export const submitFeedback = async (req, res) => {
   try {
@@ -135,5 +190,26 @@ export const deleteFeedback = async (req, res) => {
       success: false,
       message: "Internal server error",
     });
+  }
+};
+
+// Approve feedback (Admin only)
+export const approveFeedback = async (req, res) => {
+  try {
+    const { feedbackId } = req.params;
+
+    if (!feedbackId) {
+      return res.status(400).json({ success: false, message: 'Feedback ID is required' });
+    }
+
+    const updated = await prisma.fEEDBACK.update({
+      where: { FB_id: parseInt(feedbackId) },
+      data: { Status: 'Approved' },
+    });
+
+    res.status(200).json({ success: true, message: 'Feedback approved', data: { feedback: { ...updated, User_id: updated.User_id.toString() } } });
+  } catch (error) {
+    console.error('Approve feedback error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };

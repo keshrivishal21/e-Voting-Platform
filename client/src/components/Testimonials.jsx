@@ -1,6 +1,7 @@
 import React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
+import { apiFetch } from "../utils/apiClient";
 
 const Testimonials = ({ userType = "Student" }) => {
   const [showModal, setShowModal] = useState(false);
@@ -75,44 +76,38 @@ const Testimonials = ({ userType = "Student" }) => {
   
   // Static testimonial data for demonstration
   // TODO: Replace with API call to fetch real testimonials from database
-  const cardsData = [
-    {
-      image:
-        "https://randomuser.me/api/portraits/women/65.jpg",
-      name: "Ananya Verma",
-      handle: "@ananya_v",
-      date: "March 12, 2025",
-      review:
-        "This e-voting platform made our college elections so smooth! The interface is clean and easy to use.",
-    },
-    {
-      image:
-        "https://randomuser.me/api/portraits/men/52.jpg",
-      name: "Rohan Mehta",
-      handle: "@rohan_mehta",
-      date: "April 5, 2025",
-      review:
-        "Loved the transparency and real-time result tracking. It really made me trust the process.",
-    },
-    {
-      image:
-        "https://randomuser.me/api/portraits/women/44.jpg",
-      name: "Priya Sharma",
-      handle: "@priya_s",
-      date: "April 20, 2025",
-      review:
-        "Very smooth experience! I could view all candidates’ manifestos and cast my vote in under a minute.",
-    },
-    {
-      image:
-        "https://randomuser.me/api/portraits/men/36.jpg",
-      name: "Arjun Nair",
-      handle: "@arjun.nair",
-      date: "May 1, 2025",
-      review:
-        "Finally a modern way to run elections! Secure, reliable and convenient for students.",
-    },
-  ];
+  // Live feedbacks fetched from server (approved only)
+  const [cardsData, setCardsData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadFeedbacks = async () => {
+      setLoading(true);
+      try {
+        const { response, data } = await apiFetch('/feedback/feedbacks', { method: 'GET', auth: false });
+        if (response && response.ok && data && data.success) {
+          // data.data.feedbacks expected
+          const fbList = (data.data && data.data.feedbacks) || [];
+          if (mounted) setCardsData(fbList);
+        } else {
+          const msg = (data && data.message) || 'Failed to fetch feedbacks';
+          setFetchError(msg);
+        }
+      } catch (err) {
+        console.error('Error loading feedbacks:', err);
+        setFetchError(err.message || 'Network error');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    loadFeedbacks();
+
+    return () => { mounted = false; };
+  }, []);
 
   const CreateCard = ({ card }) => (
     <div className="p-4 rounded-xl mx-4 shadow-md hover:shadow-lg transition-all duration-200 w-72 shrink-0 bg-white">
@@ -120,17 +115,17 @@ const Testimonials = ({ userType = "Student" }) => {
       <div className="flex gap-2">
         <img
           className="size-11 rounded-full"
-          src={card.image}
+          src={card.avatar || card.image || 'https://ui-avatars.com/api/?background=7c3aed&color=fff&name=' + encodeURIComponent(card.name)}
           alt={card.name}
         />
         <div className="flex flex-col">
           <p className="font-medium text-gray-800">{card.name}</p>
-          <span className="text-xs text-indigo-500">{card.handle}</span>
+          <span className="text-xs text-indigo-500">{card.role === 'Student' ? '@student' : '@candidate'}</span>
         </div>
       </div>
 
       {/* Review text */}
-      <p className="text-sm py-4 text-gray-700">{card.review}</p>
+  <p className="text-sm py-4 text-gray-700">{card.message || card.review}</p>
 
       {/* Bottom date */}
       <div className="flex items-center justify-between text-slate-500 text-xs">
@@ -168,9 +163,23 @@ const Testimonials = ({ userType = "Student" }) => {
         <div className="marquee-row w-full mx-auto max-w-5xl overflow-hidden relative mt-10">
           <div className="absolute left-0 top-0 h-full w-20 z-10 pointer-events-none bg-gradient-to-r from-[#F5F7FF] to-transparent"></div>
           <div className="marquee-inner flex transform-gpu min-w-[200%] pt-4 pb-4">
-            {[...cardsData, ...cardsData].map((card, index) => (
-              <CreateCard key={index} card={card} />
-            ))}
+                {loading ? (
+                  <div className="flex items-center justify-center w-full py-8">
+                    <div className="text-gray-500">Loading feedbacks...</div>
+                  </div>
+                ) : fetchError ? (
+                  <div className="flex items-center justify-center w-full py-8">
+                    <div className="text-red-500">{fetchError}</div>
+                  </div>
+                ) : cardsData.length === 0 ? (
+                  <div className="flex items-center justify-center w-full py-8">
+                    <div className="text-gray-500">No feedbacks yet.</div>
+                  </div>
+                ) : (
+                  [...cardsData, ...cardsData].map((card, index) => (
+                    <CreateCard key={index} card={card} />
+                  ))
+                )}
           </div>
           <div className="absolute right-0 top-0 h-full w-20 md:w-40 z-10 pointer-events-none bg-gradient-to-l from-[#F5F7FF] to-transparent"></div>
         </div>

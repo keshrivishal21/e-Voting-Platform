@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+import { apiFetch } from './apiClient';
 
 class VoteAPI {
   // Get current token
@@ -19,21 +19,7 @@ class VoteAPI {
   // Get ongoing elections
   static async getOngoingElections() {
     try {
-      const token = this.getCurrentToken();
-      if (!token) {
-        throw new Error('No token found');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/vote/elections/ongoing`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const data = await response.json();
-      return { response, data };
+      return await apiFetch('/vote/elections/ongoing', { method: 'GET' });
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
     }
@@ -42,21 +28,7 @@ class VoteAPI {
   // Get election public key for encryption
   static async getElectionPublicKey(electionId) {
     try {
-      const token = this.getCurrentToken();
-      if (!token) {
-        throw new Error('No token found');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/vote/election/${electionId}/public-key`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const data = await response.json();
-      return { response, data };
+      return await apiFetch(`/vote/election/${electionId}/public-key`, { method: 'GET' });
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
     }
@@ -65,22 +37,7 @@ class VoteAPI {
   // Request OTP for voting
   static async requestVotingOTP(electionId) {
     try {
-      const token = this.getCurrentToken();
-      if (!token) {
-        throw new Error('No token found');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/vote/request-otp`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ electionId })
-      });
-
-      const data = await response.json();
-      return { response, data };
+      return await apiFetch('/vote/request-otp', { method: 'POST', body: { electionId } });
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
     }
@@ -89,22 +46,7 @@ class VoteAPI {
   // Verify OTP
   static async verifyOTP(electionId, otp) {
     try {
-      const token = this.getCurrentToken();
-      if (!token) {
-        throw new Error('No token found');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/vote/verify-otp`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ electionId, otp })
-      });
-
-      const data = await response.json();
-      return { response, data };
+      return await apiFetch('/vote/verify-otp', { method: 'POST', body: { electionId, otp } });
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
     }
@@ -113,21 +55,7 @@ class VoteAPI {
   // Get ballot (after OTP verification)
   static async getBallot(electionId) {
     try {
-      const token = this.getCurrentToken();
-      if (!token) {
-        throw new Error('No token found');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/vote/ballot/${electionId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const data = await response.json();
-      return { response, data };
+      return await apiFetch(`/vote/ballot/${electionId}`, { method: 'GET' });
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
     }
@@ -136,22 +64,7 @@ class VoteAPI {
   // Cast vote (with encrypted votes)
   static async castVote(electionId, encryptedVotes) {
     try {
-      const token = this.getCurrentToken();
-      if (!token) {
-        throw new Error('No token found');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/vote/cast`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ electionId, encryptedVotes })
-      });
-
-      const data = await response.json();
-      return { response, data };
+      return await apiFetch('/vote/cast', { method: 'POST', body: { electionId, encryptedVotes } });
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
     }
@@ -160,21 +73,7 @@ class VoteAPI {
   // Check vote status
   static async checkVoteStatus(electionId) {
     try {
-      const token = this.getCurrentToken();
-      if (!token) {
-        throw new Error('No token found');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/vote/status/${electionId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const data = await response.json();
-      return { response, data };
+      return await apiFetch(`/vote/status/${electionId}`, { method: 'GET' });
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
     }

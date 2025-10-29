@@ -42,8 +42,10 @@ const FeedbackManagement = () => {
               <th className="px-4 py-2">#</th>
               <th className="px-4 py-2">Sender</th>
               <th className="px-4 py-2">Role</th>
+              <th className="px-4 py-2">Status</th>
               <th className="px-4 py-2">Message</th>
               <th className="px-4 py-2">Date</th>
+              <th className="px-4 py-2">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -68,8 +70,54 @@ const FeedbackManagement = () => {
                   <td className="px-4 py-2">{index + 1}</td>
                   <td className="px-4 py-2">{feedback.sender}</td>
                   <td className="px-4 py-2">{feedback.role}</td>
+                  <td className="px-4 py-2">{feedback.status || 'Pending'}</td>
                   <td className="px-4 py-2">{feedback.message}</td>
                   <td className="px-4 py-2">{feedback.date}</td>
+                  <td className="px-4 py-2">
+                    {feedback.status !== 'Approved' ? (
+                      <button
+                        className="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 mr-2"
+                        onClick={async () => {
+                          try {
+                            const res = await AdminAPI.approveFeedback(feedback.id);
+                            if (res && res.response && res.response.ok) {
+                              toast.success('Feedback approved');
+                              // update local state
+                              setFeedbacks((prev) => prev.map((f) => (f.id === feedback.id ? { ...f, status: 'Approved' } : f)));
+                            } else {
+                              toast.error((res && res.data && res.data.message) || 'Failed to approve');
+                            }
+                          } catch (err) {
+                            console.error('Approve error', err);
+                            toast.error('Failed to approve feedback');
+                          }
+                        }}
+                      >
+                        Approve
+                      </button>
+                    ) : (
+                      <span className="text-sm text-green-700 font-medium">Approved</span>
+                    )}
+                    <button
+                      className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 ml-2"
+                      onClick={async () => {
+                        try {
+                          const res = await AdminAPI.deleteFeedback(feedback.id);
+                          if (res && res.response && res.response.ok) {
+                            toast.success('Feedback deleted');
+                            setFeedbacks((prev) => prev.filter((f) => f.id !== feedback.id));
+                          } else {
+                            toast.error((res && res.data && res.data.message) || 'Failed to delete');
+                          }
+                        } catch (err) {
+                          console.error('Delete error', err);
+                          toast.error('Failed to delete feedback');
+                        }
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </td>
                 </tr>
               ))
             )}

@@ -1,19 +1,14 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+import { apiFetch } from './apiClient';
 
 class AuthAPI {
   // Admin login
   static async adminLogin(userId, password) {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/admin/login`, {
+      return await apiFetch('/auth/admin/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId, password })
+        body: { userId, password },
+        auth: false,
       });
-
-      const data = await response.json();
-      return { response, data };
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
     }
@@ -22,16 +17,11 @@ class AuthAPI {
   // Student login
   static async studentLogin(email, password) {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/student/login`, {
+      return await apiFetch('/auth/student/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password })
+        body: { email, password },
+        auth: false,
       });
-
-      const data = await response.json();
-      return { response, data };
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
     }
@@ -40,14 +30,12 @@ class AuthAPI {
   // Student registration
   static async studentRegister(formData) {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/student/register`, {
+      return await apiFetch('/auth/student/register', {
         method: 'POST',
-        // Don't set Content-Type header when sending FormData - browser sets it automatically with boundary
-        body: formData
+        body: formData,
+        auth: false,
+        isFormData: true,
       });
-
-      const data = await response.json();
-      return { response, data };
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
     }
@@ -56,16 +44,11 @@ class AuthAPI {
   // Candidate login
   static async candidateLogin(email, password) {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/candidate/login`, {
+      return await apiFetch('/auth/candidate/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password })
+        body: { email, password },
+        auth: false,
       });
-
-      const data = await response.json();
-      return { response, data };
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
     }
@@ -74,14 +57,12 @@ class AuthAPI {
   // Candidate registration
   static async candidateRegister(formData) {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/candidate/register`, {
+      return await apiFetch('/auth/candidate/register', {
         method: 'POST',
-        // Don't set Content-Type header - browser will set it automatically for FormData
-        body: formData
+        body: formData,
+        auth: false,
+        isFormData: true,
       });
-
-      const data = await response.json();
-      return { response, data };
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
     }
@@ -105,21 +86,7 @@ class AuthAPI {
   // Verify token
   static async verifyToken() {
     try {
-      const token = this.getCurrentToken();
-      if (!token) {
-        throw new Error('No token found');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/auth/verify`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const data = await response.json();
-      return { response, data };
+      return await apiFetch('/auth/validate', { method: 'GET' });
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
     }
@@ -128,21 +95,7 @@ class AuthAPI {
   // Check candidate status for student
   static async checkCandidateStatus() {
     try {
-      const token = this.getCurrentToken();
-      if (!token) {
-        throw new Error('No token found');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/auth/student/candidate-status`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const data = await response.json();
-      return { response, data };
+      return await apiFetch('/auth/student/candidate-status', { method: 'GET' });
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
     }
@@ -151,21 +104,7 @@ class AuthAPI {
   // Get student profile
   static async getStudentProfile(studentId) {
     try {
-      const token = this.getCurrentToken();
-      if (!token) {
-        throw new Error('No token found');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/auth/student/${studentId}/profile`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const data = await response.json();
-      return { response, data };
+      return await apiFetch(`/auth/student/${studentId}/profile`, { method: 'GET' });
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
     }
@@ -174,31 +113,12 @@ class AuthAPI {
   // Update student profile
   static async updateStudentProfile(studentId, profileData) {
     try {
-      const token = this.getCurrentToken();
-      if (!token) {
-        throw new Error('No token found');
-      }
-
-      // Check if profileData is FormData (contains file) or plain object
       const isFormData = profileData instanceof FormData;
-
-      const headers = {
-        'Authorization': `Bearer ${token}`
-      };
-
-      // Only set Content-Type for JSON; let browser set it for FormData (includes boundary)
-      if (!isFormData) {
-        headers['Content-Type'] = 'application/json';
-      }
-
-      const response = await fetch(`${API_BASE_URL}/auth/student/${studentId}/profile`, {
+      return await apiFetch(`/auth/student/${studentId}/profile`, {
         method: 'PUT',
-        headers,
-        body: isFormData ? profileData : JSON.stringify(profileData)
+        body: isFormData ? profileData : profileData,
+        isFormData,
       });
-
-      const data = await response.json();
-      return { response, data };
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
     }
@@ -207,22 +127,10 @@ class AuthAPI {
   // Change student password
   static async changeStudentPassword(studentId, passwordData) {
     try {
-      const token = this.getCurrentToken();
-      if (!token) {
-        throw new Error('No token found');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/auth/student/${studentId}/change-password`, {
+      return await apiFetch(`/auth/student/${studentId}/change-password`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(passwordData)
+        body: passwordData,
       });
-
-      const data = await response.json();
-      return { response, data };
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
     }
@@ -231,21 +139,7 @@ class AuthAPI {
   // Get candidate profile
   static async getCandidateProfile(candidateId) {
     try {
-      const token = this.getCurrentToken();
-      if (!token) {
-        throw new Error('No token found');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/auth/candidate/${candidateId}/profile`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const data = await response.json();
-      return { response, data };
+      return await apiFetch(`/auth/candidate/${candidateId}/profile`, { method: 'GET' });
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
     }
@@ -254,22 +148,10 @@ class AuthAPI {
   // Update candidate profile
   static async updateCandidateProfile(candidateId, profileData) {
     try {
-      const token = this.getCurrentToken();
-      if (!token) {
-        throw new Error('No token found');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/auth/candidate/${candidateId}/profile`, {
+      return await apiFetch(`/auth/candidate/${candidateId}/profile`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(profileData)
+        body: profileData,
       });
-
-      const data = await response.json();
-      return { response, data };
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
     }
@@ -278,22 +160,10 @@ class AuthAPI {
   // Change candidate password
   static async changeCandidatePassword(candidateId, passwordData) {
     try {
-      const token = this.getCurrentToken();
-      if (!token) {
-        throw new Error('No token found');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/auth/candidate/${candidateId}/change-password`, {
+      return await apiFetch(`/auth/candidate/${candidateId}/change-password`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(passwordData)
+        body: passwordData,
       });
-
-      const data = await response.json();
-      return { response, data };
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
     }
@@ -307,17 +177,8 @@ class AuthAPI {
       const endpoint = userType === 'student' 
         ? `${API_BASE_URL}/auth/student/forgot-password`
         : `${API_BASE_URL}/auth/candidate/forgot-password`;
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email })
-      });
-
-      const data = await response.json();
-      return { response, data };
+      const path = endpoint.replace(API_BASE_URL, '');
+      return await apiFetch(path, { method: 'POST', body: { email }, auth: false });
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
     }
@@ -329,17 +190,8 @@ class AuthAPI {
       const endpoint = userType === 'student'
         ? `${API_BASE_URL}/auth/student/reset-password`
         : `${API_BASE_URL}/auth/candidate/reset-password`;
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token, newPassword })
-      });
-
-      const data = await response.json();
-      return { response, data };
+      const path = endpoint.replace(API_BASE_URL, '');
+      return await apiFetch(path, { method: 'POST', body: { token, newPassword }, auth: false });
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
     }
@@ -348,14 +200,7 @@ class AuthAPI {
   // Get public elections (no auth required)
   static async getPublicElections() {
     try {
-      const response = await fetch(`${API_BASE_URL}/election/public/elections?status=Upcoming`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-
-      const data = await response.json();
+      const { data } = await apiFetch('/election/public/elections?status=Upcoming', { method: 'GET', auth: false });
       return data;
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
@@ -365,25 +210,10 @@ class AuthAPI {
   // Submit feedback (Candidate)
   static async submitCandidateFeedback(feedbackText) {
     try {
-      const token = this.getCurrentToken();
-      
-      if (!token) {
-        throw new Error("No authentication token found");
-      }
-
-      const response = await fetch(`${API_BASE_URL}/feedback/candidate/feedbacks`, {
+      return await apiFetch('/feedback/candidate/feedbacks', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ 
-          feedbackText 
-        })
+        body: { feedbackText },
       });
-
-      const data = await response.json();
-      return { response, data };
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
     }

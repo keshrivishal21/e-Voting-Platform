@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+import { apiFetch } from './apiClient';
 
 class ElectionAPI {
   // Get current token
@@ -19,25 +19,8 @@ class ElectionAPI {
   // Get all elections (optional: filter by status)
   static async getElections(status = null) {
     try {
-      const token = this.getCurrentToken();
-      if (!token) {
-        throw new Error('No token found');
-      }
-
-      const url = status 
-        ? `${API_BASE_URL}/election/elections?status=${status}`
-        : `${API_BASE_URL}/election/elections`;
-
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const data = await response.json();
-      return { response, data };
+      const path = status ? `/election/elections?status=${status}` : `/election/elections`;
+      return await apiFetch(path, { method: 'GET' });
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
     }
@@ -61,21 +44,7 @@ class ElectionAPI {
   // Get a single election by ID
   static async getElectionById(electionId) {
     try {
-      const token = this.getCurrentToken();
-      if (!token) {
-        throw new Error('No token found');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/election/elections/${electionId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const data = await response.json();
-      return { response, data };
+      return await apiFetch(`/election/elections/${electionId}`, { method: 'GET' });
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
     }
@@ -84,22 +53,7 @@ class ElectionAPI {
   // Admin: Create a new election
   static async createElection(electionData) {
     try {
-      const token = this.getCurrentToken();
-      if (!token) {
-        throw new Error('No token found');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/election/admin/elections`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(electionData)
-      });
-
-      const data = await response.json();
-      return { response, data };
+      return await apiFetch('/election/admin/elections', { method: 'POST', body: electionData });
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
     }
@@ -108,22 +62,7 @@ class ElectionAPI {
   // Admin: Start an election
   static async startElection(electionId, force = false) {
     try {
-      const token = this.getCurrentToken();
-      if (!token) {
-        throw new Error('No token found');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/election/admin/elections/${electionId}/start`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ force })
-      });
-
-      const data = await response.json();
-      return { response, data };
+      return await apiFetch(`/election/admin/elections/${electionId}/start`, { method: 'POST', body: { force } });
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
     }
@@ -132,22 +71,7 @@ class ElectionAPI {
   // Admin: End an election
   static async endElection(electionId, force = false) {
     try {
-      const token = this.getCurrentToken();
-      if (!token) {
-        throw new Error('No token found');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/election/admin/elections/${electionId}/end`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ force })
-      });
-
-      const data = await response.json();
-      return { response, data };
+      return await apiFetch(`/election/admin/elections/${electionId}/end`, { method: 'POST', body: { force } });
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
     }

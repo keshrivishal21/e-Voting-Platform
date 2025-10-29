@@ -127,6 +127,18 @@ router.get("/verify", verifyToken, (req, res) => {
   });
 });
 
+// Optional validate endpoint used by clients to validate token and fetch user info
+router.get("/validate", verifyToken, (req, res) => {
+  // Return minimal user information for client-side session validation
+  res.status(200).json({
+    success: true,
+    user: {
+      userId: req.user.userId,
+      userType: req.user.userType,
+    }
+  });
+});
+
 // Role-specific protected routes
 router.get("/admin/dashboard", verifyAdmin, (req, res) => {
   res.status(200).json({

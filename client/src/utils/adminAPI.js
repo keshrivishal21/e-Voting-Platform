@@ -1,10 +1,7 @@
-// Admin API utility functions
-const API_BASE_URL = "http://localhost:5000/api";
+import { apiFetch } from './apiClient';
 
-// Get current authentication token from localStorage
-const getCurrentToken = () => {
-  return localStorage.getItem("adminToken");
-};
+// Keep API_BASE_URL for document URL construction
+const API_BASE_URL = "http://localhost:5000/api";
 
 /**
  * Get all pending candidate applications
@@ -12,26 +9,7 @@ const getCurrentToken = () => {
  */
 export const getPendingCandidates = async () => {
   try {
-    const token = getCurrentToken();
-    
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
-
-    const response = await fetch(`${API_BASE_URL}/candidate/admin/candidates/pending`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to fetch pending candidates");
-    }
-
+    const { data } = await apiFetch('/candidate/admin/candidates/pending', { method: 'GET' });
     return data;
   } catch (error) {
     console.error("Error fetching pending candidates:", error);
@@ -46,30 +24,8 @@ export const getPendingCandidates = async () => {
  */
 export const getAllCandidates = async (status = null) => {
   try {
-    const token = getCurrentToken();
-    
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
-
-    const url = status 
-      ? `${API_BASE_URL}/candidate/admin/candidates?status=${status}`
-      : `${API_BASE_URL}/candidate/admin/candidates`;
-
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to fetch candidates");
-    }
-
+    const path = status ? `/candidate/admin/candidates?status=${status}` : `/candidate/admin/candidates`;
+    const { data } = await apiFetch(path, { method: 'GET' });
     return data;
   } catch (error) {
     console.error("Error fetching candidates:", error);
@@ -84,30 +40,7 @@ export const getAllCandidates = async (status = null) => {
  */
 export const approveCandidate = async (candidateId) => {
   try {
-    const token = getCurrentToken();
-    
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
-
-    const response = await fetch(
-      `${API_BASE_URL}/candidate/admin/candidates/${candidateId}/approve`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to approve candidate");
-    }
-
-    return data;
+    return await apiFetch(`/candidate/admin/candidates/${candidateId}/approve`, { method: 'POST' });
   } catch (error) {
     console.error("Error approving candidate:", error);
     throw error;
@@ -122,31 +55,7 @@ export const approveCandidate = async (candidateId) => {
  */
 export const rejectCandidate = async (candidateId, reason = null) => {
   try {
-    const token = getCurrentToken();
-    
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
-
-    const response = await fetch(
-      `${API_BASE_URL}/candidate/admin/candidates/${candidateId}/reject`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ reason }),
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to reject candidate");
-    }
-
-    return data;
+    return await apiFetch(`/candidate/admin/candidates/${candidateId}/reject`, { method: 'POST', body: { reason } });
   } catch (error) {
     console.error("Error rejecting candidate:", error);
     throw error;
@@ -159,7 +68,7 @@ export const rejectCandidate = async (candidateId, reason = null) => {
  * @returns {string} URL to view the document
  */
 export const getCandidateDocumentUrl = (candidateId) => {
-  const token = getCurrentToken();
+  const token = localStorage.getItem('adminToken');
   return `${API_BASE_URL}/candidate/admin/candidates/${candidateId}/document?token=${token}`;
 };
 
@@ -169,26 +78,7 @@ export const getCandidateDocumentUrl = (candidateId) => {
  */
 export const getDashboardStats = async () => {
   try {
-    const token = getCurrentToken();
-    
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
-
-    const response = await fetch(`${API_BASE_URL}/dashboard/admin/stats`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to fetch dashboard stats");
-    }
-
+    const { data } = await apiFetch('/dashboard/admin/stats', { method: 'GET' });
     return data;
   } catch (error) {
     console.error("Error fetching dashboard stats:", error);
@@ -203,29 +93,7 @@ export const getDashboardStats = async () => {
  */
 export const getRecentActivity = async (limit = 20) => {
   try {
-    const token = getCurrentToken();
-    
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
-
-    const response = await fetch(
-      `${API_BASE_URL}/dashboard/admin/activity?limit=${limit}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to fetch recent activity");
-    }
-
+    const { data } = await apiFetch(`/dashboard/admin/activity?limit=${limit}`, { method: 'GET' });
     return data;
   } catch (error) {
     console.error("Error fetching recent activity:", error);
@@ -239,29 +107,36 @@ export const getRecentActivity = async (limit = 20) => {
  */
 export const getAllFeedbacks = async () => {
   try {
-    const token = getCurrentToken();
-    
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
-
-    const response = await fetch(`${API_BASE_URL}/feedback/admin/feedbacks`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to fetch feedbacks");
-    }
-
+    const { data } = await apiFetch('/feedback/admin/feedbacks', { method: 'GET' });
     return data;
   } catch (error) {
     console.error("Error fetching feedbacks:", error);
+    throw error;
+  }
+};
+
+/**
+ * Approve a feedback by id
+ * @param {number} feedbackId
+ */
+export const approveFeedback = async (feedbackId) => {
+  try {
+    return await apiFetch(`/feedback/admin/feedbacks/${feedbackId}/approve`, { method: 'POST' });
+  } catch (error) {
+    console.error('Error approving feedback:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete a feedback (admin)
+ * @param {number} feedbackId
+ */
+export const deleteFeedback = async (feedbackId) => {
+  try {
+    return await apiFetch(`/feedback/admin/feedbacks/${feedbackId}`, { method: 'DELETE' });
+  } catch (error) {
+    console.error('Error deleting feedback:', error);
     throw error;
   }
 };
@@ -272,26 +147,7 @@ export const getAllFeedbacks = async () => {
  */
 export const getAllNotifications = async () => {
   try {
-    const token = getCurrentToken();
-    
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
-
-    const response = await fetch(`${API_BASE_URL}/notification/admin/notifications`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to fetch notifications");
-    }
-
+    const { data } = await apiFetch('/notification/admin/notifications', { method: 'GET' });
     return data;
   } catch (error) {
     console.error("Error fetching notifications:", error);
@@ -307,28 +163,7 @@ export const getAllNotifications = async () => {
  */
 export const sendNotification = async (recipientType, message) => {
   try {
-    const token = getCurrentToken();
-    
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
-
-    const response = await fetch(`${API_BASE_URL}/notification/admin/notifications`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ recipientType, message }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to send notification");
-    }
-
-    return data;
+    return await apiFetch('/notification/admin/notifications', { method: 'POST', body: { recipientType, message } });
   } catch (error) {
     console.error("Error sending notification:", error);
     throw error;
@@ -341,26 +176,7 @@ export const sendNotification = async (recipientType, message) => {
  */
 export const getAllStudents = async () => {
   try {
-    const token = getCurrentToken();
-    
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
-
-    const response = await fetch(`${API_BASE_URL}/student/admin/students`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to fetch students");
-    }
-
+    const { data } = await apiFetch('/student/admin/students', { method: 'GET' });
     return data;
   } catch (error) {
     console.error("Error fetching students:", error);
@@ -375,26 +191,7 @@ export const getAllStudents = async () => {
  */
 export const getStudentById = async (studentId) => {
   try {
-    const token = getCurrentToken();
-    
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
-
-    const response = await fetch(`${API_BASE_URL}/student/admin/students/${studentId}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to fetch student");
-    }
-
+    const { data } = await apiFetch(`/student/admin/students/${studentId}`, { method: 'GET' });
     return data;
   } catch (error) {
     console.error("Error fetching student:", error);
@@ -408,26 +205,7 @@ export const getStudentById = async (studentId) => {
  */
 export const getStudentStats = async () => {
   try {
-    const token = getCurrentToken();
-    
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
-
-    const response = await fetch(`${API_BASE_URL}/student/admin/students/stats`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to fetch student statistics");
-    }
-
+    const { data } = await apiFetch('/student/admin/students/stats', { method: 'GET' });
     return data;
   } catch (error) {
     console.error("Error fetching student stats:", error);
@@ -442,26 +220,7 @@ export const getStudentStats = async () => {
  */
 export const getStudentVotingHistory = async (studentId) => {
   try {
-    const token = getCurrentToken();
-    
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
-
-    const response = await fetch(`${API_BASE_URL}/student/admin/students/${studentId}/voting-history`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to fetch voting history");
-    }
-
+    const { data } = await apiFetch(`/student/admin/students/${studentId}/voting-history`, { method: 'GET' });
     return data;
   } catch (error) {
     console.error("Error fetching voting history:", error);
@@ -478,6 +237,8 @@ export default {
   getDashboardStats,
   getRecentActivity,
   getAllFeedbacks,
+  approveFeedback,
+  deleteFeedback,
   getAllNotifications,
   sendNotification,
   getAllStudents,
