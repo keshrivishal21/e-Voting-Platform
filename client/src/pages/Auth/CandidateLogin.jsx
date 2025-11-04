@@ -62,12 +62,15 @@ function CandidateLogin() {
             if (response.ok && data.success) {
                 // Use auth context to login - just token and type
                 login(data.data.token, 'Candidate');
+                
+                // Remove student token only after candidate login is successful
+                localStorage.removeItem("studentToken");
+                
                 toast.success('Welcome back, Candidate! 🚀');
                 
                 // Navigate to intended page or candidate dashboard
                 const from = location.state?.from?.pathname || '/candidate';
                 navigate(from);
-                localStorage.removeItem("studentToken");
             } else {
                 const errorMsg = data.message || 'Login failed. Please try again.';
                 setError(errorMsg);

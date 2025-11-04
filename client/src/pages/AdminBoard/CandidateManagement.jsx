@@ -53,16 +53,21 @@ const CandidateManagement = () => {
   // Approve a pending candidate
   const approveCandidate = async (candidate) => {
     try {
+      console.log("Approving candidate with ID:", candidate.Can_id);
       const response = await AdminAPI.approveCandidate(candidate.Can_id);
+      console.log("Approval response:", response);
+      
       if (response.success) {
         toast.success("Candidate approved successfully!");
         // Refresh both lists
         fetchPendingCandidates();
         fetchApprovedCandidates();
+      } else {
+        toast.error(response.message || "Failed to approve candidate");
       }
     } catch (error) {
-      toast.error(error.message || "Failed to approve candidate");
       console.error("Error approving candidate:", error);
+      toast.error(error.message || "Failed to approve candidate");
     }
   };
 

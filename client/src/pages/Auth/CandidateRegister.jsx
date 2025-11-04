@@ -8,6 +8,10 @@ import { motion } from "framer-motion";
 const CandidateRegister = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const hasFetched = useRef(false); 
+  const [scholarNo, setScholarNo] = useState(""); // Will be set from fetched data
+  const [studentFetched, setStudentFetched] = useState(false);
+  const [fetchingStudent, setFetchingStudent] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -43,8 +47,73 @@ const CandidateRegister = () => {
 
   const years = [1, 2, 3, 4];
 
-  // Fetch available elections on component mount
+  // Fetch authenticated student details from token
+  const handleFetchStudent = async () => {
+    setFetchingStudent(true);
+    setError("");
+
+    try {
+      // Get student token from localStorage
+      const token = localStorage.getItem('studentToken');
+      
+      if (!token) {
+        const errorMsg = "You must be logged in as a student to register as a candidate";
+        setError(errorMsg);
+        toast.error(errorMsg);
+        // Redirect to student login
+        setTimeout(() => navigate('/student/login'), 2000);
+        return;
+      }
+
+      const response = await fetch('http://localhost:5000/api/auth/student/details', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        const student = data.data;
+        setScholarNo(student.scholarNo); // Set the scholar number from response
+        setFormData((prev) => ({
+          ...prev,
+          name: student.name,
+          email: student.email,
+          phone: student.phone,
+        }));
+        setStudentFetched(true);
+        toast.success("✅ Student details fetched successfully!");
+      } else {
+        const errorMsg = data?.message || "Failed to fetch student details";
+        setError(errorMsg);
+        toast.error(errorMsg);
+        setStudentFetched(false);
+        
+        // If unauthorized, redirect to login
+        if (response.status === 401 || response.status === 403) {
+          setTimeout(() => navigate('/student/login'), 2000);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching student:", error);
+      const errorMsg = "Network error. Please check your connection and try again.";
+      setError(errorMsg);
+      toast.error(errorMsg);
+      setStudentFetched(false);
+    } finally {
+      setFetchingStudent(false);
+    }
+  };
+
+  // Fetch available elections and student details on component mount
   useEffect(() => {
+    // Prevent duplicate fetches in React StrictMode
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+
     const fetchElections = async () => {
       try {
         const response = await AuthAPI.getPublicElections();
@@ -66,6 +135,9 @@ const CandidateRegister = () => {
         toast.error(`Failed to load elections: ${error.message}`);
       }
     };
+    
+    // Auto-fetch student details on mount
+    handleFetchStudent();
     fetchElections();
   }, []);
 
@@ -157,6 +229,15 @@ const CandidateRegister = () => {
     setError("");
 
     try {
+      // Check if student details are fetched
+      if (!studentFetched) {
+        const errorMsg = "Please fetch your student details first";
+        setError(errorMsg);
+        toast.error(errorMsg);
+        setLoading(false);
+        return;
+      }
+
       // Validate required fields
       const requiredFields = [
         "name",
@@ -283,7 +364,58 @@ const CandidateRegister = () => {
               </div>
             )}
 
-            {/* Personal Information */}
+            {/* Student Verification Status */}
+            {fetchingStudent && (
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-sm font-medium text-gray-700">
+                    Verifying your student account...
+                  </span>
+                </div>
+              </div>
+            )}
+            
+            {!fetchingStudent && studentFetched && (
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-green-600 text-xl">✓</span>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-700">
+                      Student Account Verified
+                    </p>
+                    <p className="text-xs text-gray-600 mt-1">
+                      Scholar Number: {scholarNo} • Your details have been loaded from student records
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {!fetchingStudent && !studentFetched && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-red-600 text-xl">⚠</span>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-700">
+                      Student Verification Required
+                    </p>
+                    <p className="text-xs text-gray-600 mt-1">
+                      You must be logged in as a student to register as a candidate.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/student/login')}
+                      className="mt-2 text-xs text-indigo-600 hover:text-indigo-700 font-medium hover:underline"
+                    >
+                      Go to Student Login →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Personal Information (Read-only after fetch) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -294,10 +426,13 @@ const CandidateRegister = () => {
                   type="text"
                   value={formData.name}
                   onChange={handleInputChange}
-                  placeholder="Enter your full name"
-                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                  placeholder={studentFetched ? "Fetched from student records" : "Enter your full name"}
+                  className={`w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 ${
+                    studentFetched ? "bg-gray-100 cursor-not-allowed" : "bg-white"
+                  }`}
                   required
-                  disabled={loading}
+                  disabled={studentFetched || loading}
+                  readOnly={studentFetched}
                 />
               </div>
 
@@ -310,10 +445,13 @@ const CandidateRegister = () => {
                   type="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  placeholder="Enter your email"
-                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                  placeholder={studentFetched ? "Fetched from student records" : "Enter your email"}
+                  className={`w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 ${
+                    studentFetched ? "bg-gray-100 cursor-not-allowed" : "bg-white"
+                  }`}
                   required
-                  disabled={loading}
+                  disabled={studentFetched || loading}
+                  readOnly={studentFetched}
                 />
               </div>
             </div>
@@ -328,10 +466,13 @@ const CandidateRegister = () => {
                   type="tel"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  placeholder="Enter phone number"
-                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                  placeholder={studentFetched ? "Fetched from student records" : "Enter phone number"}
+                  className={`w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 ${
+                    studentFetched ? "bg-gray-100 cursor-not-allowed" : "bg-white"
+                  }`}
                   required
-                  disabled={loading}
+                  disabled={studentFetched || loading}
+                  readOnly={studentFetched}
                 />
               </div>
 
@@ -558,7 +699,7 @@ const CandidateRegister = () => {
             {/* Submit Button */}
             <motion.button
               type="submit"
-              disabled={loading || !formData.electionId || elections.length === 0}
+              disabled={loading || !studentFetched || !formData.electionId || elections.length === 0}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
@@ -568,13 +709,20 @@ const CandidateRegister = () => {
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
                   Registering...
                 </div>
+              ) : !studentFetched ? (
+                "Fetch Student Details First"
               ) : !formData.electionId ? (
                 "Select an Election to Continue"
               ) : (
                 "Register as Candidate"
               )}
             </motion.button>
-            {!formData.electionId && !loading && (
+            {!studentFetched && !loading && (
+              <p className="mt-2 text-sm text-center text-orange-500">
+                ⚠️ Please fetch your student details before registering
+              </p>
+            )}
+            {studentFetched && !formData.electionId && !loading && (
               <p className="mt-2 text-sm text-center text-red-500">
                 ⚠️ Please select an election before registering
               </p>

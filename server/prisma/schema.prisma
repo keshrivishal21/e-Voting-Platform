@@ -80,6 +80,7 @@ model STUDENT {
   Std_password String   @db.VarChar(255)
   Dob         DateTime  
   Std_email   String    @db.VarChar(50)
+  Email_verified Boolean @default(false)
   User_type   UserType  @default(Student)
   Profile      Bytes?    @db.MediumBlob
   Reset_token String?   @db.VarChar(255)

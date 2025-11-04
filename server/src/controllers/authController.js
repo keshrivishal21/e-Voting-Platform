@@ -1,10 +1,10 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import { parse } from "dotenv";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import fs from "fs";
-import { sendPasswordResetEmail, sendPasswordResetConfirmationEmail } from "../utils/emailService.js";
+import { sendPasswordResetEmail, sendPasswordResetConfirmationEmail, sendEmailVerification } from "../utils/emailService.js";
+import { storePendingRegistration, getPendingRegistration, removePendingRegistration, updatePendingOTP } from "../utils/pendingRegistrations.js";
 
 const prisma = new PrismaClient();
 
@@ -114,6 +114,14 @@ export const studentLogin = async (req, res) => {
       });
     }
 
+    // Ensure email is verified before allowing login
+    if (!student.Email_verified) {
+      return res.status(403).json({
+        success: false,
+        message: 'Email not verified. Please verify your email before logging in.'
+      });
+    }
+
     // Generate token
     const token = generateToken(student.Std_id, "Student");
 
@@ -177,7 +185,7 @@ export const studentRegister = async (req, res) => {
       });
     }
 
-    // Check if student already exists
+    // Check if student already exists in database
     const existingStudent = await prisma.sTUDENT.findFirst({
       where: { Std_email: email },
     });
@@ -193,7 +201,24 @@ export const studentRegister = async (req, res) => {
       }
       return res.status(409).json({
         success: false,
-        message: "Student with this email already exist",
+        message: "Student with this email already exists",
+      });
+    }
+
+    // Check if email was verified via OTP
+    const pendingData = getPendingRegistration(email);
+    if (!pendingData || !pendingData.emailVerified) {
+      // Clean up uploaded file
+      if (profileFile && profileFile.path) {
+        try {
+          fs.unlinkSync(profileFile.path);
+        } catch (error) {
+          console.error("Error deleting temporary file:", error);
+        }
+      }
+      return res.status(400).json({
+        success: false,
+        message: "Please verify your email before registering",
       });
     }
 
@@ -217,45 +242,76 @@ export const studentRegister = async (req, res) => {
       }
     }
 
-    // Create user entry
-    const user = await prisma.uSERS.create({
-      data: {
-        User_id: BigInt(scholarNo),
-        User_type: "Student",
-      },
-    });
-    // Create student
-    const student = await prisma.sTUDENT.create({
-      data: {
-        Std_id: BigInt(scholarNo),
-        Std_name: name,
-        Std_phone: phone,
-        Std_password: hashedPassword,
-        Dob: new Date(dob),
-        Std_email: email,
-        Profile: profileBuffer, // Store profile picture as buffer (can be null)
-      },
-    });
-
-    // Clean up temporary file after saving to database
-    if (profileFile && profileFile.path) {
-      try {
-        fs.unlinkSync(profileFile.path);
-      } catch (error) {
-        console.error("Error deleting temporary file:", error);
-      }
-    }
-
-    res.status(201).json({
-      success: true,
-      message: "Student registered successfully",
-      data: {
-        user: {
-          scholarNo: student.Std_id.toString(),
-          userType: "Student",
+    // Create USERS and STUDENT records (email already verified)
+    try {
+      // Create user entry
+      await prisma.uSERS.create({
+        data: {
+          User_id: BigInt(scholarNo),
+          User_type: "Student",
         },
-      },
-    });
+      });
+
+      // Create student record with Email_verified=true
+      const student = await prisma.sTUDENT.create({
+        data: {
+          Std_id: BigInt(scholarNo),
+          Std_name: name,
+          Std_phone: phone,
+          Std_password: hashedPassword,
+          Dob: new Date(dob),
+          Std_email: email,
+          Profile: profileBuffer,
+          Email_verified: true, // Email was verified via OTP
+          Reset_token: null,
+          Reset_token_expiry: null,
+        },
+      });
+
+      // Clean up temporary file after saving to database
+      if (profileFile && profileFile.path) {
+        try {
+          fs.unlinkSync(profileFile.path);
+        } catch (error) {
+          console.error("Error deleting temporary file:", error);
+        }
+      }
+
+      // Remove pending registration data
+      removePendingRegistration(email);
+
+      res.status(201).json({
+        success: true,
+        message: "Registration successful! You can now log in.",
+        data: {
+          user: {
+            scholarNo: student.Std_id.toString(),
+            userType: "Student",
+          },
+        },
+      });
+    } catch (dbError) {
+      console.error('Database error during student creation:', dbError);
+      
+      // Clean up uploaded file in case of error
+      if (profileFile && profileFile.path) {
+        try {
+          fs.unlinkSync(profileFile.path);
+        } catch (error) {
+          console.error("Error deleting temporary file:", error);
+        }
+      }
+
+      // Check if it's a duplicate key error
+      if (dbError.code === 'P2002') {
+        return res.status(409).json({ 
+          success: false, 
+          message: 'Student account already exists. Please login.' 
+        });
+      }
+      
+      throw dbError;
+    }
   } catch (error) {
     console.error("Student registration error:", error);
     
@@ -512,6 +568,166 @@ export const candidateRegister = async (req, res) => {
       success: false,
       message: "Internal server error",
     });
+  }
+};
+
+// Send OTP for inline email verification (before registration)
+export const sendOTP = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+
+    // Validate email format (must be college email: scholarNo@stu.manit.ac.in)
+    const collegeEmailRegex = /^(\d+)@stu\.manit\.ac\.in$/;
+    const match = email.match(collegeEmailRegex);
+    if (!match) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Please enter a valid college email (e.g., 123456@stu.manit.ac.in)' 
+      });
+    }
+
+    // Check if student already exists in database
+    const existingStudent = await prisma.sTUDENT.findFirst({ where: { Std_email: email } });
+    if (existingStudent) {
+      return res.status(409).json({ success: false, message: 'This email is already registered' });
+    }
+
+    // Check if there's already a pending verification for this email
+    const existingPending = getPendingRegistration(email);
+    
+    // Generate 6-digit OTP
+    const verifyOTP = Math.floor(100000 + Math.random() * 900000).toString();
+    const verifyOTPHashed = crypto.createHash('sha256').update(verifyOTP).digest('hex');
+    const verifyExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    if (existingPending) {
+      // Update existing pending registration with new OTP
+      updatePendingOTP(email, verifyOTPHashed, verifyExpiry);
+    } else {
+      // Store minimal pending data (just for OTP verification, full registration data comes later)
+      storePendingRegistration(email, {
+        email,
+        verificationOnly: true, // Flag to indicate this is just for email verification
+      }, verifyOTPHashed, verifyExpiry);
+    }
+
+    // Send OTP email
+    try {
+      await sendEmailVerification(email, verifyOTP, 'Student');
+      res.status(200).json({ 
+        success: true, 
+        message: 'OTP sent to your email. Valid for 10 minutes.' 
+      });
+    } catch (err) {
+      console.error('Failed to send OTP email:', err?.message || err);
+      // Don't fail completely - allow verification to proceed (useful for dev/testing)
+      res.status(200).json({ 
+        success: true, 
+        message: 'OTP sent. If you don\'t receive it, please check your email address.' 
+      });
+    }
+  } catch (error) {
+    console.error('Send OTP error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+// Get student details by scholar number (for candidate registration)
+// Get authenticated student details for candidate registration
+export const getStudentDetailsForCandidate = async (req, res) => {
+  try {
+    // Get student ID from authenticated user's token (set by verifyStudent middleware)
+    const studentId = BigInt(req.user.userId);
+
+    const student = await prisma.sTUDENT.findUnique({
+      where: { Std_id: studentId },
+      select: {
+        Std_id: true,
+        Std_name: true,
+        Std_email: true,
+        Std_phone: true,
+        Email_verified: true,
+      }
+    });
+
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found. Please register as a student first.' });
+    }
+
+    if (!student.Email_verified) {
+      return res.status(400).json({ success: false, message: 'Please verify your student email before registering as a candidate.' });
+    }
+
+    // Check if already registered as candidate
+    const existingCandidate = await prisma.cANDIDATE.findUnique({
+      where: { Can_id: studentId }
+    });
+
+    if (existingCandidate) {
+      return res.status(409).json({ success: false, message: 'You are already registered as a candidate.' });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        scholarNo: student.Std_id.toString(),
+        name: student.Std_name,
+        email: student.Std_email,
+        phone: student.Std_phone,
+      }
+    });
+  } catch (error) {
+    console.error('Get student details error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+// Verify OTP (inline verification before registration)
+export const verifyOTP = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return res.status(400).json({ success: false, message: 'Email and OTP are required' });
+    }
+
+    // Get pending data
+    const pendingData = getPendingRegistration(email);
+    if (!pendingData) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No OTP found for this email. Please request a new OTP.' 
+      });
+    }
+
+    // Check if OTP is expired
+    if (pendingData.expiresAt < Date.now()) {
+      removePendingRegistration(email);
+      return res.status(400).json({ 
+        success: false, 
+        message: 'OTP expired. Please request a new one.' 
+      });
+    }
+
+    // Hash provided OTP and compare
+    const otpHashed = crypto.createHash('sha256').update(otp).digest('hex');
+    if (pendingData.otpHash !== otpHashed) {
+      return res.status(400).json({ success: false, message: 'Invalid OTP' });
+    }
+
+    // Mark email as verified in pending data (keep the verified status)
+    pendingData.emailVerified = true;
+    pendingData.verifiedAt = Date.now();
+
+    res.status(200).json({ 
+      success: true, 
+      message: 'Email verified successfully! You can now complete your registration.' 
+    });
+  } catch (error) {
+    console.error('Verify OTP error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 

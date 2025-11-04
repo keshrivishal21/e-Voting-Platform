@@ -6,6 +6,9 @@ import {
   studentLogin, 
   candidateLogin,
   studentRegister,
+  sendOTP,
+  verifyOTP,
+  getStudentDetailsForCandidate,
   candidateRegister,
   getStudentProfile,
   updateStudentProfile,
@@ -30,26 +33,29 @@ import upload from "../middlewares/uploadMiddleware.js";
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// Generate JWT Token helper function
-const generateToken = (userId,userType) => {
+
+const generateToken = (userId, userType) => {
   return jwt.sign(
-    { userId, role, userType },
+    { userId, userType },
     process.env.JWT_SECRET || "your-secret-key",
     { expiresIn: "24h" }
   );
 };
 
 
-router.post("/admin/login", adminLogin); // Admin-specific login
-router.post("/student/login", studentLogin); // Student-specific login
-router.post("/candidate/login", candidateLogin); // Candidate-specific login
+router.post("/admin/login", adminLogin); 
+router.post("/student/login", studentLogin); 
+router.post("/candidate/login", candidateLogin); 
 
 // Registration Routes
 router.post("/student/register", upload.single('profile'), studentRegister); // Student registration with optional profile picture
+router.post('/student/send-otp', sendOTP); // Send OTP for inline email verification
+router.post('/student/verify-otp', verifyOTP); // Verify OTP before registration
+router.get('/student/details', verifyStudent, getStudentDetailsForCandidate); // Get authenticated student details for candidate registration
 router.post("/candidate/register", upload.fields([
   { name: 'document', maxCount: 1 },
   { name: 'profile', maxCount: 1 }
-]), candidateRegister); // Candidate registration with file uploads
+]), candidateRegister); // Candidate registration with document and optional profile
 
 // Forgot Password Routes
 router.post("/student/forgot-password", requestStudentPasswordReset); // Request student password reset
@@ -88,7 +94,7 @@ router.get("/student/candidate-status", verifyStudent, async (req, res) => {
 
     if (candidate) {
       // Generate candidate token for seamless access
-      const candidateToken = generateToken(candidate.id, "candidate", "candidate");
+      const candidateToken = generateToken(candidate.id, "Candidate");
       
       return res.status(200).json({
         success: true,

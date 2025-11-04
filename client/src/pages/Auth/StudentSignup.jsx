@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import logo from "../../assets/evoting.png";
 import AuthAPI from "../../utils/authAPI";
+import { apiFetch } from "../../utils/apiClient";
 
 function Signup() {
   const navigate = useNavigate();
@@ -19,6 +20,13 @@ function Signup() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [scholarNo, setScholarNo] = useState('');
+  
+  // OTP verification state
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [verifyLoading, setVerifyLoading] = useState(false);
 
   const collegeEmailRegex = /^(\d+)@stu\.manit\.ac\.in$/;
 
@@ -92,6 +100,72 @@ function Signup() {
     setProfilePreview(null);
   };
 
+  // Send OTP to email
+  const handleSendOTP = async () => {
+    // Validate email first
+    if (!formData.email) {
+      toast.error('Please enter your email address');
+      return;
+    }
+
+    const match = formData.email.match(collegeEmailRegex);
+    if (!match) {
+      toast.error('Please enter a valid college email (e.g. 123456@stu.manit.ac.in)');
+      return;
+    }
+
+    setOtpLoading(true);
+    try {
+      const { response, data } = await apiFetch('/auth/student/send-otp', {
+        method: 'POST',
+        body: { email: formData.email.trim() },
+        auth: false
+      });
+
+      if (response && response.ok && data && data.success) {
+        setOtpSent(true);
+        setOtpVerified(false);
+        toast.success(data.message || 'OTP sent to your email');
+      } else {
+        toast.error(data?.message || 'Failed to send OTP');
+      }
+    } catch (err) {
+      console.error('Send OTP error:', err);
+      toast.error('Failed to send OTP. Please try again.');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  // Verify OTP
+  const handleVerifyOTP = async () => {
+    if (!otp || otp.length !== 6) {
+      toast.error('Please enter a valid 6-digit OTP');
+      return;
+    }
+
+    setVerifyLoading(true);
+    try {
+      const { response, data } = await apiFetch('/auth/student/verify-otp', {
+        method: 'POST',
+        body: { email: formData.email.trim(), otp },
+        auth: false
+      });
+
+      if (response && response.ok && data && data.success) {
+        setOtpVerified(true);
+        toast.success('Email verified successfully!');
+      } else {
+        toast.error(data?.message || 'Invalid OTP');
+      }
+    } catch (err) {
+      console.error('Verify OTP error:', err);
+      toast.error('Failed to verify OTP. Please try again.');
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
+
   const submitHandler = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -110,6 +184,14 @@ function Signup() {
       const match = formData.email.match(collegeEmailRegex);
       if (!match) {
         const errorMsg = "Please enter a valid college email (e.g. 123456@stu.manit.ac.in)";
+        setError(errorMsg);
+        toast.error(errorMsg);
+        return;
+      }
+
+      // Check if email is verified
+      if (!otpVerified) {
+        const errorMsg = "Please verify your email before registering";
         setError(errorMsg);
         toast.error(errorMsg);
         return;
@@ -140,8 +222,9 @@ function Signup() {
       const { response, data } = await AuthAPI.studentRegister(registrationData);
 
       if (response.ok && data.success) {
-        toast.success("🎉 Registration successful! Please login.");
-        navigate('/student/login');
+        toast.success("Registration successful! You can now log in.");
+        // Redirect to login page
+        setTimeout(() => navigate('/student/login'), 1500);
       } else {
         const errorMsg = data.message || 'Registration failed. Please try again.';
         setError(errorMsg);
@@ -269,17 +352,75 @@ function Signup() {
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 College Email
               </label>
-              <input
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="Enter your college email (e.g. 123456@stu.manit.ac.in)"
-                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
-                required
-                disabled={loading}
-              />
+              <div className="flex gap-2">
+                <input
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  placeholder="123456@stu.manit.ac.in"
+                  className="flex-1 px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                  required
+                  disabled={loading || otpVerified}
+                />
+                <button
+                  type="button"
+                  onClick={handleSendOTP}
+                  disabled={otpLoading || otpVerified || !formData.email}
+                  className={`px-4 py-2 rounded-xl font-medium transition-all ${
+                    otpVerified
+                      ? 'bg-green-100 text-green-700 cursor-not-allowed'
+                      : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                  } disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap`}
+                >
+                  {otpLoading ? '...' : otpVerified ? '✓ Verified' : otpSent ? 'Resend' : 'Send OTP'}
+                </button>
+              </div>
             </div>
+
+            {/* OTP Verification Field - Shows after OTP is sent */}
+            {otpSent && !otpVerified && (
+              <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Enter OTP
+                </label>
+                <p className="text-xs text-gray-600 mb-3">
+                  We've sent a 6-digit code to your email
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={otp}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                      setOtp(value);
+                    }}
+                    placeholder="000000"
+                    maxLength={6}
+                    className="flex-1 px-4 py-3 bg-white border border-gray-300 rounded-xl text-center text-xl tracking-widest font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    disabled={verifyLoading}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleVerifyOTP}
+                    disabled={verifyLoading || otp.length !== 6}
+                    className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                  >
+                    {verifyLoading ? 'Verifying...' : 'Verify'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Success Message after verification */}
+            {otpVerified && (
+              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span>Email verified! You can now complete your registration.</span>
+              </div>
+            )}
 
             {/* DOB and Phone Number */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
