@@ -475,7 +475,7 @@ export const getElectionResults = async (req, res) => {
                 Position: true,
                 Branch: true,
                 Year: true,
-                Profile_pic: true
+                Profile: true
               }
             }
           },
@@ -491,6 +491,23 @@ export const getElectionResults = async (req, res) => {
           if (!resultsByPosition[position]) {
             resultsByPosition[position] = [];
           }
+
+          // Convert profile to base64 if exists
+          let profileBase64 = null;
+          if (result.candidate.Profile) {
+            let profileBuffer = result.candidate.Profile;
+            
+            // Handle if Profile is already a Buffer object
+            if (profileBuffer instanceof Buffer) {
+              profileBase64 = `data:image/jpeg;base64,${profileBuffer.toString('base64')}`;
+            } 
+            // Handle if Profile is serialized as object with numeric keys
+            else if (typeof profileBuffer === 'object' && !Array.isArray(profileBuffer)) {
+              profileBuffer = Buffer.from(Object.values(profileBuffer));
+              profileBase64 = `data:image/jpeg;base64,${profileBuffer.toString('base64')}`;
+            }
+          }
+
           resultsByPosition[position].push({
             candidateId: result.Can_id.toString(),
             candidateName: result.candidate.Can_name,
@@ -498,7 +515,7 @@ export const getElectionResults = async (req, res) => {
             position: result.candidate.Position,
             branch: result.candidate.Branch,
             year: result.candidate.Year,
-            profilePic: result.candidate.Profile_pic,
+            profilePic: profileBase64,
             voteCount: result.Vote_count,
             isWinner: resultsByPosition[position].length === 0 // First candidate (highest votes) is winner
           });

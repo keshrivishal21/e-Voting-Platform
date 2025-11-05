@@ -131,7 +131,12 @@ async function declareElectionResults(electionId, electionTitle) {
 }
 
 // Schedule cleanup for a specific election after retention period
+// DISABLED: Cleanup functionality disabled to preserve all election data
 function scheduleCleanupForElection(electionId, title, endDate) {
+  console.log(`ℹ️  Cleanup disabled - all data for election ${electionId} ("${title}") will be preserved`);
+  return; // Early return - no cleanup scheduled
+  
+  /* CLEANUP DISABLED - Code preserved for future implementation
   const retentionDays = parseInt(process.env.CANDIDATE_RETENTION_DAYS) || 2;
   const retentionMs = retentionDays * 24 * 60 * 60 * 1000;
   
@@ -153,10 +158,16 @@ function scheduleCleanupForElection(electionId, title, endDate) {
   }, delayMs);
   
   cleanupTimeouts.set(electionId, timeoutRef);
+  */
 }
 
 // Cleanup candidates from a specific completed election
+// DISABLED: Cleanup functionality disabled to preserve all election data
 async function cleanupSpecificElection(electionId) {
+  console.log(`ℹ️  Cleanup disabled - data for election ${electionId} will be preserved`);
+  return;
+  
+  /* CLEANUP DISABLED - Code preserved for future implementation
   try {
     const election = await prisma.eLECTION.findUnique({
       where: { Election_id: electionId },
@@ -265,10 +276,16 @@ async function cleanupSpecificElection(electionId) {
   } catch (error) {
     console.error(`❌ Failed to cleanup election ${electionId}:`, error);
   }
+  */
 }
 
 // Cleanup candidates from completed elections after retention period (batch cleanup for existing elections)
+// DISABLED: Cleanup functionality disabled to preserve all election data
 async function cleanupCompletedElectionCandidates() {
+  console.log(`ℹ️  Cleanup disabled - all election data will be preserved`);
+  return { electionsProcessed: 0, candidatesDeleted: 0 };
+  
+  /* CLEANUP DISABLED - Code preserved for future implementation
   try {
     const now = new Date();
     
@@ -395,6 +412,7 @@ async function cleanupCompletedElectionCandidates() {
     console.error("❌ Candidate cleanup error:", error);
     return { electionsProcessed: 0, candidatesDeleted: 0 };
   }
+  */
 }
 
 // Process elections that need status transitions
@@ -574,7 +592,12 @@ export function startElectionScheduler(options = {}) {
 }
 
 // Schedule cleanups for existing completed elections on startup
+// DISABLED: Cleanup functionality disabled to preserve all election data
 async function scheduleExistingCompletedElections() {
+  console.log(`ℹ️  Cleanup disabled - no election data will be cleaned up`);
+  return;
+  
+  /* CLEANUP DISABLED - Code preserved for future implementation
   try {
     const now = new Date();
     const retentionDays = parseInt(process.env.CANDIDATE_RETENTION_DAYS) || 2;
@@ -614,6 +637,7 @@ async function scheduleExistingCompletedElections() {
   } catch (error) {
     console.error("❌ Error scheduling existing completed elections:", error);
   }
+  */
 }
 
 export function stopElectionScheduler() {

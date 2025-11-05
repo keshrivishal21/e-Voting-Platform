@@ -37,32 +37,16 @@ const Results = () => {
   // Get profile picture URL
   const getProfilePicUrl = (profilePic) => {
     if (!profilePic) return null;
+    // If it's already a data URL (base64), return as-is
+    if (profilePic.startsWith('data:')) return profilePic;
+    // If it's an HTTP URL, return as-is
     if (profilePic.startsWith('http')) return profilePic;
+    // Otherwise, treat as a relative path
     return `http://localhost:5000${profilePic}`;
   };
 
-  // Flatten results to show all winners by position
-  const getAllWinners = () => {
-    const winners = [];
-    elections.forEach(election => {
-      if (election.hasResults) {
-        Object.entries(election.results).forEach(([position, candidates]) => {
-          if (candidates.length > 0) {
-            const winner = candidates[0]; // First candidate has highest votes
-            winners.push({
-              electionId: election.electionId,
-              electionTitle: election.title,
-              position: position,
-              ...winner
-            });
-          }
-        });
-      }
-    });
-    return winners;
-  };
-
-  const winners = getAllWinners();
+  // Get elections with results
+  const electionsWithResults = elections.filter(election => election.hasResults);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6">
@@ -91,55 +75,112 @@ const Results = () => {
               Retry
             </button>
           </div>
-        ) : winners.length === 0 ? (
+        ) : electionsWithResults.length === 0 ? (
           <div className="mt-10 bg-blue-50 border border-blue-200 rounded-xl p-8 text-center">
             <p className="text-blue-700 text-lg">📊 No results declared yet</p>
             <p className="text-gray-600 mt-2">Results will be displayed here once elections are completed and results are declared.</p>
           </div>
         ) : (
-          <div className="space-y-8 mt-10">
-            {winners.map((winner, index) => (
-              <div key={`${winner.electionId}-${winner.position}-${index}`} className="bg-white rounded-2xl shadow-md border border-gray-300 p-6 flex flex-col md:flex-row items-center gap-6">
-                {/* Winner Photo */}
-                {winner.profilePic ? (
-                  <img
-                    className="w-32 h-32 object-cover rounded-full border-2 border-indigo-600"
-                    src={getProfilePicUrl(winner.profilePic)}
-                    alt={winner.candidateName}
-                    onError={(e) => {
-                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(winner.candidateName)}&size=128&background=6366f1&color=fff`;
-                    }}
-                  />
-                ) : (
-                  <div className="w-32 h-32 rounded-full border-2 border-indigo-600 bg-indigo-100 flex items-center justify-center">
-                    <span className="text-4xl font-bold text-indigo-600">
-                      {winner.candidateName.charAt(0).toUpperCase()}
-                    </span>
+          <div className="space-y-12 mt-10">
+            {electionsWithResults.map((election) => (
+              <div key={election.electionId} className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+                {/* Election Header */}
+                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6">
+                  <h2 className="text-2xl font-bold">{election.title}</h2>
+                  <div className="flex flex-wrap gap-4 mt-2 text-sm opacity-90">
+                    <span>📅 {new Date(election.startDate).toLocaleDateString()} - {new Date(election.endDate).toLocaleDateString()}</span>
+                    <span>✅ Status: {election.status}</span>
                   </div>
-                )}
-
-                {/* Winner Details */}
-                <div className="flex-1 text-center md:text-left">
-                  <h2 className="text-2xl font-semibold text-indigo-800">
-                    {winner.position}
-                  </h2>
-                  <p className="text-sm text-gray-500 mt-1">{winner.electionTitle}</p>
-                  <p className="text-gray-700 font-medium mt-2">{winner.candidateName}</p>
-                  <p className="text-gray-500 text-sm">
-                    {winner.candidateEmail}
-                  </p>
-                  <p className="text-gray-500 text-sm">
-                    {winner.branch} • Year {winner.year}
-                  </p>
                 </div>
 
-                {/* Votes */}
-                <div className="text-center">
-                  <p className="text-gray-500 text-sm">Votes Received</p>
-                  <p className="text-indigo-600 font-bold text-2xl">{winner.voteCount}</p>
-                  <span className="inline-block mt-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                    🏆 Winner
-                  </span>
+                {/* Results by Position */}
+                <div className="p-6 space-y-8">
+                  {Object.entries(election.results).map(([position, candidates]) => (
+                    <div key={position} className="border-b border-gray-200 last:border-b-0 pb-8 last:pb-0">
+                      {/* Position Header */}
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-1 h-8 bg-indigo-600 rounded-full"></div>
+                        <h3 className="text-xl font-semibold text-gray-800">{position}</h3>
+                        {/* <span className="text-sm text-gray-500">({candidates.length} candidate{candidates.length !== 1 ? 's' : ''})</span> */}
+                      </div>
+
+                      {/* Candidates List */}
+                      <div className="space-y-3">
+                        {candidates.map((candidate, index) => {
+                          const isWinner = index === 0;
+                          const totalVotes = candidates.reduce((sum, c) => sum + c.voteCount, 0);
+                          const votePercentage = totalVotes > 0 ? ((candidate.voteCount / totalVotes) * 100).toFixed(1) : 0;
+
+                          return (
+                            <div
+                              key={candidate.candidateId}
+                              className={`flex flex-col md:flex-row items-center gap-4 p-4 rounded-xl border-2 transition-all ${
+                                isWinner
+                                  ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-300 shadow-md'
+                                  : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+                              }`}
+                            >
+                              {/* Rank Badge */}
+                              <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${
+                                isWinner ? 'bg-yellow-400 text-yellow-900' : 'bg-gray-300 text-gray-700'
+                              }`}>
+                                {isWinner ? '🏆' : `#${index + 1}`}
+                              </div>
+
+                              {/* Profile Picture */}
+                              {candidate.profilePic ? (
+                                <img
+                                  className="w-16 h-16 object-cover rounded-full border-2 border-white shadow-sm"
+                                  src={getProfilePicUrl(candidate.profilePic)}
+                                  alt={candidate.candidateName}
+                                  onError={(e) => {
+                                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(candidate.candidateName)}&size=64&background=6366f1&color=fff`;
+                                  }}
+                                />
+                              ) : (
+                                <div className="w-16 h-16 rounded-full border-2 border-white shadow-sm bg-indigo-100 flex items-center justify-center">
+                                  <span className="text-xl font-bold text-indigo-600">
+                                    {candidate.candidateName.charAt(0).toUpperCase()}
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Candidate Info */}
+                              <div className="flex-1 text-center md:text-left min-w-0">
+                                <p className="font-semibold text-gray-800 text-lg truncate">
+                                  {candidate.candidateName}
+                                  {isWinner && <span className="ml-2 text-green-600">✓ Winner</span>}
+                                </p>
+                                <p className="text-sm text-gray-600 truncate">{candidate.candidateEmail}</p>
+                                <p className="text-sm text-gray-500">
+                                  {candidate.branch} • Year {candidate.year}
+                                </p>
+                              </div>
+
+                              {/* Vote Stats */}
+                              <div className="flex-shrink-0 text-center">
+                                <p className="text-2xl font-bold text-indigo-600">{candidate.voteCount}</p>
+                                <p className="text-xs text-gray-500">votes</p>
+                                <div className="mt-1 px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs font-medium">
+                                  {votePercentage}%
+                                </div>
+                              </div>
+
+                              {/* Vote Bar
+                              <div className="w-full md:w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full transition-all ${
+                                    isWinner ? 'bg-green-500' : 'bg-indigo-400'
+                                  }`}
+                                  style={{ width: `${votePercentage}%` }}
+                                ></div>
+                              </div> */}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}

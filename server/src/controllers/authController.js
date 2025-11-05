@@ -395,18 +395,6 @@ export const candidateRegister = async (req, res) => {
       });
     }
 
-    // Check if candidate already exists
-    const existingCandidate = await prisma.cANDIDATE.findFirst({
-      where: { Can_email: email },
-    });
-
-    if (existingCandidate) {
-      return res.status(409).json({
-        success: false,
-        message: "Candidate with this email already exists",
-      });
-    }
-
     // Validate election exists
     const election = await prisma.eLECTION.findUnique({
       where: { Election_id: parseInt(electionId) }
@@ -419,11 +407,32 @@ export const candidateRegister = async (req, res) => {
       });
     }
 
+    // Check if candidate already exists for THIS specific election
+    const existingCandidateInElection = await prisma.cANDIDATE.findFirst({
+      where: { 
+        Can_email: email,
+        Election_id: parseInt(electionId)
+      },
+    });
+
+    if (existingCandidateInElection) {
+      return res.status(409).json({
+        success: false,
+        message: "You have already registered for this election",
+      });
+    }
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
     // Generate candidate ID (you can modify this logic as needed)
     const candidateId = parseInt(email.split("@")[0]);
+
+    // Check if this is a re-registration (candidate existed for a previous election)
+    const previousCandidateRecord = await prisma.cANDIDATE.findUnique({
+      where: { Can_id: candidateId }
+    });
+    const isReRegistration = previousCandidateRecord !== null;
 
     // Read uploaded files and convert to buffer for database storage
     let documentBuffer = Buffer.from("");
@@ -477,9 +486,30 @@ export const candidateRegister = async (req, res) => {
           });
         }
 
-        // Create candidate
-        const candidate = await tx.cANDIDATE.create({
-          data: {
+        // Upsert candidate - update if exists from previous election, create if new
+        // This allows students to contest in multiple elections
+        const candidate = await tx.cANDIDATE.upsert({
+          where: {
+            Can_id: candidateId
+          },
+          update: {
+            // Update all fields for the new election
+            Can_name: name,
+            Can_email: email,
+            Can_phone: phone,
+            Can_password: hashedPassword,
+            Position: position,
+            Manifesto: manifesto || "",
+            Election_id: parseInt(electionId), // Update to new election
+            Branch: branch,
+            Year: parseInt(year),
+            Cgpa: cgpa ? parseFloat(cgpa) : 0.0,
+            Data: documentBuffer,
+            Profile: profileBuffer,
+            Status: "Pending", // Reset status to Pending for new election
+            Rejection_reason: null, // Clear any previous rejection reason
+          },
+          create: {
             Can_id: candidateId,
             Can_name: name,
             Can_email: email,
@@ -487,13 +517,13 @@ export const candidateRegister = async (req, res) => {
             Can_password: hashedPassword,
             Position: position,
             Manifesto: manifesto || "",
-            Election_id: parseInt(electionId), // Assign to the selected election
+            Election_id: parseInt(electionId),
             Branch: branch,
             Year: parseInt(year),
             Cgpa: cgpa ? parseFloat(cgpa) : 0.0,
-            Data: documentBuffer, // Store marksheet as buffer
-            Profile: profileBuffer, // Store profile picture as buffer (can be null)
-            User_type: "Candidate", // Add the User_type field
+            Data: documentBuffer,
+            Profile: profileBuffer,
+            User_type: "Candidate",
           },
         });
 
@@ -552,14 +582,19 @@ export const candidateRegister = async (req, res) => {
       }
     }
 
+    const successMessage = isReRegistration 
+      ? "Candidate re-registration successful! You have been registered for the new election."
+      : "Candidate registration successful";
+
     res.status(201).json({
       success: true,
-      message: "Candidate registration successful",
+      message: successMessage,
       data: {
         candidate: {
           id: candidate.Can_id.toString(),
           name: candidate.Can_name,
         },
+        isReRegistration: isReRegistration,
       },
     });
   } catch (error) {
@@ -661,14 +696,9 @@ export const getStudentDetailsForCandidate = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please verify your student email before registering as a candidate.' });
     }
 
-    // Check if already registered as candidate
-    const existingCandidate = await prisma.cANDIDATE.findUnique({
-      where: { Can_id: studentId }
-    });
-
-    if (existingCandidate) {
-      return res.status(409).json({ success: false, message: 'You are already registered as a candidate.' });
-    }
+    // Note: We allow re-registration for different elections
+    // Check if already registered as candidate is done during registration based on election
+    // Students can contest in multiple elections, so we don't block here
 
     res.status(200).json({
       success: true,
