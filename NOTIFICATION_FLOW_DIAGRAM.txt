@@ -1,0 +1,248 @@
+=====================================================================
+                 NOTIFICATION SYSTEM FLOW DIAGRAM
+=====================================================================
+
+┌─────────────────────────────────────────────────────────────────┐
+│                        ADMIN PANEL                              │
+│  (AdminBoard/Notifications.jsx)                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌───────────────────────────────────┐                         │
+│  │  Send Notification Form           │                         │
+│  │  ────────────────────────         │                         │
+│  │  Recipient: [Students ▼]          │                         │
+│  │  Message: [_______________]       │                         │
+│  │  [Send Notification Button]       │                         │
+│  └───────────────────────────────────┘                         │
+│                    │                                            │
+│                    │ User clicks "Send"                         │
+│                    ▼                                            │
+│  POST /api/notification/admin/notifications                    │
+│  {                                                              │
+│    "recipientType": "Students",                                │
+│    "message": "Election voting is now open!"                   │
+│  }                                                              │
+│  Authorization: Bearer <admin-token>                           │
+└─────────────────────────────────────────────────────────────────┘
+                           │
+                           │ HTTP Request
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    BACKEND SERVER                               │
+│  (server/src/controllers/notificationController.js)            │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  sendNotification(req, res)                                     │
+│  ───────────────────────────                                    │
+│  1. ✅ Validate recipientType (Students/Candidates/All)         │
+│  2. ✅ Validate message not empty                               │
+│  3. ✅ Verify admin token (verifyAdmin middleware)              │
+│                                                                 │
+│  4. Fetch all recipients:                                       │
+│     ┌──────────────────────────┐                               │
+│     │ If "Students" selected:  │                               │
+│     │ - Query STUDENT table    │ → Gets: 1 student             │
+│     │ - Get all Std_id         │   (Vishal - 24204031140)      │
+│     └──────────────────────────┘                               │
+│                                                                 │
+│     ┌──────────────────────────┐                               │
+│     │ If "Candidates" selected:│                               │
+│     │ - Query CANDIDATE table  │ → Gets: 1 candidate           │
+│     │ - Get all Can_id         │   (Vishal - 24204031140)      │
+│     └──────────────────────────┘                               │
+│                                                                 │
+│     ┌──────────────────────────┐                               │
+│     │ If "All" selected:       │                               │
+│     │ - Query both tables      │ → Gets: 2 recipients          │
+│     │ - Combine all IDs        │   (1 student + 1 candidate)   │
+│     └──────────────────────────┘                               │
+│                                                                 │
+│  5. Create notification records:                                │
+│     For each recipient:                                         │
+│     ┌────────────────────────────────────────┐                 │
+│     │ INSERT INTO NOTIFICATION               │                 │
+│     │ {                                      │                 │
+│     │   User_id: 24204031140,                │                 │
+│     │   User_type: "Student",                │                 │
+│     │   Notif_message: "Election voting...", │                 │
+│     │   Notif_time: NOW(),                   │                 │
+│     │   Admin_id: 2101                       │                 │
+│     │ }                                      │                 │
+│     └────────────────────────────────────────┘                 │
+│                                                                 │
+│  6. Return response:                                            │
+│     {                                                           │
+│       "success": true,                                          │
+│       "message": "Notification sent to 1 recipient(s)",         │
+│       "data": { "recipientCount": 1 }                           │
+│     }                                                           │
+└─────────────────────────────────────────────────────────────────┘
+                           │
+                           │ Response
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    ADMIN PANEL                                  │
+│  (AdminBoard/Notifications.jsx)                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ✅ Toast: "Notification sent successfully!"                    │
+│  ✅ Form cleared                                                │
+│  ✅ Recently Sent list updated                                  │
+│                                                                 │
+│  ┌───────────────────────────────────┐                         │
+│  │  Recently Sent Notifications      │                         │
+│  │  ────────────────────────          │                         │
+│  │  • Students: "Election voting..." │                         │
+│  │    Sent by Vishal • Just now      │                         │
+│  └───────────────────────────────────┘                         │
+└─────────────────────────────────────────────────────────────────┘
+
+═════════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────────────────────┐
+│                  STUDENT/CANDIDATE LOGIN                        │
+│  User logs in → JWT token stored in localStorage               │
+└─────────────────────────────────────────────────────────────────┘
+                           │
+                           │ Navigate to Notifications page
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│               STUDENT NOTIFICATIONS PANEL                       │
+│  (StudentBoard/Notifications.jsx)                               │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  useEffect() → fetchNotifications()                             │
+│                    │                                            │
+│                    ▼                                            │
+│  GET /api/notification/notifications                            │
+│  Authorization: Bearer <student-token>                          │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+                           │
+                           │ HTTP Request
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    BACKEND SERVER                               │
+│  (server/src/controllers/notificationController.js)            │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  getUserNotifications(req, res)                                 │
+│  ───────────────────────────────                                │
+│  1. ✅ Verify token (verifyToken middleware)                    │
+│  2. ✅ Extract userId from JWT: 24204031140                     │
+│  3. ✅ Extract userType from JWT: "Student"                     │
+│                                                                 │
+│  4. Query database:                                             │
+│     ┌────────────────────────────────────────┐                 │
+│     │ SELECT * FROM NOTIFICATION             │                 │
+│     │ WHERE User_id = 24204031140            │                 │
+│     │   AND User_type = 'Student'            │                 │
+│     │ ORDER BY Notif_time DESC               │                 │
+│     │ LIMIT 10                               │                 │
+│     └────────────────────────────────────────┘                 │
+│                                                                 │
+│  5. Results found:                                              │
+│     [                                                           │
+│       {                                                         │
+│         N_id: 35,                                               │
+│         Notif_message: "Election voting is now open!",          │
+│         Notif_time: "2025-11-05T15:37:12.000Z"                  │
+│       },                                                        │
+│       {                                                         │
+│         N_id: 32,                                               │
+│         Notif_message: "hello",                                 │
+│         Notif_time: "2025-11-05T15:37:11.000Z"                  │
+│       },                                                        │
+│       ... (more notifications)                                  │
+│     ]                                                           │
+│                                                                 │
+│  6. Return response:                                            │
+│     {                                                           │
+│       "success": true,                                          │
+│       "message": "Notifications retrieved successfully",        │
+│       "data": { "notifications": [...] }                        │
+│     }                                                           │
+└─────────────────────────────────────────────────────────────────┘
+                           │
+                           │ Response
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│               STUDENT NOTIFICATIONS PANEL                       │
+│  (StudentBoard/Notifications.jsx)                               │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ✅ Loading complete                                            │
+│  ✅ Notifications displayed                                     │
+│                                                                 │
+│  ┌───────────────────────────────────────────┐                 │
+│  │         Notifications                     │                 │
+│  │  ─────────────────────                    │                 │
+│  │                                           │                 │
+│  │  ┌────────────────────────────────────┐  │                 │
+│  │  │ Message                            │  │                 │
+│  │  │ "Election voting is now open!"     │  │                 │
+│  │  │ 11/5/2025, 3:37:12 PM             │  │                 │
+│  │  └────────────────────────────────────┘  │                 │
+│  │                                           │                 │
+│  │  ┌────────────────────────────────────┐  │                 │
+│  │  │ Message                            │  │                 │
+│  │  │ "hello"                            │  │                 │
+│  │  │ 11/5/2025, 3:37:11 PM             │  │                 │
+│  │  └────────────────────────────────────┘  │                 │
+│  │                                           │                 │
+│  │  ... (more notifications)                 │                 │
+│  │                                           │                 │
+│  └───────────────────────────────────────────┘                 │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+
+═════════════════════════════════════════════════════════════════
+
+                         DATABASE STATE
+                    (MySQL - Prisma ORM)
+
+┌─────────────────────────────────────────────────────────────────┐
+│                     NOTIFICATION Table                          │
+├──────┬─────────────┬────────────┬─────────────┬────────────────┤
+│ N_id │ User_id     │ User_type  │ Admin_id    │ Notif_message  │
+├──────┼─────────────┼────────────┼─────────────┼────────────────┤
+│  35  │ 24204031140 │ Student    │ 2101        │ Election vot...│
+│  34  │ 24204031140 │ Candidate  │ 2101        │ hello          │
+│  33  │ 24204031140 │ Student    │ 2101        │ hello          │
+│  32  │ 24204031140 │ Candidate  │ 2101        │ hello          │
+│  ... │ ...         │ ...        │ ...         │ ...            │
+└──────┴─────────────┴────────────┴─────────────┴────────────────┘
+
+Total: 38 notifications
+
+═════════════════════════════════════════════════════════════════
+
+                      KEY FEATURES
+
+✅ Admin can send to:
+   • Students only
+   • Candidates only  
+   • All users (both)
+
+✅ Individual records:
+   • Each recipient gets their own NOTIFICATION record
+   • Enables per-user notification retrieval
+
+✅ Authentication:
+   • Admin: verifyAdmin middleware
+   • Users: verifyToken middleware
+   • JWT token contains userId and userType
+
+✅ Filtering:
+   • Users only see their own notifications
+   • Filtered by User_id AND User_type
+   • Ordered by time (newest first)
+
+✅ UI Features:
+   • Admin: Form + sent notifications list
+   • Users: Notification cards with timestamps
+   • Loading states
+   • Empty states
+   • Error handling
+
+═════════════════════════════════════════════════════════════════

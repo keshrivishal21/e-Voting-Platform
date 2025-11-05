@@ -1,10 +1,134 @@
 import { PrismaClient } from "@prisma/client";
+import { notifyElectionStarted, notifyElectionEnded, notifyResultsDeclared } from "../utils/notificationHelper.js";
 
 const prisma = new PrismaClient();
 
 let timeoutId = null;
 let isRunning = false;
 let cleanupTimeouts = new Map(); // Track cleanup timeouts by election ID
+
+// Automatically declare results for a completed election
+async function declareElectionResults(electionId, electionTitle) {
+  try {
+    console.log(`📊 Declaring results for election ${electionId} ("${electionTitle}")...`);
+
+    // Get all votes for this election
+    const votes = await prisma.vOTE.findMany({
+      where: { Election_id: electionId },
+      select: {
+        Can_id: true,
+        candidate: {
+          select: {
+            Can_id: true,
+            Can_name: true,
+            Position: true,
+            Status: true
+          }
+        }
+      }
+    });
+
+    if (votes.length === 0) {
+      console.log(`⚠️ No votes found for election ${electionId}. Skipping result declaration.`);
+      return;
+    }
+
+    // Count votes by candidate
+    const voteCounts = new Map();
+    votes.forEach(vote => {
+      const candidateId = vote.Can_id.toString();
+      voteCounts.set(candidateId, (voteCounts.get(candidateId) || 0) + 1);
+    });
+
+    // Get unique candidates from votes
+    const candidateIds = [...new Set(votes.map(v => v.Can_id))];
+    
+    // Get admin ID (use first admin or default to 1)
+    const admin = await prisma.aDMIN.findFirst({
+      select: { Admin_id: true }
+    });
+    const adminId = admin?.Admin_id || 1;
+
+    // Create or update results in transaction
+    const results = [];
+    for (const candidateId of candidateIds) {
+      const voteCount = voteCounts.get(candidateId.toString()) || 0;
+      
+      // Check if result already exists
+      const existingResult = await prisma.rESULT.findUnique({
+        where: {
+          Election_id_Can_id: {
+            Election_id: electionId,
+            Can_id: candidateId
+          }
+        }
+      });
+
+      if (existingResult) {
+        // Update existing result
+        const updated = await prisma.rESULT.update({
+          where: {
+            Election_id_Can_id: {
+              Election_id: electionId,
+              Can_id: candidateId
+            }
+          },
+          data: {
+            Vote_count: voteCount
+          }
+        });
+        results.push(updated);
+      } else {
+        // Create new result
+        const created = await prisma.rESULT.create({
+          data: {
+            Can_id: candidateId,
+            Election_id: electionId,
+            Vote_count: voteCount,
+            Admin_id: adminId
+          }
+        });
+        results.push(created);
+      }
+    }
+
+    console.log(`✅ Results declared for election ${electionId}:`);
+    console.log(`   - Total votes cast: ${votes.length}`);
+    console.log(`   - Results recorded for ${results.length} candidates`);
+    
+    // Log top candidates by position
+    const candidatesByPosition = new Map();
+    votes.forEach(vote => {
+      const position = vote.candidate.Position;
+      if (!candidatesByPosition.has(position)) {
+        candidatesByPosition.set(position, new Map());
+      }
+      const positionCandidates = candidatesByPosition.get(position);
+      const candidateId = vote.Can_id.toString();
+      positionCandidates.set(candidateId, {
+        name: vote.candidate.Can_name,
+        votes: (positionCandidates.get(candidateId)?.votes || 0) + 1
+      });
+    });
+
+    candidatesByPosition.forEach((candidates, position) => {
+      const sortedCandidates = Array.from(candidates.values())
+        .sort((a, b) => b.votes - a.votes);
+      const winner = sortedCandidates[0];
+      console.log(`   - ${position}: ${winner.name} (${winner.votes} votes)`);
+    });
+
+    // Send notification about results declaration (don't wait for it)
+    notifyResultsDeclared(electionTitle, votes.length).catch(err => 
+      console.error("Failed to send results declared notification:", err)
+    );
+
+    return results;
+  } catch (error) {
+    console.error(`❌ Error declaring results for election ${electionId}:`, error);
+    throw error;
+  }
+}
 
 // Schedule cleanup for a specific election after retention period
 function scheduleCleanupForElection(electionId, title, endDate) {
@@ -293,6 +417,11 @@ async function processElectionTransitions() {
           data: { Status: "Ongoing" },
         });
         console.log(`✅ Election ${e.Election_id} ("${e.Title}") started automatically`);
+        
+        // Send notification about election start (don't wait for it)
+        notifyElectionStarted(e.Title, e.End_date).catch(err => 
+          console.error("Failed to send election started notification:", err)
+        );
       } catch (err) {
         console.error(`❌ Failed to start election ${e.Election_id}:`, err);
       }
@@ -314,9 +443,20 @@ async function processElectionTransitions() {
         });
         console.log(`✅ Election ${e.Election_id} ("${e.Title}") ended automatically`);
         
+        // Send notification about election end (don't wait for it)
+        notifyElectionEnded(e.Title).catch(err => 
+          console.error("Failed to send election ended notification:", err)
+        );
+        
+        // Automatically declare results
+        try {
+          await declareElectionResults(e.Election_id, e.Title);
+        } catch (resultError) {
+          console.error(`⚠️ Failed to declare results for election ${e.Election_id}, but election still marked as completed:`, resultError);
+        }
+        
         // Schedule cleanup for this election after retention period
         scheduleCleanupForElection(e.Election_id, e.Title, e.End_date);
-        // TODO: trigger result aggregation here if desired
       } catch (err) {
         console.error(`❌ Failed to end election ${e.Election_id}:`, err);
       }

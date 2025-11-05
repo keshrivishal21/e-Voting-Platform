@@ -163,7 +163,8 @@ export const getAllNotifications = async () => {
  */
 export const sendNotification = async (recipientType, message) => {
   try {
-    return await apiFetch('/notification/admin/notifications', { method: 'POST', body: { recipientType, message } });
+    const { data } = await apiFetch('/notification/admin/notifications', { method: 'POST', body: { recipientType, message } });
+    return data;
   } catch (error) {
     console.error("Error sending notification:", error);
     throw error;

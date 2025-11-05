@@ -10,12 +10,25 @@ const otpStore = new Map();
 // Store election public keys (in production, use secure key management)
 const electionKeys = new Map();
 
-// Configure email transporter
+// Configure email transporter with timeout settings
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASSWORD
+  },
+  connectionTimeout: 10000, // 10 seconds
+  greetingTimeout: 10000,
+  socketTimeout: 10000,
+});
+
+// Verify transporter configuration on startup
+transporter.verify((error, success) => {
+  if (error) {
+    console.error('❌ Email transporter configuration error:', error.message);
+    console.log('⚠️ Email notifications will not work. Please check your EMAIL_USER and EMAIL_PASSWORD in .env file');
+  } else {
+    console.log('✅ Email transporter is ready to send emails');
   }
 });
 
@@ -124,7 +137,7 @@ const requestVotingOTP = async (req, res) => {
 
     // Send OTP via email
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: `"e-Voting Platform" <${process.env.EMAIL_USER}>`,
       to: student.Std_email,
       subject: 'Voting OTP Verification',
       html: `
@@ -140,12 +153,45 @@ const requestVotingOTP = async (req, res) => {
       `
     };
 
-    await transporter.sendMail(mailOptions);
-
-    res.status(200).json({ 
-      message: 'OTP sent successfully to your registered email',
-      expiresIn: 600 // seconds
-    });
+    console.log(`📧 Attempting to send voting OTP to: ${student.Std_email}`);
+    console.log(`🔑 Generated OTP: ${otp} (valid for 10 minutes)`);
+    
+    try {
+      const info = await transporter.sendMail(mailOptions);
+      console.log('✅ Voting OTP email sent successfully:', info.messageId);
+      console.log('📬 Email accepted by:', info.accepted);
+      
+      res.status(200).json({ 
+        message: 'OTP sent successfully to your registered email',
+        expiresIn: 600 // seconds
+      });
+    } catch (emailError) {
+      console.error('❌ Failed to send voting OTP email:', emailError);
+      
+      // Check specific error types
+      if (emailError.code === 'ETIMEDOUT') {
+        console.error('⏱️ Connection timeout - Check your internet connection and firewall settings');
+      } else if (emailError.code === 'EAUTH') {
+        console.error('🔐 Authentication failed - Check EMAIL_USER and EMAIL_PASSWORD in .env');
+      } else if (emailError.code === 'ECONNECTION') {
+        console.error('🌐 Connection failed - SMTP server may be unreachable');
+      }
+      
+      // Log OTP to console for development/testing
+      console.log(`\n${'='.repeat(60)}`);
+      console.log('⚠️ EMAIL FAILED - USE THIS OTP FOR TESTING:');
+      console.log(`📝 OTP: ${otp}`);
+      console.log(`👤 Student: ${student.Std_email}`);
+      console.log(`🗳️ Election: ${election.Title}`);
+      console.log(`⏰ Valid until: ${new Date(otpExpiry).toLocaleString()}`);
+      console.log(`${'='.repeat(60)}\n`);
+      
+      // Still return success so user can continue with OTP from console
+      res.status(200).json({ 
+        message: 'OTP generated. Check server console for OTP (email service unavailable)',
+        expiresIn: 600 // seconds
+      });
+    }
   } catch (error) {
     console.error('Error requesting voting OTP:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -297,6 +343,20 @@ const castVote = async (req, res) => {
     const studentId = req.user.userId;
     const { electionId, encryptedVotes } = req.body;
     const electionIdInt = parseInt(electionId);
+
+    // Validate that encrypted votes exist and are not empty
+    if (!encryptedVotes || typeof encryptedVotes !== 'object' || Object.keys(encryptedVotes).length === 0) {
+      return res.status(400).json({ message: 'No votes provided. Please select at least one candidate.' });
+    }
+
+    // Validate that all votes have valid candidate IDs
+    for (const [position, voteData] of Object.entries(encryptedVotes)) {
+      if (!voteData || !voteData.candidateId) {
+        return res.status(400).json({ 
+          message: `No candidate selected for position: ${position}` 
+        });
+      }
+    }
 
     // Verify OTP was verified
     const storedData = otpStore.get(`${studentId}-${electionIdInt}`);

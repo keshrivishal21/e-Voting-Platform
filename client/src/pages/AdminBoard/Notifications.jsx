@@ -43,11 +43,15 @@ const Notifications = () => {
       const response = await AdminAPI.sendNotification(recipient, message);
 
       if (response.success) {
-        toast.success("Notification sent successfully!");
-        setSentNotifications([response.data.notification, ...sentNotifications]);
+        toast.success(`Notification sent successfully to ${response.data.recipientCount} recipient(s)!`);
+        // Refresh the notifications list
+        const updatedNotifications = await AdminAPI.getAllNotifications();
+        if (updatedNotifications.success) {
+          setSentNotifications(updatedNotifications.data.notifications);
+        }
         setMessage("");
       } else {
-        toast.error("Failed to send notification");
+        toast.error(response.message || "Failed to send notification");
       }
     } catch (error) {
       console.error("Error sending notification:", error);

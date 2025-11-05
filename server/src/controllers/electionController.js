@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { triggerSchedulerCheck } from "../services/electionScheduler.js";
+import { notifyElectionCreated, notifyElectionStarted, notifyElectionEnded, notifyResultsDeclared } from "../utils/notificationHelper.js";
 
 const prisma = new PrismaClient();
 
@@ -57,6 +58,11 @@ export const createElection = async (req, res) => {
         Created_by: adminId,
       },
     });
+
+    // Send notification about new election (don't wait for it)
+    notifyElectionCreated(title, start, end, adminId).catch(err => 
+      console.error("Failed to send election created notification:", err)
+    );
 
     // Trigger scheduler to recalculate next run time (don't wait for it)
     triggerSchedulerCheck().catch(err => 
@@ -127,6 +133,11 @@ export const startElection = async (req, res) => {
       },
     });
 
+    // Send notification about election start (don't wait for it)
+    notifyElectionStarted(updated.Title, updated.End_date).catch(err => 
+      console.error("Failed to send election started notification:", err)
+    );
+
     const responseMessage = force 
       ? "Election started manually (forced override)" 
       : "Election started";
@@ -190,6 +201,11 @@ export const endElection = async (req, res) => {
         End_date: now,
       },
     });
+
+    // Send notification about election end (don't wait for it)
+    notifyElectionEnded(updated.Title).catch(err => 
+      console.error("Failed to send election ended notification:", err)
+    );
 
     // Optionally you might want to compute results here and persist them.
 
@@ -262,5 +278,256 @@ export const getElectionById = async (req, res) => {
   } catch (error) {
     console.error("Get election error:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+// Declare/Calculate results for an election (admin only)
+export const declareResults = async (req, res) => {
+  try {
+    const { electionId } = req.params;
+    const adminId = req.user.userId;
+
+    if (!electionId) {
+      return res.status(400).json({
+        success: false,
+        message: "Election ID is required",
+      });
+    }
+
+    const electionIdInt = parseInt(electionId);
+
+    // Verify election exists and is completed
+    const election = await prisma.eLECTION.findUnique({
+      where: { Election_id: electionIdInt },
+      select: {
+        Election_id: true,
+        Title: true,
+        Status: true
+      }
+    });
+
+    if (!election) {
+      return res.status(404).json({
+        success: false,
+        message: "Election not found",
+      });
+    }
+
+    if (election.Status !== "Completed") {
+      return res.status(400).json({
+        success: false,
+        message: "Can only declare results for completed elections",
+      });
+    }
+
+    // Get all votes for this election
+    const votes = await prisma.vOTE.findMany({
+      where: { Election_id: electionIdInt },
+      select: {
+        Can_id: true,
+        candidate: {
+          select: {
+            Can_id: true,
+            Can_name: true,
+            Position: true
+          }
+        }
+      }
+    });
+
+    if (votes.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No votes found for this election",
+      });
+    }
+
+    // Count votes by candidate
+    const voteCounts = new Map();
+    votes.forEach(vote => {
+      const candidateId = vote.Can_id.toString();
+      voteCounts.set(candidateId, (voteCounts.get(candidateId) || 0) + 1);
+    });
+
+    // Get unique candidates
+    const candidateIds = [...new Set(votes.map(v => v.Can_id))];
+
+    // Create or update results
+    const results = [];
+    for (const candidateId of candidateIds) {
+      const voteCount = voteCounts.get(candidateId.toString()) || 0;
+      
+      const result = await prisma.rESULT.upsert({
+        where: {
+          Election_id_Can_id: {
+            Election_id: electionIdInt,
+            Can_id: candidateId
+          }
+        },
+        update: {
+          Vote_count: voteCount
+        },
+        create: {
+          Can_id: candidateId,
+          Election_id: electionIdInt,
+          Vote_count: voteCount,
+          Admin_id: adminId
+        },
+        include: {
+          candidate: {
+            select: {
+              Can_id: true,
+              Can_name: true,
+              Position: true
+            }
+          }
+        }
+      });
+      results.push(result);
+    }
+
+    // Format results by position
+    const resultsByPosition = {};
+    results.forEach(result => {
+      const position = result.candidate.Position;
+      if (!resultsByPosition[position]) {
+        resultsByPosition[position] = [];
+      }
+      resultsByPosition[position].push({
+        candidateId: result.Can_id.toString(),
+        candidateName: result.candidate.Can_name,
+        voteCount: result.Vote_count
+      });
+    });
+
+    // Sort candidates by vote count within each position
+    Object.keys(resultsByPosition).forEach(position => {
+      resultsByPosition[position].sort((a, b) => b.voteCount - a.voteCount);
+    });
+
+    // Send notification about results declaration (don't wait for it)
+    notifyResultsDeclared(election.Title, votes.length).catch(err => 
+      console.error("Failed to send results declared notification:", err)
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Results declared successfully",
+      data: {
+        electionId: electionIdInt,
+        electionTitle: election.Title,
+        totalVotes: votes.length,
+        candidatesCount: results.length,
+        results: resultsByPosition
+      }
+    });
+  } catch (error) {
+    console.error("Declare results error:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Internal server error",
+      error: error.message 
+    });
+  }
+};
+
+// Get results for completed elections (public)
+export const getElectionResults = async (req, res) => {
+  try {
+    // Get all completed elections with results
+    const completedElections = await prisma.eLECTION.findMany({
+      where: {
+        Status: "Completed"
+      },
+      select: {
+        Election_id: true,
+        Title: true,
+        Start_date: true,
+        End_date: true,
+        Status: true
+      },
+      orderBy: {
+        End_date: 'desc'
+      }
+    });
+
+    if (completedElections.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "No completed elections found",
+        data: { elections: [] }
+      });
+    }
+
+    // Get results for each election
+    const electionsWithResults = await Promise.all(
+      completedElections.map(async (election) => {
+        const results = await prisma.rESULT.findMany({
+          where: {
+            Election_id: election.Election_id
+          },
+          include: {
+            candidate: {
+              select: {
+                Can_id: true,
+                Can_name: true,
+                Can_email: true,
+                Position: true,
+                Branch: true,
+                Year: true,
+                Profile_pic: true
+              }
+            }
+          },
+          orderBy: {
+            Vote_count: 'desc'
+          }
+        });
+
+        // Group results by position
+        const resultsByPosition = {};
+        results.forEach(result => {
+          const position = result.candidate.Position;
+          if (!resultsByPosition[position]) {
+            resultsByPosition[position] = [];
+          }
+          resultsByPosition[position].push({
+            candidateId: result.Can_id.toString(),
+            candidateName: result.candidate.Can_name,
+            candidateEmail: result.candidate.Can_email,
+            position: result.candidate.Position,
+            branch: result.candidate.Branch,
+            year: result.candidate.Year,
+            profilePic: result.candidate.Profile_pic,
+            voteCount: result.Vote_count,
+            isWinner: resultsByPosition[position].length === 0 // First candidate (highest votes) is winner
+          });
+        });
+
+        return {
+          electionId: election.Election_id,
+          title: election.Title,
+          startDate: election.Start_date,
+          endDate: election.End_date,
+          status: election.Status,
+          hasResults: results.length > 0,
+          results: resultsByPosition
+        };
+      })
+    );
+
+    res.status(200).json({
+      success: true,
+      data: {
+        elections: electionsWithResults
+      }
+    });
+  } catch (error) {
+    console.error("Get election results error:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Internal server error",
+      error: error.message 
+    });
   }
 };

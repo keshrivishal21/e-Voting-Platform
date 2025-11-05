@@ -1,16 +1,85 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { BellIcon, UserCircleIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "../contexts/AuthContext";
+import AuthAPI from "../utils/authAPI";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [newNotificationCount, setNewNotificationCount] = useState(0);
+  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { userType, logout, isStudent, isCandidate, isAdmin } = useAuth();
 
   const isAdminRoute = location.pathname.startsWith("/admin");
   const isCandidateRoute = location.pathname.startsWith("/candidate");
+  const isOnNotificationPage = location.pathname.includes("/notifications");
+
+  // Fetch notification count for students and candidates
+  useEffect(() => {
+    const fetchNotificationCount = async () => {
+      if (isStudent() || isCandidate()) {
+        try {
+          const response = await AuthAPI.getUserNotifications(50);
+          if (response.success) {
+            const notifications = response.data.notifications;
+            setNotificationCount(notifications.length);
+            
+            // Check if there are NEW notifications (arrived after last view)
+            const lastViewedTime = localStorage.getItem('lastNotificationView');
+            
+            if (notifications.length === 0) {
+              setHasUnreadNotifications(false);
+              setNewNotificationCount(0);
+            } else if (!lastViewedTime) {
+              // Never viewed before, all notifications are new
+              setHasUnreadNotifications(true);
+              setNewNotificationCount(notifications.length);
+            } else {
+              // Count notifications newer than last viewed time
+              const lastViewed = new Date(lastViewedTime);
+              const newNotifications = notifications.filter(notif => {
+                const notifTime = new Date(notif.time);
+                return notifTime > lastViewed;
+              });
+              
+              const newCount = newNotifications.length;
+              setNewNotificationCount(newCount);
+              setHasUnreadNotifications(newCount > 0);
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching notification count:", error);
+        }
+      }
+    };
+
+    fetchNotificationCount();
+
+    // Refresh notification count every 30 seconds
+    const interval = setInterval(fetchNotificationCount, 30000);
+
+    return () => clearInterval(interval);
+  }, [isStudent, isCandidate, userType, location.pathname, isOnNotificationPage]); // Re-fetch when location changes
+
+  // Mark notifications as read when user is on notification page
+  useEffect(() => {
+    if (isOnNotificationPage && (isStudent() || isCandidate())) {
+      localStorage.setItem('lastNotificationView', new Date().toISOString());
+      setHasUnreadNotifications(false);
+      setNewNotificationCount(0);
+    }
+  }, [isOnNotificationPage, isStudent, isCandidate]);
+
+  // Handle notification icon click
+  const handleNotificationClick = () => {
+    setMenuOpen(false);
+    localStorage.setItem('lastNotificationView', new Date().toISOString());
+    setHasUnreadNotifications(false);
+    setNewNotificationCount(0);
+  };
 
   const handleLogout = () => {
     // Save the user type before logout clears it
@@ -57,14 +126,20 @@ export default function Navbar() {
                   : "/candidate/notifications"
               }
               className="relative"
-              onClick={() => setMenuOpen(false)}
+              onClick={handleNotificationClick}
             >
-              <BellIcon className="h-6 w-6 text-gray-700 hover:text-indigo-600 transition" />
-              {/* {notificationCount > 0 && (
+              <BellIcon 
+                className={`h-6 w-6 transition ${
+                  hasUnreadNotifications 
+                    ? "text-red-500 hover:text-red-600" 
+                    : "text-gray-700 hover:text-indigo-600"
+                }`} 
+              />
+              {hasUnreadNotifications && newNotificationCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow">
-                  {notificationCount}
+                  {newNotificationCount}
                 </span>
-              )} */}
+              )}
             </Link>
           )}
 

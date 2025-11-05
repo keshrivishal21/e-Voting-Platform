@@ -142,6 +142,22 @@ const CastVote = () => {
       return;
     }
 
+    // Validate that all selected votes have valid candidate IDs
+    const hasInvalidVotes = Object.values(selectedVotes).some(
+      candidateId => !candidateId || candidateId === null || candidateId === undefined
+    );
+
+    if (hasInvalidVotes) {
+      toast.error("Please select a valid candidate for each position");
+      return;
+    }
+
+    // Ensure no empty selections
+    if (Object.keys(selectedVotes).length === 0) {
+      toast.error("Please select at least one candidate");
+      return;
+    }
+
     try {
       setSubmitting(true);
       

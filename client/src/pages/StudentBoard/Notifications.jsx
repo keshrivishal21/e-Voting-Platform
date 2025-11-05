@@ -29,6 +29,8 @@ const StudentNotifications = () => {
 
       if (response.data.success) {
         setNotifications(response.data.data.notifications);
+        // Mark notifications as viewed
+        localStorage.setItem('lastNotificationView', new Date().toISOString());
       } else {
         toast.error("Failed to load notifications");
       }

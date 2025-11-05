@@ -76,6 +76,31 @@ class ElectionAPI {
       throw new Error(`Network error: ${error.message}`);
     }
   }
+
+  // Admin: Declare results for an election
+  static async declareResults(electionId) {
+    try {
+      return await apiFetch(`/election/admin/elections/${electionId}/declare-results`, { method: 'POST' });
+    } catch (error) {
+      throw new Error(`Network error: ${error.message}`);
+    }
+  }
+
+  // Get election results (public - no auth required)
+  static async getElectionResults() {
+    try {
+      const response = await fetch('http://localhost:5000/api/election/results', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      return { response, data };
+    } catch (error) {
+      throw new Error(`Network error: ${error.message}`);
+    }
+  }
 }
 
 export default ElectionAPI;

@@ -5,16 +5,12 @@ const prisma = new PrismaClient();
 // Get all notifications (Admin only)
 export const getAllNotifications = async (req, res) => {
   try {
-    // Get recent system logs related to notifications
-    const logs = await prisma.sYSTEM_LOGS.findMany({
-      where: {
-        Log_type: "Audit",
-        Action: {
-          contains: "Notification sent",
-        },
-      },
-      orderBy: { Log_time: "desc" },
-      take: 50,
+    const limit = parseInt(req.query.limit) || 50;
+
+    // Get recent notifications from the database
+    const notifications = await prisma.nOTIFICATION.findMany({
+      orderBy: { Notif_time: "desc" },
+      take: limit,
       include: {
         admin: {
           select: {
@@ -24,18 +20,45 @@ export const getAllNotifications = async (req, res) => {
       },
     });
 
-    // Format logs as notifications
-    const formattedNotifications = logs.map((log) => {
-      // Extract recipient type from action string
-      const recipientMatch = log.Action.match(/Notification sent to (\w+):/);
-      const messageMatch = log.Action.match(/: "(.+)"/);
-      
+    // Group notifications by message and time to show summary
+    const groupedNotifications = {};
+    notifications.forEach(notif => {
+      const key = `${notif.Notif_message}_${notif.Notif_time.getTime()}_${notif.Admin_id}`;
+      if (!groupedNotifications[key]) {
+        groupedNotifications[key] = {
+          id: notif.N_id,
+          message: notif.Notif_message,
+          sentBy: notif.admin?.Admin_name || "System",
+          sentAt: notif.Notif_time,
+          recipientTypes: new Set(),
+          recipientCount: 0
+        };
+      }
+      groupedNotifications[key].recipientTypes.add(notif.User_type);
+      groupedNotifications[key].recipientCount++;
+    });
+
+    // Format grouped notifications
+    const formattedNotifications = Object.values(groupedNotifications).map(group => {
+      const recipientTypes = Array.from(group.recipientTypes);
+      let recipient = "";
+      if (recipientTypes.length === 2) {
+        recipient = "All";
+      } else if (recipientTypes.includes("Student")) {
+        recipient = "Students";
+      } else if (recipientTypes.includes("Candidate")) {
+        recipient = "Candidates";
+      } else {
+        recipient = "Unknown";
+      }
+
       return {
-        id: log.Log_id,
-        recipient: recipientMatch ? recipientMatch[1] : "Unknown",
-        message: messageMatch ? messageMatch[1] : log.Action,
-        sentBy: log.admin?.Admin_name || "System",
-        sentAt: log.Log_time,
+        id: group.id,
+        recipient: recipient,
+        message: group.message,
+        sentBy: group.sentBy,
+        sentAt: group.sentAt,
+        recipientCount: group.recipientCount
       };
     });
 

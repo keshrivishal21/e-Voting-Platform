@@ -218,6 +218,18 @@ class AuthAPI {
       throw new Error(`Network error: ${error.message}`);
     }
   }
+
+  // Get user notifications (Student/Candidate)
+  static async getUserNotifications(limit = 10) {
+    try {
+      const { data } = await apiFetch(`/notification/notifications?limit=${limit}`, {
+        method: 'GET',
+      });
+      return data;
+    } catch (error) {
+      throw new Error(`Network error: ${error.message}`);
+    }
+  }
 }
 
 export default AuthAPI;
