@@ -174,10 +174,9 @@ class AuthAPI {
   // Request password reset
   static async requestPasswordReset(email, userType = 'student') {
     try {
-      const endpoint = userType === 'student' 
-        ? `${API_BASE_URL}/auth/student/forgot-password`
-        : `${API_BASE_URL}/auth/candidate/forgot-password`;
-      const path = endpoint.replace(API_BASE_URL, '');
+      const path = userType === 'student' 
+        ? '/auth/student/forgot-password'
+        : '/auth/candidate/forgot-password';
       return await apiFetch(path, { method: 'POST', body: { email }, auth: false });
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
@@ -187,10 +186,9 @@ class AuthAPI {
   // Reset password with token
   static async resetPassword(token, newPassword, userType = 'student') {
     try {
-      const endpoint = userType === 'student'
-        ? `${API_BASE_URL}/auth/student/reset-password`
-        : `${API_BASE_URL}/auth/candidate/reset-password`;
-      const path = endpoint.replace(API_BASE_URL, '');
+      const path = userType === 'student'
+        ? '/auth/student/reset-password'
+        : '/auth/candidate/reset-password';
       return await apiFetch(path, { method: 'POST', body: { token, newPassword }, auth: false });
     } catch (error) {
       throw new Error(`Network error: ${error.message}`);
