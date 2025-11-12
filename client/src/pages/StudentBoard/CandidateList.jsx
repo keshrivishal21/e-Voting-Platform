@@ -147,19 +147,17 @@ const CandidateList = () => {
                         {candidate.branch} • {candidate.year}
                       </p>
 
-                      {candidate.manifesto && (
-                        <motion.button
-                          onClick={() => {
-                            setSelectedCandidate(candidate);
-                            setShowManifestoModal(true);
-                          }}
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          className="border text-sm text-gray-600 border-gray-400 w-28 h-8 rounded-full mt-4 flex items-center justify-center hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition"
-                        >
-                          View Details
-                        </motion.button>
-                      )}
+                      <motion.button
+                        onClick={() => {
+                          setSelectedCandidate(candidate);
+                          setShowManifestoModal(true);
+                        }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="border text-sm text-gray-600 border-gray-400 w-28 h-8 rounded-full mt-4 flex items-center justify-center hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition"
+                      >
+                        View Details
+                      </motion.button>
                     </div>
                   </motion.div>
                 ))}

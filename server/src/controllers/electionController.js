@@ -7,12 +7,20 @@ const prisma = new PrismaClient();
 // Create a new election (admin only)
 export const createElection = async (req, res) => {
   try {
-    const { title, startDate, endDate, autoDeclareResults } = req.body;
+    const { title, startDate, endDate, autoDeclareResults, positions } = req.body;
 
     if (!title || !startDate || !endDate) {
       return res.status(400).json({
         success: false,
         message: "Title, startDate and endDate are required",
+      });
+    }
+
+    // Validate positions
+    if (!positions || !Array.isArray(positions) || positions.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "At least one position is required for the election",
       });
     }
 
@@ -86,6 +94,7 @@ export const createElection = async (req, res) => {
         Status: "Upcoming",
         Created_by: adminId,
         Auto_declare_results: autoDeclareResults !== undefined ? autoDeclareResults : true,
+        Positions: JSON.stringify(positions), // Store positions as JSON string
       },
     });
 
@@ -268,9 +277,15 @@ export const getElections = async (req, res) => {
       },
     });
 
+    // Parse positions from JSON string to array
+    const electionsWithPositions = elections.map(election => ({
+      ...election,
+      Positions: election.Positions ? JSON.parse(election.Positions) : []
+    }));
+
     res.status(200).json({
       success: true,
-      data: { elections },
+      data: { elections: electionsWithPositions },
     });
   } catch (error) {
     console.error("Get elections error:", error);
@@ -301,9 +316,15 @@ export const getElectionById = async (req, res) => {
       });
     }
 
+    // Parse positions from JSON string to array
+    const electionWithPositions = {
+      ...election,
+      Positions: election.Positions ? JSON.parse(election.Positions) : []
+    };
+
     res.status(200).json({
       success: true,
-      data: { election },
+      data: { election: electionWithPositions },
     });
   } catch (error) {
     console.error("Get election error:", error);

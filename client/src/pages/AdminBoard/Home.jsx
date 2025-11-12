@@ -35,7 +35,9 @@ const Home = () => {
     startDate: "",
     endDate: "",
     autoDeclareResults: true,
+    positions: ["President", "Vice President", "Secretary", "Treasurer"], 
   });
+  const [positionInput, setPositionInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -106,6 +108,15 @@ const Home = () => {
       return;
     }
 
+    // Validate positions
+    if (!formData.positions || formData.positions.length === 0) {
+      const errorMsg = "Please add at least one position for the election";
+      setError(errorMsg);
+      toast.error(errorMsg);
+      setLoading(false);
+      return;
+    }
+
     const startDate = new Date(formData.startDate);
     const endDate = new Date(formData.endDate);
     const now = new Date();
@@ -164,6 +175,7 @@ const Home = () => {
             startDate: startDate.toISOString(),
             endDate: endDate.toISOString(),
             autoDeclareResults: formData.autoDeclareResults,
+            positions: formData.positions,
           }),
         }
       );
@@ -173,7 +185,14 @@ const Home = () => {
       if (data.success) {
         setSuccess("Election created successfully!");
         toast.success("Election created successfully!");
-        setFormData({ title: "", startDate: "", endDate: "", autoDeclareResults: true });
+        setFormData({ 
+          title: "", 
+          startDate: "", 
+          endDate: "", 
+          autoDeclareResults: true,
+          positions: ["President", "Vice President", "Secretary", "Treasurer"]
+        });
+        setPositionInput("");
         setTimeout(() => {
           setIsModalOpen(false);
           setSuccess("");
@@ -409,7 +428,7 @@ const Home = () => {
       {/* Create Election Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-opacity-20 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 relative animate-fadeIn">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-8 relative animate-fadeIn">
             <button
               onClick={() => {
                 setIsModalOpen(false);
@@ -518,6 +537,88 @@ const Home = () => {
                     </p>
                   </div>
                 </label>
+              </div>
+
+              {/* Election Positions */}
+              <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+                <label className="block text-gray-800 font-medium mb-3">
+                  Election Positions *
+                </label>
+                <p className="text-xs text-gray-600 mb-3">
+                  Define the positions for this election. Candidates will register for these positions.
+                </p>
+                
+                {/* Add Position Input */}
+                <div className="flex gap-2 mb-3">
+                  <input
+                    type="text"
+                    value={positionInput}
+                    onChange={(e) => setPositionInput(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (positionInput.trim() && !formData.positions.includes(positionInput.trim())) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            positions: [...prev.positions, positionInput.trim()]
+                          }));
+                          setPositionInput("");
+                        } else if (formData.positions.includes(positionInput.trim())) {
+                          toast.error("Position already exists");
+                        }
+                      }
+                    }}
+                    placeholder="Enter position name (e.g., President)"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (positionInput.trim() && !formData.positions.includes(positionInput.trim())) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          positions: [...prev.positions, positionInput.trim()]
+                        }));
+                        setPositionInput("");
+                      } else if (positionInput.trim() && formData.positions.includes(positionInput.trim())) {
+                        toast.error("Position already exists");
+                      } else {
+                        toast.error("Please enter a position name");
+                      }
+                    }}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+                  >
+                    Add
+                  </button>
+                </div>
+
+                {/* Positions List */}
+                <div className="space-y-2">
+                  {formData.positions.length === 0 ? (
+                    <p className="text-sm text-gray-500 italic">No positions added yet</p>
+                  ) : (
+                    formData.positions.map((position, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-purple-200"
+                      >
+                        <span className="text-gray-800 font-medium">{position}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              positions: prev.positions.filter((_, i) => i !== index)
+                            }));
+                          }}
+                          className="text-red-500 hover:text-red-700 font-medium text-sm"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
 
               <div className="flex gap-3 pt-4">

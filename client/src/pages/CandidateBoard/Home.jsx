@@ -9,6 +9,7 @@ import Testimonials from "../../components/Testimonials";
 const Home = () => {
   const [loading, setLoading] = useState(true);
   const [candidate, setCandidate] = useState(null);
+  const [notifications, setNotifications] = useState([]);
 
   // Get candidate ID from JWT token
   const getCandidateIdFromToken = () => {
@@ -88,16 +89,27 @@ const Home = () => {
         }
       } catch (error) {
         console.error('Error loading profile:', error);
-        toast.error('Failed to load profile. Please try again.');
+          toast.error('Failed to load profile. Please try again.');
       } finally {
         setLoading(false);
       }
     };
 
-    loadProfile();
-  }, []);
+    const loadNotifications = async () => {
+      try {
+        const data = await AuthAPI.getUserNotifications(3);
+        if (data.success) {
+          setNotifications(data.data.notifications || []);
+        }
+      } catch (error) {
+        console.error('Error loading notifications:', error);
+        // Don't show error toast for notifications, it's not critical
+      }
+    };
 
-  if (loading) {
+    loadProfile();
+    loadNotifications();
+  }, []);  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white flex items-center justify-center">
         <div className="text-center">
@@ -145,10 +157,18 @@ const Home = () => {
           <h2 className="text-2xl font-semibold text-indigo-900 mb-2">
             {candidate.name}
           </h2>
-          <p className="text-gray-600 text-base mb-5">
+          <p className="text-gray-600 text-base mb-2">
             {candidate.branch} • {candidate.year}
           </p>
-          <div className="flex flex-wrap gap-3 justify-center md:justify-start">
+          {candidate.electionTitle && (
+            <div className="mb-4 inline-block">
+              <p className="text-sm text-gray-500">Contesting in</p><p className="text-lg font-semibold text-indigo-700">{candidate.electionTitle}</p>
+              <p className="text-sm text-gray-600">
+                Position: <span className="font-semibold text-indigo-600">{candidate.position}</span>
+              </p>
+            </div>
+          )}
+          <div className="flex flex-wrap gap-3 justify-center md:justify-start mt-4">
             <a
               href="/candidate/profile"
               className="flex items-center gap-2 bg-indigo-50 text-indigo-700 border border-indigo-300 px-5 py-2.5 rounded-xl hover:bg-indigo-100 transition"
@@ -225,24 +245,26 @@ const Home = () => {
           <h3 className="text-lg font-semibold text-indigo-700 mb-4">
             Recent Notifications
           </h3>
-          {/* TODO: Replace with API call to GET /api/notifications/recent?limit=3 */}
           <ul className="space-y-3 text-sm text-gray-700 flex-1">
-            <li className="flex items-start gap-2">
-              <span>📢</span>
-              <span>Election results will be announced at 5 PM</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span>📝</span>
-              <span>Manifesto update deadline ends tomorrow</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span>📊</span>
-              <span>Live voting stats are now available</span>
-            </li>
+            {notifications.length > 0 ? (
+              notifications.map((notification, index) => (
+                <li key={index} className="flex items-start gap-2">
+                  <span>📢</span>
+                  <span className="line-clamp-1">{notification.Message || notification.message || 'New notification'}</span>
+                </li>
+              ))
+            ) : (
+              <li className="text-center text-gray-500 py-4">
+                No notifications yet
+              </li>
+            )}
           </ul>
-          <button className="mt-4 text-indigo-600 text-sm font-medium hover:underline self-start">
-            View All
-          </button>
+          <a 
+            href="/candidate/notifications"
+            className="mt-4 text-indigo-600 text-sm font-medium hover:underline self-start"
+          >
+            View All Notifications →
+          </a>
         </div>
       </div>
 

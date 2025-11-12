@@ -438,22 +438,22 @@ async function cleanupCompletedElectionCandidates() {
 
           totalDeleted += deletedCandidates.count;
 
-          console.log(`   ✅ Deleted ${deletedCandidates.count} candidates from election ${election.Election_id}`);
+          console.log(`   Deleted ${deletedCandidates.count} candidates from election ${election.Election_id}`);
         });
       } catch (error) {
-        console.error(`   ❌ Failed to cleanup candidates for election ${election.Election_id}:`, error);
+        console.error(`   Failed to cleanup candidates for election ${election.Election_id}:`, error);
       }
     }
 
     if (totalDeleted > 0) {
-      console.log(`✅ Total candidates cleaned up: ${totalDeleted} from ${completedElections.length} completed elections`);
+      console.log(`Total candidates cleaned up: ${totalDeleted} from ${completedElections.length} completed elections`);
     } else if (completedElections.length > 0) {
-      console.log(`ℹ️  No candidates to cleanup (${completedElections.length} elections checked)`);
+      console.log(`No candidates to cleanup (${completedElections.length} elections checked)`);
     }
 
     return { electionsProcessed: completedElections.length, candidatesDeleted: totalDeleted };
   } catch (error) {
-    console.error("❌ Candidate cleanup error:", error);
+    console.error("Candidate cleanup error:", error);
     return { electionsProcessed: 0, candidatesDeleted: 0 };
   }
   */

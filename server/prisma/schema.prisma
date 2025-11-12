@@ -67,6 +67,7 @@ model ELECTION {
   Status      ElectionStatus
   Created_by  Int
   Auto_declare_results Boolean @default(true)
+  Positions   String?          @db.Text
 
   admin       ADMIN            @relation(fields: [Created_by], references: [Admin_id])
   candidates  CANDIDATE[]

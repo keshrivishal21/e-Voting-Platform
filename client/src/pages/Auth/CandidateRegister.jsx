@@ -43,7 +43,7 @@ const CandidateRegister = () => {
     "Biotechnology",
   ];
 
-  const positions = ["President", "Vice President", "Secretary", "Treasurer"];
+  const [positions, setPositions] = useState([]); // Dynamic positions based on selected election
 
   const years = [1, 2, 3, 4];
 
@@ -118,6 +118,7 @@ const CandidateRegister = () => {
         
         if (response && response.success) {
           const electionsList = response.data?.elections || [];
+          console.log("Elections loaded:", electionsList);
           setElections(electionsList);
           
           if (electionsList.length === 0) {
@@ -146,6 +147,31 @@ const CandidateRegister = () => {
       setError(errorMsg);
       toast.error(errorMsg);
       return;
+    }
+    
+    // When election is selected, update positions
+    if (name === 'electionId') {
+      const selectedElection = elections.find(e => e.Election_id.toString() === value);
+      console.log("Selected election:", selectedElection);
+      console.log("Positions in election:", selectedElection?.Positions);
+      
+      if (selectedElection && selectedElection.Positions && Array.isArray(selectedElection.Positions) && selectedElection.Positions.length > 0) {
+        setPositions(selectedElection.Positions);
+        console.log("Positions set to:", selectedElection.Positions);
+        // Reset position field if previously selected position is not in new election
+        if (formData.position && !selectedElection.Positions.includes(formData.position)) {
+          setFormData((prev) => ({
+            ...prev,
+            position: '',
+            [name]: value,
+          }));
+          return;
+        }
+      } else {
+        console.log("No positions found in election, using fallback");
+        // Fallback to default positions if none found
+        setPositions(["President", "Vice President", "Secretary", "Treasurer"]);
+      }
     }
     
     setFormData((prev) => ({
@@ -571,15 +597,28 @@ const CandidateRegister = () => {
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
                   required
-                  disabled={loading}
+                  disabled={loading || !formData.electionId}
                 >
-                  <option value="">Select Position</option>
-                  {positions.map((position) => (
-                    <option key={position} value={position}>
-                      {position}
-                    </option>
-                  ))}
+                  <option value="">
+                    {!formData.electionId ? "Select an election first" : "Select Position"}
+                  </option>
+                  {positions.length > 0 ? (
+                    positions.map((position) => (
+                      <option key={position} value={position}>
+                        {position}
+                      </option>
+                    ))
+                  ) : (
+                    formData.electionId && (
+                      <option value="" disabled>No positions available for this election</option>
+                    )
+                  )}
                 </select>
+                {formData.electionId && positions.length === 0 && (
+                  <p className="mt-1 text-xs text-red-500">
+                    No positions defined for this election. Please contact admin.
+                  </p>
+                )}
               </div>
             </div>
 

@@ -565,6 +565,59 @@ const ElectionControl = () => {
               </div>
             </div>
 
+            {/* Winners Summary - Only show for completed elections with declared results */}
+            {stats.election.status === "Completed" && stats.results.declared && (
+              <div className="bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 border-2 border-green-300 rounded-2xl shadow-xl p-6 mb-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="bg-green-500 rounded-full p-3">
+                    <TrophyIcon className="w-8 h-8 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-green-900">
+                      🎉 Election Winners
+                    </h2>
+                    <p className="text-green-700 text-sm">
+                      Results declared for {stats.election.title}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {Object.entries(stats.candidates.byPosition).map(([position, candidates]) => {
+                    // Get the winner (first candidate with highest votes)
+                    const winner = candidates[0];
+                    if (winner && winner.voteCount > 0) {
+                      return (
+                        <div key={position} className="bg-white rounded-xl p-4 border-2 border-green-200 shadow-md hover:shadow-lg transition-all">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="bg-green-600 text-white px-3 py-1 rounded-lg font-bold text-sm">
+                              {position}
+                            </div>
+                            <span className="text-2xl">🏆</span>
+                          </div>
+                          <h3 className="text-lg font-bold text-gray-900 mb-1">
+                            {winner.Can_name}
+                          </h3>
+                          <p className="text-sm text-gray-600 mb-2">
+                            {winner.Branch} • Year {winner.Year}
+                          </p>
+                          <div className="flex items-center justify-between">
+                            <span className="text-2xl font-bold text-green-600">
+                              {winner.voteCount}
+                            </span>
+                            <span className="text-sm text-gray-500">
+                              votes
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Election Actions */}
             <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
               <h2 className="text-xl font-bold text-gray-800 mb-4">
@@ -673,7 +726,9 @@ const ElectionControl = () => {
                                   key={candidate.Can_id}
                                   className={`p-4 rounded-lg border-2 ${
                                     index === 0 && candidate.voteCount > 0
-                                      ? "border-yellow-300 bg-yellow-50"
+                                      ? stats.election.status === "Completed" && stats.results.declared
+                                        ? "border-green-400 bg-gradient-to-r from-green-50 to-emerald-50 shadow-lg"
+                                        : "border-yellow-300 bg-yellow-50"
                                       : "border-gray-200 bg-gray-50"
                                   }`}
                                 >
@@ -715,7 +770,9 @@ const ElectionControl = () => {
                                     <div
                                       className={`h-2 rounded-full transition-all duration-500 ${
                                         index === 0 && candidate.voteCount > 0
-                                          ? "bg-gradient-to-r from-yellow-400 to-yellow-600"
+                                          ? stats.election.status === "Completed" && stats.results.declared
+                                            ? "bg-gradient-to-r from-green-400 to-emerald-600"
+                                            : "bg-gradient-to-r from-yellow-400 to-yellow-600"
                                           : "bg-gradient-to-r from-indigo-400 to-purple-600"
                                       }`}
                                       style={{ width: `${percentage}%` }}
@@ -730,8 +787,12 @@ const ElectionControl = () => {
                                       {candidate.Status}
                                     </span>
                                     {index === 0 && candidate.voteCount > 0 && (
-                                      <span className="text-xs font-semibold text-yellow-700 bg-yellow-100 px-2 py-1 rounded-full">
-                                        Leading
+                                      <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                                        stats.election.status === "Completed" && stats.results.declared
+                                          ? "text-green-700 bg-green-100 border-2 border-green-300"
+                                          : "text-yellow-700 bg-yellow-100"
+                                      }`}>
+                                        {stats.election.status === "Completed" && stats.results.declared ? "🏆 WINNER" : "Leading"}
                                       </span>
                                     )}
                                   </div>
