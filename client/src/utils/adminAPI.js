@@ -40,7 +40,8 @@ export const getAllCandidates = async (status = null) => {
  */
 export const approveCandidate = async (candidateId) => {
   try {
-    return await apiFetch(`/candidate/admin/candidates/${candidateId}/approve`, { method: 'POST' });
+    const { data } = await apiFetch(`/candidate/admin/candidates/${candidateId}/approve`, { method: 'POST' });
+    return data;
   } catch (error) {
     console.error("Error approving candidate:", error);
     throw error;
@@ -55,7 +56,8 @@ export const approveCandidate = async (candidateId) => {
  */
 export const rejectCandidate = async (candidateId, reason = null) => {
   try {
-    return await apiFetch(`/candidate/admin/candidates/${candidateId}/reject`, { method: 'POST', body: { reason } });
+    const { data } = await apiFetch(`/candidate/admin/candidates/${candidateId}/reject`, { method: 'POST', body: { reason } });
+    return data;
   } catch (error) {
     console.error("Error rejecting candidate:", error);
     throw error;
@@ -121,7 +123,8 @@ export const getAllFeedbacks = async () => {
  */
 export const approveFeedback = async (feedbackId) => {
   try {
-    return await apiFetch(`/feedback/admin/feedbacks/${feedbackId}/approve`, { method: 'POST' });
+    const { data } = await apiFetch(`/feedback/admin/feedbacks/${feedbackId}/approve`, { method: 'POST' });
+    return data;
   } catch (error) {
     console.error('Error approving feedback:', error);
     throw error;
@@ -134,7 +137,8 @@ export const approveFeedback = async (feedbackId) => {
  */
 export const deleteFeedback = async (feedbackId) => {
   try {
-    return await apiFetch(`/feedback/admin/feedbacks/${feedbackId}`, { method: 'DELETE' });
+    const { data } = await apiFetch(`/feedback/admin/feedbacks/${feedbackId}`, { method: 'DELETE' });
+    return data;
   } catch (error) {
     console.error('Error deleting feedback:', error);
     throw error;
@@ -268,10 +272,11 @@ export const getElectionStats = async (electionId) => {
  */
 export const declareElectionResults = async (electionId, options = {}) => {
   try {
-    return await apiFetch(`/election/admin/elections/${electionId}/declare-results`, { 
+    const { data } = await apiFetch(`/election/admin/elections/${electionId}/declare-results`, { 
       method: 'POST',
       body: options
     });
+    return data;
   } catch (error) {
     console.error("Error declaring results:", error);
     throw error;
@@ -286,10 +291,11 @@ export const declareElectionResults = async (electionId, options = {}) => {
  */
 export const startElection = async (electionId, force = false) => {
   try {
-    return await apiFetch(`/election/admin/elections/${electionId}/start`, { 
+    const { data } = await apiFetch(`/election/admin/elections/${electionId}/start`, { 
       method: 'POST',
       body: { force }
     });
+    return data;
   } catch (error) {
     console.error("Error starting election:", error);
     throw error;
@@ -304,10 +310,11 @@ export const startElection = async (electionId, force = false) => {
  */
 export const endElection = async (electionId, force = false) => {
   try {
-    return await apiFetch(`/election/admin/elections/${electionId}/end`, { 
+    const { data } = await apiFetch(`/election/admin/elections/${electionId}/end`, { 
       method: 'POST',
       body: { force }
     });
+    return data;
   } catch (error) {
     console.error("Error ending election:", error);
     throw error;
