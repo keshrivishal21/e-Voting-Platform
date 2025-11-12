@@ -229,6 +229,91 @@ export const getStudentVotingHistory = async (studentId) => {
   }
 };
 
+/**
+ * Get all elections
+ * @param {string} status - Optional: filter by status
+ * @returns {Promise} Response with elections array
+ */
+export const getAllElections = async (status = null) => {
+  try {
+    const path = status ? `/election/elections?status=${status}` : `/election/elections`;
+    const { data } = await apiFetch(path, { method: 'GET' });
+    return data;
+  } catch (error) {
+    console.error("Error fetching elections:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get election statistics
+ * @param {number} electionId - Election ID
+ * @returns {Promise} Response with detailed election stats
+ */
+export const getElectionStats = async (electionId) => {
+  try {
+    const { data } = await apiFetch(`/election/admin/elections/${electionId}/stats`, { method: 'GET' });
+    return data;
+  } catch (error) {
+    console.error("Error fetching election stats:", error);
+    throw error;
+  }
+};
+
+/**
+ * Declare results for an election
+ * @param {number} electionId - Election ID
+ * @param {object} options - Optional: { tieBreaking: { position: candidateId } }
+ * @returns {Promise} Response with declared results
+ */
+export const declareElectionResults = async (electionId, options = {}) => {
+  try {
+    return await apiFetch(`/election/admin/elections/${electionId}/declare-results`, { 
+      method: 'POST',
+      body: options
+    });
+  } catch (error) {
+    console.error("Error declaring results:", error);
+    throw error;
+  }
+};
+
+/**
+ * Start an election
+ * @param {number} electionId - Election ID
+ * @param {boolean} force - Force start (override scheduler)
+ * @returns {Promise} Response with updated election
+ */
+export const startElection = async (electionId, force = false) => {
+  try {
+    return await apiFetch(`/election/admin/elections/${electionId}/start`, { 
+      method: 'POST',
+      body: { force }
+    });
+  } catch (error) {
+    console.error("Error starting election:", error);
+    throw error;
+  }
+};
+
+/**
+ * End an election
+ * @param {number} electionId - Election ID
+ * @param {boolean} force - Force end (override scheduler)
+ * @returns {Promise} Response with updated election
+ */
+export const endElection = async (electionId, force = false) => {
+  try {
+    return await apiFetch(`/election/admin/elections/${electionId}/end`, { 
+      method: 'POST',
+      body: { force }
+    });
+  } catch (error) {
+    console.error("Error ending election:", error);
+    throw error;
+  }
+};
+
 export default {
   getPendingCandidates,
   getAllCandidates,
@@ -246,4 +331,9 @@ export default {
   getStudentById,
   getStudentStats,
   getStudentVotingHistory,
+  getAllElections,
+  getElectionStats,
+  declareElectionResults,
+  startElection,
+  endElection,
 };

@@ -24,13 +24,10 @@ function CandidateLogin() {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        
-        // Check for whitespace in email and password fields
         if ((name === 'email' || name === 'password') && /\s/.test(value)) {
             const errorMsg = `${name === 'email' ? 'Email' : 'Password'} cannot contain whitespace`;
             setError(errorMsg);
             toast.error(errorMsg);
-            // Don't update state - reject the input
             return;
         }
         
@@ -38,11 +35,7 @@ function CandidateLogin() {
             ...prev,
             [name]: value
         }));
-        
-        // Clear error when user starts typing valid input
         if (error) setError('');
-        
-        // Validate email format in real-time (only for email field)
         if (name === 'email' && value) {
             const match = value.match(collegeEmailRegex);
             if (!match) {
@@ -60,15 +53,9 @@ function CandidateLogin() {
             const { response, data } = await AuthAPI.candidateLogin(formData.email, formData.password);
 
             if (response.ok && data.success) {
-                // Use auth context to login - just token and type
                 login(data.data.token, 'Candidate');
-                
-                // Remove student token only after candidate login is successful
                 localStorage.removeItem("studentToken");
-                
-                toast.success('Welcome back, Candidate! 🚀');
-                
-                // Navigate to intended page or candidate dashboard
+                toast.success('Welcome back, Candidate!');
                 const from = location.state?.from?.pathname || '/candidate';
                 navigate(from);
             } else {

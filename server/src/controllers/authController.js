@@ -407,6 +407,23 @@ export const candidateRegister = async (req, res) => {
       });
     }
 
+    // Validate election status and dates
+    if (election.Status === 'Completed') {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot register for a completed election",
+      });
+    }
+
+    // Check if election has already ended
+    const now = new Date();
+    if (election.End_date && now > election.End_date) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot register for an election that has already ended",
+      });
+    }
+
     // Check if candidate already exists for THIS specific election
     const existingCandidateInElection = await prisma.cANDIDATE.findFirst({
       where: { 

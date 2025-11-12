@@ -16,7 +16,7 @@ import AdminCandidateManagement from './pages/AdminBoard/CandidateManagement';
 import AdminElectionControl from './pages/AdminBoard/ElectionControl';
 import AdminFeedbackManagement from './pages/AdminBoard/FeedbackMangement';
 import AdminNotifications from './pages/AdminBoard/Notifications';
-import AdminResultManagement from './pages/AdminBoard/ResultMangement';
+//import AdminResultManagement from './pages/AdminBoard/ResultMangement';
 import AdminStudentManagement from './pages/AdminBoard/StudentMangement';
 import Login from './pages/Auth/StudentLogin';
 import AdminLogin from './pages/Auth/AdminLogin';
@@ -188,11 +188,11 @@ function AppContent() {
             <AdminNotifications />
           </ProtectedRoute>
         } />
-        <Route path="/admin/results" element={
+        {/* <Route path="/admin/results" element={
           <ProtectedRoute requiredRole="Admin">
             <AdminResultManagement />
           </ProtectedRoute>
-        } />
+        } /> */}
         <Route path="/admin/students" element={
           <ProtectedRoute requiredRole="Admin">
             <AdminStudentManagement />

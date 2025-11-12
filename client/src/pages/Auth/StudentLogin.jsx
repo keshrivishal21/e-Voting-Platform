@@ -25,13 +25,10 @@ function Login() {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        
-        // Check for whitespace in email and password fields
         if ((name === 'email' || name === 'password') && /\s/.test(value)) {
             const errorMsg = `${name === 'email' ? 'Email' : 'Password'} cannot contain whitespace`;
             setError(errorMsg);
             toast.error(errorMsg);
-            // Don't update state - reject the input
             return;
         }
         
@@ -40,10 +37,7 @@ function Login() {
             [name]: value
         }));
         
-        // Clear error when user starts typing valid input
         if (error) setError('');
-        
-        // Validate email format in real-time (only for email field)
         if (name === 'email' && value) {
             const match = value.match(collegeEmailRegex);
             if (!match) {

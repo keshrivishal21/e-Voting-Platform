@@ -34,6 +34,7 @@ const Home = () => {
     title: "",
     startDate: "",
     endDate: "",
+    autoDeclareResults: true,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -107,9 +108,40 @@ const Home = () => {
 
     const startDate = new Date(formData.startDate);
     const endDate = new Date(formData.endDate);
+    const now = new Date();
 
+    // Validate start date is not in the past
+    if (startDate < now) {
+      const errorMsg = "Start date cannot be in the past";
+      setError(errorMsg);
+      toast.error(errorMsg);
+      setLoading(false);
+      return;
+    }
+
+    // Validate end date is after start date
     if (endDate <= startDate) {
       const errorMsg = "End date must be after start date";
+      setError(errorMsg);
+      toast.error(errorMsg);
+      setLoading(false);
+      return;
+    }
+
+    // Validate minimum election duration (at least 1 hour)
+    // const minDuration = 60 * 60 * 1000; // 1 hour in milliseconds
+    // if (endDate - startDate < minDuration) {
+    //   const errorMsg = "Election duration must be at least 1 hour";
+    //   setError(errorMsg);
+    //   toast.error(errorMsg);
+    //   setLoading(false);
+    //   return;
+    // }
+
+    // Validate maximum election duration (not more than 30 days)
+    const maxDuration = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+    if (endDate - startDate > maxDuration) {
+      const errorMsg = "Election duration cannot exceed 30 days";
       setError(errorMsg);
       toast.error(errorMsg);
       setLoading(false);
@@ -131,6 +163,7 @@ const Home = () => {
             title: formData.title,
             startDate: startDate.toISOString(),
             endDate: endDate.toISOString(),
+            autoDeclareResults: formData.autoDeclareResults,
           }),
         }
       );
@@ -139,8 +172,8 @@ const Home = () => {
 
       if (data.success) {
         setSuccess("Election created successfully!");
-        toast.success("🎉 Election created successfully!");
-        setFormData({ title: "", startDate: "", endDate: "" });
+        toast.success("Election created successfully!");
+        setFormData({ title: "", startDate: "", endDate: "", autoDeclareResults: true });
         setTimeout(() => {
           setIsModalOpen(false);
           setSuccess("");
@@ -431,9 +464,13 @@ const Home = () => {
                   name="startDate"
                   value={formData.startDate}
                   onChange={handleInputChange}
+                  min={new Date().toISOString().slice(0, 16)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
                   required
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Must be a future date and time
+                </p>
               </div>
 
               <div>
@@ -445,9 +482,42 @@ const Home = () => {
                   name="endDate"
                   value={formData.endDate}
                   onChange={handleInputChange}
+                  min={formData.startDate || new Date().toISOString().slice(0, 16)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
                   required
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Must be after start date (30 days maximum)
+                </p>
+              </div>
+
+              <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="autoDeclareResults"
+                    checked={formData.autoDeclareResults}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        autoDeclareResults: e.target.checked,
+                      }))
+                    }
+                    className="mt-1 w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                  />
+                  <div>
+                    <span className="text-gray-800 font-medium">
+                      Auto-declare results when election ends
+                    </span>
+                    <p className="text-xs text-gray-600 mt-1">
+                      When enabled: Results will be calculated and published automatically when the election ends.
+                      <br />
+                      When disabled: You must manually declare results from the Election Control page.
+                      <br />
+                      <span className="text-indigo-600 font-medium">Note:</span> You can always manually declare results regardless of this setting.
+                    </p>
+                  </div>
+                </label>
               </div>
 
               <div className="flex gap-3 pt-4">

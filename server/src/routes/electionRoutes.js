@@ -5,6 +5,7 @@ import {
 	endElection,
 	getElections,
 	getElectionById,
+	getElectionStats,
 	declareResults,
 	getElectionResults,
 } from "../controllers/electionController.js";
@@ -23,6 +24,9 @@ router.get("/elections", verifyToken, getElections);
 
 // Get a single election by ID
 router.get("/elections/:electionId", verifyToken, getElectionById);
+
+// Admin gets detailed election statistics
+router.get("/admin/elections/:electionId/stats", verifyAdmin, getElectionStats);
 
 // Admin creates a new election
 router.post("/admin/elections", verifyAdmin, createElection);

@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 // Create a new election (admin only)
 export const createElection = async (req, res) => {
   try {
-    const { title, startDate, endDate } = req.body;
+    const { title, startDate, endDate, autoDeclareResults } = req.body;
 
     if (!title || !startDate || !endDate) {
       return res.status(400).json({
@@ -18,6 +18,8 @@ export const createElection = async (req, res) => {
 
     const start = new Date(startDate);
     const end = new Date(endDate);
+    const now = new Date();
+
 
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       return res.status(400).json({
@@ -26,10 +28,37 @@ export const createElection = async (req, res) => {
       });
     }
 
+    // Validate start date is not in the past
+    if (start < now) {
+      return res.status(400).json({
+        success: false,
+        message: "Start date cannot be in the past",
+      });
+    }
+
+    // Validate end date is after start date
     if (end <= start) {
       return res.status(400).json({
         success: false,
         message: "End date must be after start date",
+      });
+    }
+
+    // Validate minimum election duration (at least 1 hour)
+    // const minDuration = 60 * 60 * 1000; // 1 hour in milliseconds
+    // if (end - start < minDuration) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "Election duration must be at least 1 hour",
+    //   });
+    // }
+
+    // Validate maximum election duration (not more than 30 days)
+    const maxDuration = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+    if (end - start > maxDuration) {
+      return res.status(400).json({
+        success: false,
+        message: "Election duration cannot exceed 30 days",
       });
     }
 
@@ -56,6 +85,7 @@ export const createElection = async (req, res) => {
         End_date: end,
         Status: "Upcoming",
         Created_by: adminId,
+        Auto_declare_results: autoDeclareResults !== undefined ? autoDeclareResults : true,
       },
     });
 
@@ -281,11 +311,164 @@ export const getElectionById = async (req, res) => {
   }
 };
 
+// Get detailed election statistics (admin only)
+export const getElectionStats = async (req, res) => {
+  try {
+    const { electionId } = req.params;
+
+    if (!electionId) {
+      return res.status(400).json({
+        success: false,
+        message: "Election ID is required",
+      });
+    }
+
+    const electionIdInt = parseInt(electionId);
+
+    // Get election details
+    const election = await prisma.eLECTION.findUnique({
+      where: { Election_id: electionIdInt },
+      include: {
+        admin: {
+          select: {
+            Admin_id: true,
+            Admin_name: true,
+            Admin_email: true
+          }
+        }
+      }
+    });
+
+    if (!election) {
+      return res.status(404).json({
+        success: false,
+        message: "Election not found",
+      });
+    }
+
+    // Get all candidates for this election
+    const candidates = await prisma.cANDIDATE.findMany({
+      where: { Election_id: electionIdInt },
+      select: {
+        Can_id: true,
+        Can_name: true,
+        Position: true,
+        Status: true,
+        Branch: true,
+        Year: true
+      }
+    });
+
+    // Get all votes for this election
+    const votes = await prisma.vOTE.findMany({
+      where: { Election_id: electionIdInt },
+      select: {
+        Vote_id: true,
+        Std_id: true,
+        Can_id: true,
+        Vote_time: true
+      }
+    });
+
+    // Get unique voters
+    const uniqueVoters = [...new Set(votes.map(v => v.Std_id.toString()))];
+
+    // Count votes by candidate
+    const votesByCandidate = {};
+    votes.forEach(vote => {
+      const canId = vote.Can_id.toString();
+      votesByCandidate[canId] = (votesByCandidate[canId] || 0) + 1;
+    });
+
+    // Count votes by position
+    const votesByPosition = {};
+    votes.forEach(vote => {
+      const candidate = candidates.find(c => c.Can_id === vote.Can_id);
+      if (candidate) {
+        const pos = candidate.Position;
+        votesByPosition[pos] = (votesByPosition[pos] || 0) + 1;
+      }
+    });
+
+    // Group candidates by position with their vote counts
+    const candidatesByPosition = {};
+    candidates.forEach(candidate => {
+      const pos = candidate.Position;
+      if (!candidatesByPosition[pos]) {
+        candidatesByPosition[pos] = [];
+      }
+      candidatesByPosition[pos].push({
+        ...candidate,
+        Can_id: candidate.Can_id.toString(),
+        voteCount: votesByCandidate[candidate.Can_id.toString()] || 0
+      });
+    });
+
+    // Sort candidates by vote count within each position
+    Object.keys(candidatesByPosition).forEach(position => {
+      candidatesByPosition[position].sort((a, b) => b.voteCount - a.voteCount);
+    });
+
+    // Check if results have been declared
+    const declaredResults = await prisma.rESULT.findMany({
+      where: { Election_id: electionIdInt }
+    });
+
+    // Calculate statistics
+    const stats = {
+      election: {
+        id: election.Election_id,
+        title: election.Title,
+        startDate: election.Start_date,
+        endDate: election.End_date,
+        status: election.Status,
+        autoDeclareResults: election.Auto_declare_results,
+        createdBy: election.admin
+      },
+      candidates: {
+        total: candidates.length,
+        approved: candidates.filter(c => c.Status === 'Approved').length,
+        pending: candidates.filter(c => c.Status === 'Pending').length,
+        rejected: candidates.filter(c => c.Status === 'Rejected').length,
+        byPosition: candidatesByPosition
+      },
+      votes: {
+        total: votes.length,
+        uniqueVoters: uniqueVoters.length,
+        byPosition: votesByPosition,
+        byCandidate: votesByCandidate
+      },
+      results: {
+        declared: declaredResults.length > 0,
+        count: declaredResults.length
+      }
+    };
+
+    res.status(200).json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    console.error("Get election stats error:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Internal server error",
+      error: error.message 
+    });
+  }
+};
+
 // Declare/Calculate results for an election (admin only)
 export const declareResults = async (req, res) => {
   try {
     const { electionId } = req.params;
+    const { tieBreaking } = req.body; // Optional tie-breaking decisions { position: candidateId }
     const adminId = req.user.userId;
+
+    console.log(`📊 Declaring results for election ${electionId} by admin ${adminId}`);
+    if (tieBreaking) {
+      console.log(`🏆 Tie-breaking decisions provided:`, tieBreaking);
+    }
 
     if (!electionId) {
       return res.status(400).json({
@@ -307,6 +490,7 @@ export const declareResults = async (req, res) => {
     });
 
     if (!election) {
+      console.log(`Election ${electionId} not found`);
       return res.status(404).json({
         success: false,
         message: "Election not found",
@@ -314,9 +498,10 @@ export const declareResults = async (req, res) => {
     }
 
     if (election.Status !== "Completed") {
+      console.log(`Election ${electionId} is ${election.Status}, not Completed`);
       return res.status(400).json({
         success: false,
-        message: "Can only declare results for completed elections",
+        message: `Can only declare results for completed elections. Current status: ${election.Status}`,
       });
     }
 
@@ -335,7 +520,10 @@ export const declareResults = async (req, res) => {
       }
     });
 
+    console.log(`Found ${votes.length} votes for election ${electionId}`);
+
     if (votes.length === 0) {
+      console.log(`No votes found for election ${electionId}`);
       return res.status(400).json({
         success: false,
         message: "No votes found for this election",
@@ -409,6 +597,11 @@ export const declareResults = async (req, res) => {
     notifyResultsDeclared(election.Title, votes.length).catch(err => 
       console.error("Failed to send results declared notification:", err)
     );
+
+    console.log(`Results declared successfully for election ${electionId}`);
+    console.log(`   - Total votes: ${votes.length}`);
+    console.log(`   - Candidates with votes: ${results.length}`);
+    console.log(`   - Positions: ${Object.keys(resultsByPosition).join(', ')}`);
 
     res.status(200).json({
       success: true,

@@ -109,7 +109,6 @@ const CandidateManagement = () => {
       if (response.success) {
         toast.success("Candidate rejected successfully");
         closeRejectModal();
-        // Refresh both lists based on current status
         if (selectedCandidate.Status === "Pending") {
           fetchPendingCandidates();
         } else {
@@ -155,7 +154,6 @@ const CandidateManagement = () => {
 
       {/* Conditional Rendering based on toggle */}
       {viewPending ? (
-        // Pending Requests Table
         <div className="mb-10">
           <h2 className="text-2xl font-semibold mb-4 text-indigo-600">
             Pending Candidate Requests

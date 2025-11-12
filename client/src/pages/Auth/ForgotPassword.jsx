@@ -8,12 +8,10 @@ const ForgotPassword = () => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
-  const [userType, setUserType] = useState('student'); // 'student' or 'candidate'
+  const [userType, setUserType] = useState('student'); 
 
   const handleEmailChange = (e) => {
     const value = e.target.value;
-    
-    // Check for whitespace
     if (/\s/.test(value)) {
       toast.error('Email cannot contain whitespace');
       return;
@@ -107,7 +105,6 @@ const ForgotPassword = () => {
       </div>
     );
   }
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">

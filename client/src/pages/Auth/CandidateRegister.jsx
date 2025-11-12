@@ -108,9 +108,7 @@ const CandidateRegister = () => {
     }
   };
 
-  // Fetch available elections and student details on component mount
   useEffect(() => {
-    // Prevent duplicate fetches in React StrictMode
     if (hasFetched.current) return;
     hasFetched.current = true;
 
@@ -136,21 +134,17 @@ const CandidateRegister = () => {
       }
     };
     
-    // Auto-fetch student details on mount
     handleFetchStudent();
     fetchElections();
   }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
-    // Check for whitespace in email and password fields
     if ((name === 'email' || name === 'password' || name === 'confirmPassword') && /\s/.test(value)) {
       const fieldName = name === 'email' ? 'Email' : name === 'confirmPassword' ? 'Confirm Password' : 'Password';
       const errorMsg = `${fieldName} cannot contain whitespace`;
       setError(errorMsg);
       toast.error(errorMsg);
-      // Don't update state - reject the input
       return;
     }
     
@@ -191,7 +185,7 @@ const CandidateRegister = () => {
       }
 
       setSelectedFile(file);
-      toast.success("📄 Document uploaded successfully");
+      toast.success("Document uploaded successfully");
       if (error) setError("");
     }
   };
@@ -199,15 +193,13 @@ const CandidateRegister = () => {
   const handleProfileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file size (2MB limit for images)
+      // file size 2mb
       if (file.size > 2 * 1024 * 1024) {
         const errorMsg = "Profile picture size should not exceed 2MB";
         setError(errorMsg);
         toast.error(errorMsg);
         return;
       }
-
-      // Validate file type (only images)
       const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
 
       if (!allowedTypes.includes(file.type)) {
@@ -218,7 +210,7 @@ const CandidateRegister = () => {
       }
 
       setSelectedProfile(file);
-      toast.success("📷 Profile picture uploaded successfully");
+      toast.success("Profile picture uploaded successfully");
       if (error) setError("");
     }
   };
@@ -229,7 +221,6 @@ const CandidateRegister = () => {
     setError("");
 
     try {
-      // Check if student details are fetched
       if (!studentFetched) {
         const errorMsg = "Please fetch your student details first";
         setError(errorMsg);
@@ -237,8 +228,6 @@ const CandidateRegister = () => {
         setLoading(false);
         return;
       }
-
-      // Validate required fields
       const requiredFields = [
         "name",
         "email",
@@ -305,7 +294,7 @@ const CandidateRegister = () => {
       );
 
       if (response.ok && data.success) {
-        toast.success("🎉 Registration successful! Please login.");
+        toast.success("Registration successful! Please login.");
         // Navigate to candidate login
         navigate("/candidate/login");
       } else {

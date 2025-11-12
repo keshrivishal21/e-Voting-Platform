@@ -74,6 +74,22 @@ const getElectionPublicKey = async (req, res) => {
       return res.status(400).json({ message: 'Election is not currently ongoing' });
     }
 
+    // Additional time-based validation
+    const now = new Date();
+    if (election.Start_date && now < election.Start_date) {
+      return res.status(400).json({ 
+        message: 'Election has not started yet',
+        startDate: election.Start_date
+      });
+    }
+
+    if (election.End_date && now > election.End_date) {
+      return res.status(400).json({ 
+        message: 'Election has already ended',
+        endDate: election.End_date
+      });
+    }
+
     // Generate or get existing public key
     let publicKey = electionKeys.get(electionIdInt)?.publicKey;
     if (!publicKey) {
@@ -110,6 +126,22 @@ const requestVotingOTP = async (req, res) => {
 
     if (election.Status !== 'Ongoing') {
       return res.status(400).json({ message: 'Election is not currently ongoing' });
+    }
+
+    // Additional time-based validation
+    const now = new Date();
+    if (election.Start_date && now < election.Start_date) {
+      return res.status(400).json({ 
+        message: 'Election has not started yet',
+        startDate: election.Start_date
+      });
+    }
+
+    if (election.End_date && now > election.End_date) {
+      return res.status(400).json({ 
+        message: 'Election has already ended',
+        endDate: election.End_date
+      });
     }
 
     // Check if student has already voted
@@ -291,6 +323,22 @@ const getBallot = async (req, res) => {
       return res.status(400).json({ message: 'Election is not currently ongoing' });
     }
 
+    // Additional time-based validation
+    const now = new Date();
+    if (election.Start_date && now < election.Start_date) {
+      return res.status(400).json({ 
+        message: 'Election has not started yet',
+        startDate: election.Start_date
+      });
+    }
+
+    if (election.End_date && now > election.End_date) {
+      return res.status(400).json({ 
+        message: 'Election has already ended',
+        endDate: election.End_date
+      });
+    }
+
     // Group candidates by position
     const positions = {};
     election.candidates.forEach(candidate => {
@@ -392,6 +440,22 @@ const castVote = async (req, res) => {
 
     if (election.Status !== 'Ongoing') {
       return res.status(400).json({ message: 'Election is not currently ongoing' });
+    }
+
+    // Additional time-based validation
+    const now = new Date();
+    if (election.Start_date && now < election.Start_date) {
+      return res.status(400).json({ 
+        message: 'Election has not started yet',
+        startDate: election.Start_date
+      });
+    }
+
+    if (election.End_date && now > election.End_date) {
+      return res.status(400).json({ 
+        message: 'Election has already ended',
+        endDate: election.End_date
+      });
     }
 
     // Verify all candidates exist, are approved, and belong to correct election

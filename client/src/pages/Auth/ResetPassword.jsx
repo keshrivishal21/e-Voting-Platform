@@ -30,8 +30,6 @@ const ResetPassword = () => {
 
   const handlePasswordChange = (e, field) => {
     const value = e.target.value;
-    
-    // Check for whitespace
     if (/\s/.test(value)) {
       toast.error(`${field} cannot contain whitespace`);
       return;
@@ -68,7 +66,7 @@ const ResetPassword = () => {
       const { response, data } = await AuthAPI.resetPassword(token, newPassword, userType);
 
       if (response.ok && data.success) {
-        toast.success('✅ Password reset successful! Redirecting to login...');
+        toast.success('Password reset successful! Redirecting to login...');
         setTimeout(() => {
           navigate(`/${userType}/login`);
         }, 2000);

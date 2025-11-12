@@ -10,7 +10,7 @@ let cleanupTimeouts = new Map(); // Track cleanup timeouts by election ID
 // Automatically declare results for a completed election
 async function declareElectionResults(electionId, electionTitle) {
   try {
-    console.log(`📊 Declaring results for election ${electionId} ("${electionTitle}")...`);
+    console.log(`Auto-declaring results for election ${electionId} ("${electionTitle}")...`);
 
     // Get all votes for this election
     const votes = await prisma.vOTE.findMany({
@@ -29,16 +29,74 @@ async function declareElectionResults(electionId, electionTitle) {
     });
 
     if (votes.length === 0) {
-      console.log(`⚠️ No votes found for election ${electionId}. Skipping result declaration.`);
-      return;
+      console.log(`No votes found for election ${electionId}. Skipping result declaration.`);
+      return { success: false, reason: 'no_votes' };
     }
 
-    // Count votes by candidate
+    // Count votes by candidate and group by position
     const voteCounts = new Map();
+    const candidatesByPosition = new Map();
+    
     votes.forEach(vote => {
       const candidateId = vote.Can_id.toString();
+      const position = vote.candidate.Position;
+      
+      // Count total votes
       voteCounts.set(candidateId, (voteCounts.get(candidateId) || 0) + 1);
+      
+      // Group by position for tie detection
+      if (!candidatesByPosition.has(position)) {
+        candidatesByPosition.set(position, new Map());
+      }
+      const positionCandidates = candidatesByPosition.get(position);
+      positionCandidates.set(candidateId, {
+        name: vote.candidate.Can_name,
+        votes: (positionCandidates.get(candidateId)?.votes || 0) + 1
+      });
     });
+
+    // TIE DETECTION: Check if there are ties for any position
+    let hasTie = false;
+    const tieDetails = [];
+    
+    candidatesByPosition.forEach((candidates, position) => {
+      const candidateArray = Array.from(candidates.entries()).map(([id, data]) => ({
+        id,
+        name: data.name,
+        votes: data.votes
+      }));
+      
+      // Sort by votes descending
+      candidateArray.sort((a, b) => b.votes - a.votes);
+      
+      // Check if top 2 candidates have same votes (tie for winner)
+      if (candidateArray.length >= 2 && candidateArray[0].votes === candidateArray[1].votes && candidateArray[0].votes > 0) {
+        hasTie = true;
+        const tiedCandidates = candidateArray.filter(c => c.votes === candidateArray[0].votes);
+        tieDetails.push({
+          position,
+          votes: candidateArray[0].votes,
+          candidates: tiedCandidates.map(c => c.name)
+        });
+        console.log(`⚠️ TIE DETECTED for ${position}: ${tiedCandidates.map(c => c.name).join(', ')} (${candidateArray[0].votes} votes each)`);
+      }
+    });
+
+    // If there's a tie, DO NOT auto-declare results
+    if (hasTie) {
+      console.log(`AUTO-DECLARATION STOPPED due to ties in ${tieDetails.length} position(s)`);
+      console.log(`   Admin must manually review and declare results`);
+      
+      // Store tie information for admin to see
+      // Note: We could create a notification or store this in a separate table
+      // For now, we'll just return and let admin manually declare
+      
+      return { 
+        success: false, 
+        reason: 'tie_detected',
+        ties: tieDetails
+      };
+    }
 
     // Get unique candidates from votes
     const candidateIds = [...new Set(votes.map(v => v.Can_id))];
@@ -92,25 +150,11 @@ async function declareElectionResults(electionId, electionTitle) {
       }
     }
 
-    console.log(`✅ Results declared for election ${electionId}:`);
+    console.log(`Results auto-declared successfully for election ${electionId}:`);
     console.log(`   - Total votes cast: ${votes.length}`);
     console.log(`   - Results recorded for ${results.length} candidates`);
     
     // Log top candidates by position
-    const candidatesByPosition = new Map();
-    votes.forEach(vote => {
-      const position = vote.candidate.Position;
-      if (!candidatesByPosition.has(position)) {
-        candidatesByPosition.set(position, new Map());
-      }
-      const positionCandidates = candidatesByPosition.get(position);
-      const candidateId = vote.Can_id.toString();
-      positionCandidates.set(candidateId, {
-        name: vote.candidate.Can_name,
-        votes: (positionCandidates.get(candidateId)?.votes || 0) + 1
-      });
-    });
-
     candidatesByPosition.forEach((candidates, position) => {
       const sortedCandidates = Array.from(candidates.values())
         .sort((a, b) => b.votes - a.votes);
@@ -123,9 +167,9 @@ async function declareElectionResults(electionId, electionTitle) {
       console.error("Failed to send results declared notification:", err)
     );
 
-    return results;
+    return { success: true, results };
   } catch (error) {
-    console.error(`❌ Error declaring results for election ${electionId}:`, error);
+    console.error(`Error declaring results for election ${electionId}:`, error);
     throw error;
   }
 }
@@ -434,14 +478,14 @@ async function processElectionTransitions() {
           where: { Election_id: e.Election_id },
           data: { Status: "Ongoing" },
         });
-        console.log(`✅ Election ${e.Election_id} ("${e.Title}") started automatically`);
+        console.log(`Election ${e.Election_id} ("${e.Title}") started automatically`);
         
         // Send notification about election start (don't wait for it)
         notifyElectionStarted(e.Title, e.End_date).catch(err => 
           console.error("Failed to send election started notification:", err)
         );
       } catch (err) {
-        console.error(`❌ Failed to start election ${e.Election_id}:`, err);
+        console.error(`Failed to start election ${e.Election_id}:`, err);
       }
     }
 
@@ -451,6 +495,12 @@ async function processElectionTransitions() {
         Status: "Ongoing",
         End_date: { lte: now },
       },
+      select: {
+        Election_id: true,
+        Title: true,
+        End_date: true,
+        Auto_declare_results: true
+      }
     });
 
     for (const e of toEnd) {
@@ -466,11 +516,29 @@ async function processElectionTransitions() {
           console.error("Failed to send election ended notification:", err)
         );
         
-        // Automatically declare results
-        try {
-          await declareElectionResults(e.Election_id, e.Title);
-        } catch (resultError) {
-          console.error(`⚠️ Failed to declare results for election ${e.Election_id}, but election still marked as completed:`, resultError);
+        // Check if auto-declare is enabled for this election
+        if (e.Auto_declare_results === true) {
+          console.log(`🤖 Auto-declare enabled for election ${e.Election_id}, attempting to declare results...`);
+          
+          // Automatically declare results
+          try {
+            const result = await declareElectionResults(e.Election_id, e.Title);
+            
+            if (result && result.success === false) {
+              if (result.reason === 'tie_detected') {
+                console.log(`⚠️ Results NOT auto-declared due to tie(s) - Admin must manually declare`);
+                console.log(`   Tied positions: ${result.ties.map(t => t.position).join(', ')}`);
+              } else if (result.reason === 'no_votes') {
+                console.log(`⚠️ Results NOT declared - No votes cast`);
+              }
+            } else {
+              console.log(`✅ Results auto-declared successfully for election ${e.Election_id}`);
+            }
+          } catch (resultError) {
+            console.error(`⚠️ Failed to declare results for election ${e.Election_id}, but election still marked as completed:`, resultError);
+          }
+        } else {
+          console.log(`⏸️ Auto-declare DISABLED for election ${e.Election_id} - Admin must manually declare results`);
         }
         
         // Schedule cleanup for this election after retention period

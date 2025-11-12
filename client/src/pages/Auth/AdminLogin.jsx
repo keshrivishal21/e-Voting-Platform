@@ -25,7 +25,6 @@ function AdminLogin() {
             const errorMsg = `${name === 'email' ? 'Email' : 'Password'} cannot contain whitespace`;
             setError(errorMsg);
             toast.error(errorMsg);
-            // Don't update state - reject the input
             return;
         }
         
@@ -47,11 +46,8 @@ function AdminLogin() {
             const { response, data } = await AuthAPI.adminLogin(formData.userId, formData.password);
 
             if (response.ok && data.success) {
-                // Use auth context to login - just token and type
                 login(data.data.token, 'Admin');
                 toast.success('Welcome back, Admin!');
-
-                // Navigate to admin dashboard
                 const from = location.state?.from?.pathname || '/admin';
                 navigate(from);
             } else {

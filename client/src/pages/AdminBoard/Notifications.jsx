@@ -44,7 +44,6 @@ const Notifications = () => {
 
       if (response.success) {
         toast.success(`Notification sent successfully to ${response.data.recipientCount} recipient(s)!`);
-        // Refresh the notifications list
         const updatedNotifications = await AdminAPI.getAllNotifications();
         if (updatedNotifications.success) {
           setSentNotifications(updatedNotifications.data.notifications);
