@@ -102,7 +102,6 @@ function Signup() {
 
   // Send OTP to email
   const handleSendOTP = async () => {
-    // Validate email first
     if (!formData.email) {
       toast.error('Please enter your email address');
       return;
@@ -172,7 +171,6 @@ function Signup() {
     setError('');
 
     try {
-      // Validate required fields
       if (Object.values(formData).some((value) => !value.trim())) {
         const errorMsg = "Please fill in all fields";
         setError(errorMsg);

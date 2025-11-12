@@ -12,7 +12,9 @@ const electionKeys = new Map();
 
 // Configure email transporter with timeout settings
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false, // Use STARTTLS
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASSWORD
@@ -20,17 +22,20 @@ const transporter = nodemailer.createTransport({
   connectionTimeout: 10000, // 10 seconds
   greetingTimeout: 10000,
   socketTimeout: 10000,
-});
-
-// Verify transporter configuration on startup
-transporter.verify((error, success) => {
-  if (error) {
-    console.error('❌ Email transporter configuration error:', error.message);
-    console.log('⚠️ Email notifications will not work. Please check your EMAIL_USER and EMAIL_PASSWORD in .env file');
-  } else {
-    console.log('✅ Email transporter is ready to send emails');
+  tls: {
+    rejectUnauthorized: true
   }
 });
+
+// Verify transporter configuration on startup (non-blocking)
+transporter.verify()
+  .then(() => {
+    console.log('✅ Email transporter is ready to send emails');
+  })
+  .catch((error) => {
+    console.warn('⚠️ Email transporter verification failed:', error.message);
+    console.log('📧 Email service will still attempt to send emails when needed');
+  });
 
 // Generate RSA key pair for election
 const generateElectionKeys = (electionId) => {
