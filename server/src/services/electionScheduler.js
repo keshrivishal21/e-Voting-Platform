@@ -5,14 +5,13 @@ const prisma = new PrismaClient();
 
 let timeoutId = null;
 let isRunning = false;
-let cleanupTimeouts = new Map(); // Track cleanup timeouts by election ID
+let cleanupTimeouts = new Map(); 
 
 // Automatically declare results for a completed election
 async function declareElectionResults(electionId, electionTitle) {
   try {
     console.log(`Auto-declaring results for election ${electionId} ("${electionTitle}")...`);
 
-    // Get all votes for this election
     const votes = await prisma.vOTE.findMany({
       where: { Election_id: electionId },
       select: {
@@ -33,7 +32,6 @@ async function declareElectionResults(electionId, electionTitle) {
       return { success: false, reason: 'no_votes' };
     }
 
-    // Count votes by candidate and group by position
     const voteCounts = new Map();
     const candidatesByPosition = new Map();
     
@@ -44,7 +42,6 @@ async function declareElectionResults(electionId, electionTitle) {
       // Count total votes
       voteCounts.set(candidateId, (voteCounts.get(candidateId) || 0) + 1);
       
-      // Group by position for tie detection
       if (!candidatesByPosition.has(position)) {
         candidatesByPosition.set(position, new Map());
       }
@@ -55,7 +52,6 @@ async function declareElectionResults(electionId, electionTitle) {
       });
     });
 
-    // TIE DETECTION: Check if there are ties for any position
     let hasTie = false;
     const tieDetails = [];
     
@@ -69,7 +65,6 @@ async function declareElectionResults(electionId, electionTitle) {
       // Sort by votes descending
       candidateArray.sort((a, b) => b.votes - a.votes);
       
-      // Check if top 2 candidates have same votes (tie for winner)
       if (candidateArray.length >= 2 && candidateArray[0].votes === candidateArray[1].votes && candidateArray[0].votes > 0) {
         hasTie = true;
         const tiedCandidates = candidateArray.filter(c => c.votes === candidateArray[0].votes);
@@ -82,14 +77,11 @@ async function declareElectionResults(electionId, electionTitle) {
       }
     });
 
-    // If there's a tie, DO NOT auto-declare results
     if (hasTie) {
       console.log(`AUTO-DECLARATION STOPPED due to ties in ${tieDetails.length} position(s)`);
       console.log(`   Admin must manually review and declare results`);
       
-      // Store tie information for admin to see
-      // Note: We could create a notification or store this in a separate table
-      // For now, we'll just return and let admin manually declare
+   
       
       return { 
         success: false, 
@@ -98,21 +90,17 @@ async function declareElectionResults(electionId, electionTitle) {
       };
     }
 
-    // Get unique candidates from votes
     const candidateIds = [...new Set(votes.map(v => v.Can_id))];
     
-    // Get admin ID (use first admin or default to 1)
     const admin = await prisma.aDMIN.findFirst({
       select: { Admin_id: true }
     });
     const adminId = admin?.Admin_id || 1;
 
-    // Create or update results in transaction
     const results = [];
     for (const candidateId of candidateIds) {
       const voteCount = voteCounts.get(candidateId.toString()) || 0;
       
-      // Check if result already exists
       const existingResult = await prisma.rESULT.findUnique({
         where: {
           Election_id_Can_id: {
@@ -154,7 +142,6 @@ async function declareElectionResults(electionId, electionTitle) {
     console.log(`   - Total votes cast: ${votes.length}`);
     console.log(`   - Results recorded for ${results.length} candidates`);
     
-    // Log top candidates by position
     candidatesByPosition.forEach((candidates, position) => {
       const sortedCandidates = Array.from(candidates.values())
         .sort((a, b) => b.votes - a.votes);
@@ -162,7 +149,6 @@ async function declareElectionResults(electionId, electionTitle) {
       console.log(`   - ${position}: ${winner.name} (${winner.votes} votes)`);
     });
 
-    // Send notification about results declaration (don't wait for it)
     notifyResultsDeclared(electionTitle, votes.length).catch(err => 
       console.error("Failed to send results declared notification:", err)
     );
@@ -174,11 +160,9 @@ async function declareElectionResults(electionId, electionTitle) {
   }
 }
 
-// Schedule cleanup for a specific election after retention period
-// DISABLED: Cleanup functionality disabled to preserve all election data
 function scheduleCleanupForElection(electionId, title, endDate) {
   
-  return; // Early return - no cleanup scheduled
+  return; 
   
   /* CLEANUP DISABLED - Code preserved for future implementation
   const retentionDays = parseInt(process.env.CANDIDATE_RETENTION_DAYS) || 2;

@@ -22,7 +22,6 @@ export const adminLogin = async (req, res) => {
   try {
     const { userId, password } = req.body;
 
-    // Validate input
     if (!userId || !password) {
       return res.status(400).json({
         success: false,
@@ -30,7 +29,6 @@ export const adminLogin = async (req, res) => {
       });
     }
 
-    // Find admin by email
     const admin = await prisma.aDMIN.findFirst({
       where: { Admin_email: userId },
     });
@@ -43,7 +41,6 @@ export const adminLogin = async (req, res) => {
     }
 
     // Check password
-    // const isPasswordValid = await bcrypt.compare(password, admin.Admin_password);
     if (password !== admin.Admin_password) {
       return res.status(401).json({
         success: false,
@@ -51,7 +48,6 @@ export const adminLogin = async (req, res) => {
       });
     }
 
-    // Generate token
     const token = generateToken(admin.Admin_id, "Admin");
 
     res.status(200).json({
@@ -114,7 +110,6 @@ export const studentLogin = async (req, res) => {
       });
     }
 
-    // Ensure email is verified before allowing login
     if (!student.Email_verified) {
       return res.status(403).json({
         success: false,
@@ -122,7 +117,6 @@ export const studentLogin = async (req, res) => {
       });
     }
 
-    // Generate token
     const token = generateToken(student.Std_id, "Student");
 
     res.status(200).json({
@@ -150,12 +144,9 @@ export const studentRegister = async (req, res) => {
   try {
     const { name, email, dob, phone, password, confirmPassword } = req.body;
 
-    // Get uploaded profile picture if exists
     const profileFile = req.file;
 
-    // Validate input
     if (!name || !email || !dob || !phone || !password || !confirmPassword) {
-      // Clean up uploaded file if validation fails
       if (profileFile && profileFile.path) {
         try {
           fs.unlinkSync(profileFile.path);
@@ -169,9 +160,7 @@ export const studentRegister = async (req, res) => {
       });
     }
 
-    // Check if passwords match
     if (password !== confirmPassword) {
-      // Clean up uploaded file if validation fails
       if (profileFile && profileFile.path) {
         try {
           fs.unlinkSync(profileFile.path);
@@ -185,13 +174,11 @@ export const studentRegister = async (req, res) => {
       });
     }
 
-    // Check if student already exists in database
     const existingStudent = await prisma.sTUDENT.findFirst({
       where: { Std_email: email },
     });
 
     if (existingStudent) {
-      // Clean up uploaded file if student exists
       if (profileFile && profileFile.path) {
         try {
           fs.unlinkSync(profileFile.path);
@@ -205,10 +192,8 @@ export const studentRegister = async (req, res) => {
       });
     }
 
-    // Check if email was verified via OTP
     const pendingData = getPendingRegistration(email);
     if (!pendingData || !pendingData.emailVerified) {
-      // Clean up uploaded file
       if (profileFile && profileFile.path) {
         try {
           fs.unlinkSync(profileFile.path);
@@ -222,13 +207,10 @@ export const studentRegister = async (req, res) => {
       });
     }
 
-    // parse scholar number from email assuming format: 123456@stu.manit.ac.in
     const scholarNo = parseInt(email.split("@")[0]);
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Read profile picture and convert to buffer if uploaded
     let profileBuffer = null;
     if (profileFile) {
       try {
@@ -242,9 +224,7 @@ export const studentRegister = async (req, res) => {
       }
     }
 
-    // Create USERS and STUDENT records (email already verified)
     try {
-      // Create user entry
       await prisma.uSERS.create({
         data: {
           User_id: BigInt(scholarNo),
@@ -252,7 +232,6 @@ export const studentRegister = async (req, res) => {
         },
       });
 
-      // Create student record with Email_verified=true
       const student = await prisma.sTUDENT.create({
         data: {
           Std_id: BigInt(scholarNo),
@@ -262,13 +241,12 @@ export const studentRegister = async (req, res) => {
           Dob: new Date(dob),
           Std_email: email,
           Profile: profileBuffer,
-          Email_verified: true, // Email was verified via OTP
+          Email_verified: true, 
           Reset_token: null,
           Reset_token_expiry: null,
         },
       });
 
-      // Clean up temporary file after saving to database
       if (profileFile && profileFile.path) {
         try {
           fs.unlinkSync(profileFile.path);
@@ -277,7 +255,6 @@ export const studentRegister = async (req, res) => {
         }
       }
 
-      // Remove pending registration data
       removePendingRegistration(email);
 
       res.status(201).json({
@@ -293,7 +270,6 @@ export const studentRegister = async (req, res) => {
     } catch (dbError) {
       console.error('Database error during student creation:', dbError);
       
-      // Clean up uploaded file in case of error
       if (profileFile && profileFile.path) {
         try {
           fs.unlinkSync(profileFile.path);
@@ -302,7 +278,6 @@ export const studentRegister = async (req, res) => {
         }
       }
 
-      // Check if it's a duplicate key error
       if (dbError.code === 'P2002') {
         return res.status(409).json({ 
           success: false, 
@@ -315,7 +290,6 @@ export const studentRegister = async (req, res) => {
   } catch (error) {
     console.error("Student registration error:", error);
     
-    // Clean up uploaded file in case of error
     if (req.file && req.file.path) {
       try {
         fs.unlinkSync(req.file.path);
@@ -348,11 +322,9 @@ export const candidateRegister = async (req, res) => {
       electionId,
     } = req.body;
 
-    // Get uploaded files info
     const documentFile = req.files?.document?.[0];
     const profileFile = req.files?.profile?.[0];
 
-    // Validate input
     if (
       !name ||
       !email ||
@@ -371,7 +343,6 @@ export const candidateRegister = async (req, res) => {
       });
     }
 
-    // Specifically validate election selection
     if (!electionId || electionId === '' || electionId === 'undefined') {
       return res.status(400).json({
         success: false,
@@ -379,7 +350,6 @@ export const candidateRegister = async (req, res) => {
       });
     }
 
-    // Check if passwords match
     if (password !== confirmPassword) {
       return res.status(400).json({
         success: false,
@@ -387,7 +357,6 @@ export const candidateRegister = async (req, res) => {
       });
     }
 
-    // Validate document file upload
     if (!documentFile) {
       return res.status(400).json({
         success: false,
@@ -395,7 +364,6 @@ export const candidateRegister = async (req, res) => {
       });
     }
 
-    // Validate election exists
     const election = await prisma.eLECTION.findUnique({
       where: { Election_id: parseInt(electionId) }
     });
@@ -407,7 +375,6 @@ export const candidateRegister = async (req, res) => {
       });
     }
 
-    // Validate election status and dates
     if (election.Status === 'Completed') {
       return res.status(400).json({
         success: false,
@@ -415,7 +382,6 @@ export const candidateRegister = async (req, res) => {
       });
     }
 
-    // Check if election has already ended
     const now = new Date();
     if (election.End_date && now > election.End_date) {
       return res.status(400).json({
@@ -424,7 +390,6 @@ export const candidateRegister = async (req, res) => {
       });
     }
 
-    // Check if candidate already exists for THIS specific election
     const existingCandidateInElection = await prisma.cANDIDATE.findFirst({
       where: { 
         Can_email: email,
@@ -442,16 +407,13 @@ export const candidateRegister = async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Generate candidate ID (you can modify this logic as needed)
     const candidateId = parseInt(email.split("@")[0]);
 
-    // Check if this is a re-registration (candidate existed for a previous election)
     const previousCandidateRecord = await prisma.cANDIDATE.findUnique({
       where: { Can_id: candidateId }
     });
     const isReRegistration = previousCandidateRecord !== null;
 
-    // Read uploaded files and convert to buffer for database storage
     let documentBuffer = Buffer.from("");
     let profileBuffer = null;
     
@@ -479,11 +441,9 @@ export const candidateRegister = async (req, res) => {
       }
     }
 
-    // Use transaction to ensure data consistency
     let user, candidate;
     try {
       const result = await prisma.$transaction(async (tx) => {
-        // Check if user record already exists for this combination
         let user = await tx.uSERS.findUnique({
           where: {
             User_id_User_type: {
@@ -494,7 +454,6 @@ export const candidateRegister = async (req, res) => {
         });
 
         if (!user) {
-          // Create new user entry if it doesn't exist
           user = await tx.uSERS.create({
             data: {
               User_id: candidateId,
@@ -527,21 +486,20 @@ export const candidateRegister = async (req, res) => {
             Can_id: candidateId
           },
           update: {
-            // Update all fields for the new election
             Can_name: name,
             Can_email: email,
             Can_phone: phone,
             Can_password: hashedPassword,
             Position: position,
             Manifesto: manifesto || "",
-            Election_id: parseInt(electionId), // Update to new election
+            Election_id: parseInt(electionId), 
             Branch: branch,
             Year: parseInt(year),
             Cgpa: cgpa ? parseFloat(cgpa) : 0.0,
             Data: documentBuffer,
             Profile: profileBuffer,
-            Status: "Pending", // Reset status to Pending for new election
-            Rejection_reason: null, // Clear any previous rejection reason
+            Status: "Pending", 
+            Rejection_reason: null, 
           },
           create: {
             Can_id: candidateId,
@@ -570,7 +528,6 @@ export const candidateRegister = async (req, res) => {
     } catch (dbError) {
       console.error("Database transaction error:", dbError);
       
-      // Clean up temporary files in case of database error
       if (documentFile && documentFile.path) {
         try {
           fs.unlinkSync(documentFile.path);
@@ -586,7 +543,6 @@ export const candidateRegister = async (req, res) => {
         }
       }
 
-      // Handle specific Prisma errors
       if (dbError.code === 'P2002') {
         return res.status(409).json({
           success: false,
@@ -600,7 +556,6 @@ export const candidateRegister = async (req, res) => {
       });
     }
 
-    // Clean up temporary files
     if (documentFile && documentFile.path) {
       try {
         fs.unlinkSync(documentFile.path);
@@ -640,7 +595,6 @@ export const candidateRegister = async (req, res) => {
   }
 };
 
-// Send OTP for inline email verification (before registration)
 export const sendOTP = async (req, res) => {
   try {
     const { email } = req.body;
@@ -648,7 +602,6 @@ export const sendOTP = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email is required' });
     }
 
-    // Validate email format (must be college email: scholarNo@stu.manit.ac.in)
     const collegeEmailRegex = /^(\d+)@stu\.manit\.ac\.in$/;
     const match = email.match(collegeEmailRegex);
     if (!match) {
@@ -658,13 +611,11 @@ export const sendOTP = async (req, res) => {
       });
     }
 
-    // Check if student already exists in database
     const existingStudent = await prisma.sTUDENT.findFirst({ where: { Std_email: email } });
     if (existingStudent) {
       return res.status(409).json({ success: false, message: 'This email is already registered' });
     }
 
-    // Check if there's already a pending verification for this email
     const existingPending = getPendingRegistration(email);
     
     // Generate 6-digit OTP
@@ -673,13 +624,11 @@ export const sendOTP = async (req, res) => {
     const verifyExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     if (existingPending) {
-      // Update existing pending registration with new OTP
       updatePendingOTP(email, verifyOTPHashed, verifyExpiry);
     } else {
-      // Store minimal pending data (just for OTP verification, full registration data comes later)
       storePendingRegistration(email, {
         email,
-        verificationOnly: true, // Flag to indicate this is just for email verification
+        verificationOnly: true, 
       }, verifyOTPHashed, verifyExpiry);
     }
 
@@ -692,7 +641,6 @@ export const sendOTP = async (req, res) => {
       });
     } catch (err) {
       console.error('Failed to send OTP email:', err?.message || err);
-      // Don't fail completely - allow verification to proceed (useful for dev/testing)
       res.status(200).json({ 
         success: true, 
         message: 'OTP sent. If you don\'t receive it, please check your email address.' 
@@ -704,11 +652,9 @@ export const sendOTP = async (req, res) => {
   }
 };
 
-// Get student details by scholar number (for candidate registration)
-// Get authenticated student details for candidate registration
+
 export const getStudentDetailsForCandidate = async (req, res) => {
   try {
-    // Get student ID from authenticated user's token (set by verifyStudent middleware)
     const studentId = BigInt(req.user.userId);
 
     const student = await prisma.sTUDENT.findUnique({
@@ -730,9 +676,7 @@ export const getStudentDetailsForCandidate = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please verify your student email before registering as a candidate.' });
     }
 
-    // Note: We allow re-registration for different elections
-    // Check if already registered as candidate is done during registration based on election
-    // Students can contest in multiple elections, so we don't block here
+    
 
     res.status(200).json({
       success: true,
@@ -749,7 +693,6 @@ export const getStudentDetailsForCandidate = async (req, res) => {
   }
 };
 
-// Verify OTP (inline verification before registration)
 export const verifyOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -757,7 +700,6 @@ export const verifyOTP = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email and OTP are required' });
     }
 
-    // Get pending data
     const pendingData = getPendingRegistration(email);
     if (!pendingData) {
       return res.status(400).json({ 
@@ -766,7 +708,6 @@ export const verifyOTP = async (req, res) => {
       });
     }
 
-    // Check if OTP is expired
     if (pendingData.expiresAt < Date.now()) {
       removePendingRegistration(email);
       return res.status(400).json({ 
@@ -775,13 +716,11 @@ export const verifyOTP = async (req, res) => {
       });
     }
 
-    // Hash provided OTP and compare
     const otpHashed = crypto.createHash('sha256').update(otp).digest('hex');
     if (pendingData.otpHash !== otpHashed) {
       return res.status(400).json({ success: false, message: 'Invalid OTP' });
     }
 
-    // Mark email as verified in pending data (keep the verified status)
     pendingData.emailVerified = true;
     pendingData.verifiedAt = Date.now();
 
@@ -800,7 +739,6 @@ export const candidateLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validate input
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -808,7 +746,6 @@ export const candidateLogin = async (req, res) => {
       });
     }
 
-    // Find candidate by email
     const candidate = await prisma.cANDIDATE.findFirst({
       where: { Can_email: email },
     });
@@ -820,7 +757,6 @@ export const candidateLogin = async (req, res) => {
       });
     }
 
-    // Check password
     const isPasswordValid = await bcrypt.compare(
       password,
       candidate.Can_password
@@ -832,7 +768,6 @@ export const candidateLogin = async (req, res) => {
       });
     }
 
-    // Generate token
     const token = generateToken(candidate.Can_id, "Candidate");
 
     res.status(200).json({
@@ -855,7 +790,6 @@ export const candidateLogin = async (req, res) => {
   }
 };
 
-// Get Student Profile
 export const getStudentProfile = async (req, res) => {
   try {
     const { studentId } = req.params;
@@ -867,7 +801,6 @@ export const getStudentProfile = async (req, res) => {
       });
     }
 
-    // Find student by ID
     const student = await prisma.sTUDENT.findUnique({
       where: { Std_id: BigInt(studentId) },
       select: {
@@ -877,7 +810,6 @@ export const getStudentProfile = async (req, res) => {
         Std_phone: true,
         Dob: true,
         Profile: true,
-        // Don't include password in response
       },
     });
 
@@ -888,19 +820,15 @@ export const getStudentProfile = async (req, res) => {
       });
     }
 
-    // Convert profile buffer to base64 if exists
     let profileBase64 = null;
     if (student.Profile) {
       try {
-        // Handle different possible formats
         let buffer;
         if (Buffer.isBuffer(student.Profile)) {
           buffer = student.Profile;
         } else if (student.Profile.type === 'Buffer' && Array.isArray(student.Profile.data)) {
-          // Prisma sometimes returns Buffer as {type: 'Buffer', data: [...]}
           buffer = Buffer.from(student.Profile.data);
         } else if (typeof student.Profile === 'object') {
-          // If it's an object with numeric keys, convert to array first
           buffer = Buffer.from(Object.values(student.Profile));
         } else {
           buffer = Buffer.from(student.Profile);
@@ -938,12 +866,11 @@ export const getStudentProfile = async (req, res) => {
   }
 };
 
-// Update Student Profile
 export const updateStudentProfile = async (req, res) => {
   try {
     const { studentId } = req.params;
     const { phone, dob } = req.body;
-    const profileFile = req.file; // Get uploaded profile picture if any
+    const profileFile = req.file; 
 
     if (!studentId) {
       return res.status(400).json({
@@ -952,7 +879,6 @@ export const updateStudentProfile = async (req, res) => {
       });
     }
 
-    // Validate input - only phone and dob are editable
     if (!phone || !dob) {
       return res.status(400).json({
         success: false,
@@ -960,7 +886,6 @@ export const updateStudentProfile = async (req, res) => {
       });
     }
 
-    // Check if student exists
     const existingStudent = await prisma.sTUDENT.findUnique({
       where: { Std_id: BigInt(studentId) },
     });
@@ -972,22 +897,18 @@ export const updateStudentProfile = async (req, res) => {
       });
     }
 
-    // Prepare update data
     const updateData = {
       Std_phone: phone,
       Dob: new Date(dob),
     };
 
-    // Add profile picture if uploaded
     if (profileFile) {
       const profileBuffer = fs.readFileSync(profileFile.path);
       updateData.Profile = profileBuffer;
 
-      // Clean up uploaded file after reading
       fs.unlinkSync(profileFile.path);
     }
 
-    // Update student profile - phone, dob, and optionally profile picture
     const updatedStudent = await prisma.sTUDENT.update({
       where: { Std_id: BigInt(studentId) },
       data: updateData,
@@ -1001,16 +922,13 @@ export const updateStudentProfile = async (req, res) => {
       },
     });
 
-    // Convert profile to base64 if exists
     let profileBase64 = null;
     if (updatedStudent.Profile) {
       let profileBuffer = updatedStudent.Profile;
       
-      // Handle if Profile is already a Buffer object
       if (profileBuffer instanceof Buffer) {
         profileBase64 = `data:image/jpeg;base64,${profileBuffer.toString('base64')}`;
       } 
-      // Handle if Profile is serialized as object with numeric keys
       else if (typeof profileBuffer === 'object' && !Array.isArray(profileBuffer)) {
         profileBuffer = Buffer.from(Object.values(profileBuffer));
         profileBase64 = `data:image/jpeg;base64,${profileBuffer.toString('base64')}`;
@@ -1050,7 +968,6 @@ export const changeStudentPassword = async (req, res) => {
       });
     }
 
-    // Validate input
     if (!currentPassword || !newPassword) {
       return res.status(400).json({
         success: false,
@@ -1065,7 +982,6 @@ export const changeStudentPassword = async (req, res) => {
       });
     }
 
-    // Find student
     const student = await prisma.sTUDENT.findUnique({
       where: { Std_id: BigInt(studentId) },
     });
@@ -1077,7 +993,6 @@ export const changeStudentPassword = async (req, res) => {
       });
     }
 
-    // Verify current password
     const isCurrentPasswordValid = await bcrypt.compare(
       currentPassword,
       student.Std_password
@@ -1090,10 +1005,8 @@ export const changeStudentPassword = async (req, res) => {
       });
     }
 
-    // Hash new password
     const hashedNewPassword = await bcrypt.hash(newPassword, 12);
 
-    // Update password
     await prisma.sTUDENT.update({
       where: { Std_id: BigInt(studentId) },
       data: {
@@ -1114,7 +1027,6 @@ export const changeStudentPassword = async (req, res) => {
   }
 };
 
-// Get Candidate Profile
 export const getCandidateProfile = async (req, res) => {
   try {
     const { candidateId } = req.params;
@@ -1126,7 +1038,6 @@ export const getCandidateProfile = async (req, res) => {
       });
     }
 
-    // Find candidate by ID
     const candidate = await prisma.cANDIDATE.findUnique({
       where: { Can_id: BigInt(candidateId) },
       select: {
@@ -1154,16 +1065,13 @@ export const getCandidateProfile = async (req, res) => {
       });
     }
 
-    // Convert profile to base64 if exists
     let profileBase64 = null;
     if (candidate.Profile) {
       let profileBuffer = candidate.Profile;
       
-      // Handle if Profile is already a Buffer object
       if (profileBuffer instanceof Buffer) {
         profileBase64 = `data:image/jpeg;base64,${profileBuffer.toString('base64')}`;
       } 
-      // Handle if Profile is serialized as object with numeric keys
       else if (typeof profileBuffer === 'object' && !Array.isArray(profileBuffer)) {
         profileBuffer = Buffer.from(Object.values(profileBuffer));
         profileBase64 = `data:image/jpeg;base64,${profileBuffer.toString('base64')}`;
@@ -1204,7 +1112,6 @@ export const updateCandidateProfile = async (req, res) => {
       });
     }
 
-    // Validate input - only phone and manifesto can be updated
     if (!phone) {
       return res.status(400).json({
         success: false,
@@ -1212,7 +1119,6 @@ export const updateCandidateProfile = async (req, res) => {
       });
     }
 
-    // Check if candidate exists
     const existingCandidate = await prisma.cANDIDATE.findUnique({
       where: { Can_id: BigInt(candidateId) },
     });
@@ -1224,7 +1130,6 @@ export const updateCandidateProfile = async (req, res) => {
       });
     }
 
-    // Update candidate profile - only phone and manifesto
     const updatedCandidate = await prisma.cANDIDATE.update({
       where: { Can_id: BigInt(candidateId) },
       data: {
@@ -1267,7 +1172,6 @@ export const updateCandidateProfile = async (req, res) => {
   }
 };
 
-// Change Candidate Password
 export const changeCandidatePassword = async (req, res) => {
   try {
     const { candidateId } = req.params;
@@ -1280,7 +1184,6 @@ export const changeCandidatePassword = async (req, res) => {
       });
     }
 
-    // Validate input
     if (!currentPassword || !newPassword) {
       return res.status(400).json({
         success: false,
@@ -1307,7 +1210,6 @@ export const changeCandidatePassword = async (req, res) => {
       });
     }
 
-    // Verify current password
     const isCurrentPasswordValid = await bcrypt.compare(
       currentPassword,
       candidate.Can_password
@@ -1320,10 +1222,8 @@ export const changeCandidatePassword = async (req, res) => {
       });
     }
 
-    // Hash new password
     const hashedNewPassword = await bcrypt.hash(newPassword, 12);
 
-    // Update password
     await prisma.cANDIDATE.update({
       where: { Can_id: BigInt(candidateId) },
       data: {
@@ -1344,9 +1244,7 @@ export const changeCandidatePassword = async (req, res) => {
   }
 };
 
-// ==================== FORGOT PASSWORD FUNCTIONALITY ====================
 
-// Request password reset for Student
 export const requestStudentPasswordReset = async (req, res) => {
   try {
     const { email } = req.body;
@@ -1358,25 +1256,21 @@ export const requestStudentPasswordReset = async (req, res) => {
       });
     }
 
-    // Find student by email
     const student = await prisma.sTUDENT.findFirst({
       where: { Std_email: email },
     });
 
     if (!student) {
-      // Don't reveal if user exists - security best practice
       return res.status(200).json({
         success: true,
         message: "If your email is registered, you will receive a password reset link shortly.",
       });
     }
 
-    // Generate reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
     const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
     const tokenExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
 
-    // Save hashed token to database
     await prisma.sTUDENT.update({
       where: { Std_id: student.Std_id },
       data: {
@@ -1385,7 +1279,6 @@ export const requestStudentPasswordReset = async (req, res) => {
       },
     });
 
-    // Send reset email
     try {
       await sendPasswordResetEmail(student.Std_email, resetToken, student.Std_name, 'student');
     } catch (emailError) {
@@ -1409,7 +1302,6 @@ export const requestStudentPasswordReset = async (req, res) => {
   }
 };
 
-// Request password reset for Candidate
 export const requestCandidatePasswordReset = async (req, res) => {
   try {
     const { email } = req.body;
@@ -1421,25 +1313,21 @@ export const requestCandidatePasswordReset = async (req, res) => {
       });
     }
 
-    // Find candidate by email
     const candidate = await prisma.cANDIDATE.findFirst({
       where: { Can_email: email },
     });
 
     if (!candidate) {
-      // Don't reveal if user exists - security best practice
       return res.status(200).json({
         success: true,
         message: "If your email is registered, you will receive a password reset link shortly.",
       });
     }
 
-    // Generate reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
     const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
     const tokenExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
 
-    // Save hashed token to database
     await prisma.cANDIDATE.update({
       where: { Can_id: candidate.Can_id },
       data: {
@@ -1448,7 +1336,6 @@ export const requestCandidatePasswordReset = async (req, res) => {
       },
     });
 
-    // Send reset email
     try {
       await sendPasswordResetEmail(candidate.Can_email, resetToken, candidate.Can_name, 'candidate');
     } catch (emailError) {
@@ -1491,15 +1378,13 @@ export const resetStudentPassword = async (req, res) => {
       });
     }
 
-    // Hash the token to match with database
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
-    // Find student with valid token
     const student = await prisma.sTUDENT.findFirst({
       where: {
         Reset_token: hashedToken,
         Reset_token_expiry: {
-          gt: new Date(), // Token not expired
+          gt: new Date(), 
         },
       },
     });
@@ -1511,10 +1396,8 @@ export const resetStudentPassword = async (req, res) => {
       });
     }
 
-    // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 12);
 
-    // Update password and clear reset token
     await prisma.sTUDENT.update({
       where: { Std_id: student.Std_id },
       data: {
@@ -1524,12 +1407,10 @@ export const resetStudentPassword = async (req, res) => {
       },
     });
 
-    // Send confirmation email
     try {
       await sendPasswordResetConfirmationEmail(student.Std_email, student.Std_name);
     } catch (emailError) {
       console.error('Failed to send confirmation email:', emailError);
-      // Don't fail the request if confirmation email fails
     }
 
     res.status(200).json({
@@ -1564,15 +1445,13 @@ export const resetCandidatePassword = async (req, res) => {
       });
     }
 
-    // Hash the token to match with database
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
-    // Find candidate with valid token
     const candidate = await prisma.cANDIDATE.findFirst({
       where: {
         Reset_token: hashedToken,
         Reset_token_expiry: {
-          gt: new Date(), // Token not expired
+          gt: new Date(), 
         },
       },
     });
@@ -1584,10 +1463,8 @@ export const resetCandidatePassword = async (req, res) => {
       });
     }
 
-    // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 12);
 
-    // Update password and clear reset token
     await prisma.cANDIDATE.update({
       where: { Can_id: candidate.Can_id },
       data: {
@@ -1597,12 +1474,10 @@ export const resetCandidatePassword = async (req, res) => {
       },
     });
 
-    // Send confirmation email
     try {
       await sendPasswordResetConfirmationEmail(candidate.Can_email, candidate.Can_name);
     } catch (emailError) {
       console.error('Failed to send confirmation email:', emailError);
-      // Don't fail the request if confirmation email fails
     }
 
     res.status(200).json({

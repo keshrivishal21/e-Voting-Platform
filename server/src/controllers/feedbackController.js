@@ -38,7 +38,6 @@ export const getAllFeedbacks = async (req, res) => {
   }
 };
 
-// Public: Get approved feedbacks for testimonials (no auth required)
 export const getPublicFeedbacks = async (req, res) => {
   try {
     const feedbacks = await prisma.fEEDBACK.findMany({
@@ -71,7 +70,6 @@ export const getPublicFeedbacks = async (req, res) => {
           }
         }
       } catch (err) {
-        // If conversion fails, ignore and fall back to null
         console.warn('Failed to convert profile blob to base64 for feedback avatar', err?.message || err);
       }
 
@@ -177,7 +175,6 @@ export const deleteFeedback = async (req, res) => {
       });
     }
 
-    // Get feedback before deleting to send notification
     const feedback = await prisma.fEEDBACK.findUnique({
       where: { FB_id: parseInt(feedbackId) },
     });
@@ -199,7 +196,6 @@ export const deleteFeedback = async (req, res) => {
       await notifyFeedbackDeleted(feedback.User_id, feedback.User_type, adminId);
     } catch (notifError) {
       console.error("Failed to send feedback deletion notification:", notifError);
-      // Continue even if notification fails
     }
 
     res.status(200).json({

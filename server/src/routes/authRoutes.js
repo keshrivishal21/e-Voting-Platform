@@ -58,20 +58,20 @@ router.post("/candidate/register", upload.fields([
 ]), candidateRegister); // Candidate registration with document and optional profile
 
 // Forgot Password Routes
-router.post("/student/forgot-password", requestStudentPasswordReset); // Request student password reset
-router.post("/student/reset-password", resetStudentPassword); // Reset student password with token
-router.post("/candidate/forgot-password", requestCandidatePasswordReset); // Request candidate password reset
-router.post("/candidate/reset-password", resetCandidatePassword); // Reset candidate password with token
+router.post("/student/forgot-password", requestStudentPasswordReset); 
+router.post("/student/reset-password", resetStudentPassword); 
+router.post("/candidate/forgot-password", requestCandidatePasswordReset); 
+router.post("/candidate/reset-password", resetCandidatePassword); 
 
 // Student Profile Routes
-router.get("/student/:studentId/profile", verifyToken, getStudentProfile); // Get student profile
-router.put("/student/:studentId/profile", verifyToken, upload.single('profile'), updateStudentProfile); // Update student profile with optional photo
-router.put("/student/:studentId/change-password", verifyToken, changeStudentPassword); // Change student password
+router.get("/student/:studentId/profile", verifyToken, getStudentProfile); 
+router.put("/student/:studentId/profile", verifyToken, upload.single('profile'), updateStudentProfile); 
+router.put("/student/:studentId/change-password", verifyToken, changeStudentPassword); 
 
 // Candidate Profile Routes
-router.get("/candidate/:candidateId/profile", verifyToken, getCandidateProfile); // Get candidate profile
-router.put("/candidate/:candidateId/profile", verifyToken, updateCandidateProfile); // Update candidate profile
-router.put("/candidate/:candidateId/change-password", verifyToken, changeCandidatePassword); // Change candidate password
+router.get("/candidate/:candidateId/profile", verifyToken, getCandidateProfile); 
+router.put("/candidate/:candidateId/profile", verifyToken, updateCandidateProfile); 
+router.put("/candidate/:candidateId/change-password", verifyToken, changeCandidatePassword); 
 
 // Check student-candidate status
 router.get("/student/candidate-status", verifyStudent, async (req, res) => {
@@ -133,9 +133,7 @@ router.get("/verify", verifyToken, (req, res) => {
   });
 });
 
-// Optional validate endpoint used by clients to validate token and fetch user info
 router.get("/validate", verifyToken, (req, res) => {
-  // Return minimal user information for client-side session validation
   res.status(200).json({
     success: true,
     user: {
@@ -145,7 +143,6 @@ router.get("/validate", verifyToken, (req, res) => {
   });
 });
 
-// Role-specific protected routes
 router.get("/admin/dashboard", verifyAdmin, (req, res) => {
   res.status(200).json({
     success: true,
@@ -170,7 +167,6 @@ router.get("/candidate/dashboard", verifyCandidate, (req, res) => {
   });
 });
 
-// Dual access route - both students and candidates can access
 router.get("/dashboard", verifyStudentOrCandidate, (req, res) => {
   const userType = req.user.userType;
   const dashboardType = userType === "candidate" ? "Candidate" : "Student";
@@ -183,7 +179,6 @@ router.get("/dashboard", verifyStudentOrCandidate, (req, res) => {
   });
 });
 
-// Logout route (client-side should remove token)
 router.post("/logout", verifyToken, (req, res) => {
   res.status(200).json({
     success: true,
