@@ -503,6 +503,23 @@ export const candidateRegister = async (req, res) => {
           });
         }
 
+        // Check if candidate already exists for this election
+        const existingCandidate = await tx.cANDIDATE.findUnique({
+          where: {
+            Can_id_Election_id: {
+              Can_id: candidateId,
+              Election_id: parseInt(electionId)
+            }
+          }
+        });
+
+        if (existingCandidate) {
+          return res.status(400).json({
+            success: false,
+            message: `You have already registered for this election as ${existingCandidate.Position}. You can only register once per election.`,
+          });
+        }
+
         // Upsert candidate - update if exists from previous election, create if new
         // This allows students to contest in multiple elections
         const candidate = await tx.cANDIDATE.upsert({

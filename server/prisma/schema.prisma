@@ -120,6 +120,7 @@ model CANDIDATE {
   results      RESULT[]
 
   @@unique([Can_id, User_type])
+  @@unique([Can_id, Election_id])
 }
 
 
