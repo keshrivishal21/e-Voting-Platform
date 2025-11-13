@@ -1,6 +1,5 @@
 import jwt from "jsonwebtoken";
 
-// Middleware to verify JWT token
 export const verifyToken = (req, res, next) => {
   try {
     const token = req.header("Authorization")?.replace("Bearer ", "");
@@ -29,7 +28,6 @@ export const verifyToken = (req, res, next) => {
   }
 };
 
-// Middleware to verify admin role
 export const verifyAdmin = (req, res, next) => {
   verifyToken(req, res, () => {
     if (req.user.userType !== "Admin") {
@@ -42,7 +40,6 @@ export const verifyAdmin = (req, res, next) => {
   });
 };
 
-// Middleware to verify student role
 export const verifyStudent = (req, res, next) => {
   verifyToken(req, res, () => {
     if (req.user.userType !== "Student") {
@@ -55,7 +52,6 @@ export const verifyStudent = (req, res, next) => {
   });
 };
 
-// Middleware to verify candidate role
 export const verifyCandidate = (req, res, next) => {
   verifyToken(req, res, () => {
     if (req.user.userType !== "Candidate") {
@@ -68,7 +64,6 @@ export const verifyCandidate = (req, res, next) => {
   });
 };
 
-// Middleware to verify student or candidate role
 export const verifyStudentOrCandidate = (req, res, next) => {
   verifyToken(req, res, () => {
     if (!["Student", "Candidate"].includes(req.user.userType)) {
@@ -81,13 +76,10 @@ export const verifyStudentOrCandidate = (req, res, next) => {
   });
 };
 
-// Middleware to verify any authenticated user
 export const verifyAnyUser = verifyToken;
 
-// Middleware to verify admin with token from query or header (for document viewing)
 export const verifyAdminForDocument = (req, res, next) => {
   try {
-    // Try to get token from query params first, then header
     let token = req.query.token || req.header("Authorization")?.replace("Bearer ", "");
 
     if (!token) {

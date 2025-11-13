@@ -13,17 +13,14 @@ import { verifyAdmin, verifyToken, verifyAdminForDocument, verifyCandidate } fro
 
 const router = express.Router();
 
-// Admin routes - manage candidate applications
 router.get("/admin/candidates/pending", verifyAdmin, getPendingCandidates);
 router.get("/admin/candidates", verifyAdmin, getAllCandidates);
 router.get("/admin/candidates/:candidateId/document", verifyAdminForDocument, getCandidateDocument);
 router.post("/admin/candidates/:candidateId/approve", verifyAdmin, approveCandidate);
 router.post("/admin/candidates/:candidateId/reject", verifyAdmin, rejectCandidate);
 
-// Public routes - view approved candidates
 router.get("/candidates/approved", verifyToken, getApprovedCandidates);
 
-// Candidate routes - check own application status and election data
 router.get("/candidates/:candidateId/status", verifyToken, getCandidateStatus);
 router.get("/candidates/:candidateId/election-votes", verifyCandidate, getElectionVoteCount);
 

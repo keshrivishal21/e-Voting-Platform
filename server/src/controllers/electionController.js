@@ -16,7 +16,6 @@ export const createElection = async (req, res) => {
       });
     }
 
-    // Validate positions
     if (!positions || !Array.isArray(positions) || positions.length === 0) {
       return res.status(400).json({
         success: false,
@@ -36,7 +35,6 @@ export const createElection = async (req, res) => {
       });
     }
 
-    // Validate start date is not in the past
     if (start < now) {
       return res.status(400).json({
         success: false,
@@ -44,7 +42,6 @@ export const createElection = async (req, res) => {
       });
     }
 
-    // Validate end date is after start date
     if (end <= start) {
       return res.status(400).json({
         success: false,
@@ -52,16 +49,7 @@ export const createElection = async (req, res) => {
       });
     }
 
-    // Validate minimum election duration (at least 1 hour)
-    // const minDuration = 60 * 60 * 1000; // 1 hour in milliseconds
-    // if (end - start < minDuration) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: "Election duration must be at least 1 hour",
-    //   });
-    // }
-
-    // Validate maximum election duration (not more than 30 days)
+    
     const maxDuration = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
     if (end - start > maxDuration) {
       return res.status(400).json({
@@ -70,7 +58,6 @@ export const createElection = async (req, res) => {
       });
     }
 
-    // Verify admin exists
     const adminId = req.user && req.user.userId ? req.user.userId : null;
     if (adminId) {
       const adminExists = await prisma.aDMIN.findUnique({
@@ -85,7 +72,6 @@ export const createElection = async (req, res) => {
       }
     }
 
-    // Create election record
     const election = await prisma.eLECTION.create({
       data: {
         Title: title,
@@ -94,16 +80,14 @@ export const createElection = async (req, res) => {
         Status: "Upcoming",
         Created_by: adminId,
         Auto_declare_results: autoDeclareResults !== undefined ? autoDeclareResults : true,
-        Positions: JSON.stringify(positions), // Store positions as JSON string
+        Positions: JSON.stringify(positions), 
       },
     });
 
-    // Send notification about new election (don't wait for it)
     notifyElectionCreated(title, start, end, adminId).catch(err => 
       console.error("Failed to send election created notification:", err)
     );
 
-    // Trigger scheduler to recalculate next run time (don't wait for it)
     triggerSchedulerCheck().catch(err => 
       console.error("Failed to trigger scheduler check:", err)
     );
@@ -119,7 +103,6 @@ export const createElection = async (req, res) => {
   }
 };
 
-// Start an election (admin only) - sets status to Ongoing and optionally updates start_date
 export const startElection = async (req, res) => {
   try {
     const { electionId } = req.params;
@@ -148,12 +131,10 @@ export const startElection = async (req, res) => {
       return res.status(400).json({ success: false, message: "Cannot start a completed election" });
     }
 
-    // Check if automatic scheduler is enabled and election has a future start date
     const schedulerEnabled = process.env.ENABLE_SCHEDULER !== 'false';
     const now = new Date();
     const hasScheduledStart = election.Start_date && election.Start_date > now;
 
-    // Validation warning: require force flag if scheduler is active and election is scheduled
     if (schedulerEnabled && hasScheduledStart && !force) {
       return res.status(400).json({
         success: false,
@@ -163,7 +144,6 @@ export const startElection = async (req, res) => {
       });
     }
 
-    // Update status and set start date to now (manual override)
     const updated = await prisma.eLECTION.update({
       where: { Election_id: parseInt(electionId) },
       data: {
@@ -172,7 +152,6 @@ export const startElection = async (req, res) => {
       },
     });
 
-    // Send notification about election start (don't wait for it)
     notifyElectionStarted(updated.Title, updated.End_date).catch(err => 
       console.error("Failed to send election started notification:", err)
     );
@@ -192,7 +171,6 @@ export const startElection = async (req, res) => {
   }
 };
 
-// Optional: End an election - sets status to Completed and optionally run result aggregation
 export const endElection = async (req, res) => {
   try {
     const { electionId } = req.params;
@@ -218,12 +196,10 @@ export const endElection = async (req, res) => {
       return res.status(400).json({ success: false, message: "Cannot end an election that hasn't started yet" });
     }
 
-    // Check if automatic scheduler is enabled and election has a future end date
     const schedulerEnabled = process.env.ENABLE_SCHEDULER !== 'false';
     const now = new Date();
     const hasScheduledEnd = election.End_date && election.End_date > now;
 
-    // Validation warning: require force flag if scheduler is active and election is scheduled to end later
     if (schedulerEnabled && hasScheduledEnd && !force) {
       return res.status(400).json({
         success: false,
@@ -241,12 +217,10 @@ export const endElection = async (req, res) => {
       },
     });
 
-    // Send notification about election end (don't wait for it)
     notifyElectionEnded(updated.Title).catch(err => 
       console.error("Failed to send election ended notification:", err)
     );
 
-    // Optionally you might want to compute results here and persist them.
 
     const responseMessage = force 
       ? "Election ended manually (forced override)" 
@@ -263,10 +237,9 @@ export const endElection = async (req, res) => {
   }
 };
 
-// Get all elections (filtered by status if provided)
 export const getElections = async (req, res) => {
   try {
-    const { status } = req.query; // status can be: Upcoming, Ongoing, Completed
+    const { status } = req.query; 
 
     const whereClause = status ? { Status: status } : {};
 
@@ -277,7 +250,6 @@ export const getElections = async (req, res) => {
       },
     });
 
-    // Parse positions from JSON string to array
     const electionsWithPositions = elections.map(election => ({
       ...election,
       Positions: election.Positions ? JSON.parse(election.Positions) : []
@@ -293,7 +265,6 @@ export const getElections = async (req, res) => {
   }
 };
 
-// Get a single election by ID
 export const getElectionById = async (req, res) => {
   try {
     const { electionId } = req.params;
@@ -316,7 +287,6 @@ export const getElectionById = async (req, res) => {
       });
     }
 
-    // Parse positions from JSON string to array
     const electionWithPositions = {
       ...election,
       Positions: election.Positions ? JSON.parse(election.Positions) : []
@@ -332,7 +302,6 @@ export const getElectionById = async (req, res) => {
   }
 };
 
-// Get detailed election statistics (admin only)
 export const getElectionStats = async (req, res) => {
   try {
     const { electionId } = req.params;
@@ -380,7 +349,6 @@ export const getElectionStats = async (req, res) => {
       }
     });
 
-    // Get all votes for this election
     const votes = await prisma.vOTE.findMany({
       where: { Election_id: electionIdInt },
       select: {
@@ -391,17 +359,14 @@ export const getElectionStats = async (req, res) => {
       }
     });
 
-    // Get unique voters
     const uniqueVoters = [...new Set(votes.map(v => v.Std_id.toString()))];
 
-    // Count votes by candidate
     const votesByCandidate = {};
     votes.forEach(vote => {
       const canId = vote.Can_id.toString();
       votesByCandidate[canId] = (votesByCandidate[canId] || 0) + 1;
     });
 
-    // Count votes by position
     const votesByPosition = {};
     votes.forEach(vote => {
       const candidate = candidates.find(c => c.Can_id === vote.Can_id);
@@ -411,7 +376,6 @@ export const getElectionStats = async (req, res) => {
       }
     });
 
-    // Group candidates by position with their vote counts
     const candidatesByPosition = {};
     candidates.forEach(candidate => {
       const pos = candidate.Position;
@@ -425,17 +389,14 @@ export const getElectionStats = async (req, res) => {
       });
     });
 
-    // Sort candidates by vote count within each position
     Object.keys(candidatesByPosition).forEach(position => {
       candidatesByPosition[position].sort((a, b) => b.voteCount - a.voteCount);
     });
 
-    // Check if results have been declared
     const declaredResults = await prisma.rESULT.findMany({
       where: { Election_id: electionIdInt }
     });
 
-    // Calculate statistics
     const stats = {
       election: {
         id: election.Election_id,
@@ -479,11 +440,10 @@ export const getElectionStats = async (req, res) => {
   }
 };
 
-// Declare/Calculate results for an election (admin only)
 export const declareResults = async (req, res) => {
   try {
     const { electionId } = req.params;
-    const { tieBreaking } = req.body; // Optional tie-breaking decisions { position: candidateId }
+    const { tieBreaking } = req.body; 
     const adminId = req.user.userId;
 
     console.log(`Declaring results for election ${electionId} by admin ${adminId}`);
@@ -500,7 +460,6 @@ export const declareResults = async (req, res) => {
 
     const electionIdInt = parseInt(electionId);
 
-    // Verify election exists and is completed
     const election = await prisma.eLECTION.findUnique({
       where: { Election_id: electionIdInt },
       select: {
@@ -526,7 +485,6 @@ export const declareResults = async (req, res) => {
       });
     }
 
-    // Get all votes for this election
     const votes = await prisma.vOTE.findMany({
       where: { Election_id: electionIdInt },
       select: {
@@ -551,17 +509,14 @@ export const declareResults = async (req, res) => {
       });
     }
 
-    // Count votes by candidate
     const voteCounts = new Map();
     votes.forEach(vote => {
       const candidateId = vote.Can_id.toString();
       voteCounts.set(candidateId, (voteCounts.get(candidateId) || 0) + 1);
     });
 
-    // Get unique candidates
     const candidateIds = [...new Set(votes.map(v => v.Can_id))];
 
-    // Create or update results
     const results = [];
     for (const candidateId of candidateIds) {
       const voteCount = voteCounts.get(candidateId.toString()) || 0;
@@ -595,7 +550,6 @@ export const declareResults = async (req, res) => {
       results.push(result);
     }
 
-    // Format results by position
     const resultsByPosition = {};
     results.forEach(result => {
       const position = result.candidate.Position;
@@ -609,12 +563,10 @@ export const declareResults = async (req, res) => {
       });
     });
 
-    // Sort candidates by vote count within each position
     Object.keys(resultsByPosition).forEach(position => {
       resultsByPosition[position].sort((a, b) => b.voteCount - a.voteCount);
     });
 
-    // Send notification about results declaration (don't wait for it)
     notifyResultsDeclared(election.Title, votes.length).catch(err => 
       console.error("Failed to send results declared notification:", err)
     );
@@ -645,10 +597,8 @@ export const declareResults = async (req, res) => {
   }
 };
 
-// Get results for completed elections (public)
 export const getElectionResults = async (req, res) => {
   try {
-    // Get all completed elections with results
     const completedElections = await prisma.eLECTION.findMany({
       where: {
         Status: "Completed"
@@ -673,7 +623,6 @@ export const getElectionResults = async (req, res) => {
       });
     }
 
-    // Get results for each election
     const electionsWithResults = await Promise.all(
       completedElections.map(async (election) => {
         const results = await prisma.rESULT.findMany({
@@ -698,7 +647,6 @@ export const getElectionResults = async (req, res) => {
           }
         });
 
-        // Group results by position
         const resultsByPosition = {};
         results.forEach(result => {
           const position = result.candidate.Position;
@@ -706,16 +654,13 @@ export const getElectionResults = async (req, res) => {
             resultsByPosition[position] = [];
           }
 
-          // Convert profile to base64 if exists
           let profileBase64 = null;
           if (result.candidate.Profile) {
             let profileBuffer = result.candidate.Profile;
             
-            // Handle if Profile is already a Buffer object
             if (profileBuffer instanceof Buffer) {
               profileBase64 = `data:image/jpeg;base64,${profileBuffer.toString('base64')}`;
             } 
-            // Handle if Profile is serialized as object with numeric keys
             else if (typeof profileBuffer === 'object' && !Array.isArray(profileBuffer)) {
               profileBuffer = Buffer.from(Object.values(profileBuffer));
               profileBase64 = `data:image/jpeg;base64,${profileBuffer.toString('base64')}`;
@@ -731,7 +676,7 @@ export const getElectionResults = async (req, res) => {
             year: result.candidate.Year,
             profilePic: profileBase64,
             voteCount: result.Vote_count,
-            isWinner: resultsByPosition[position].length === 0 // First candidate (highest votes) is winner
+            isWinner: resultsByPosition[position].length === 0 
           });
         });
 

@@ -3,7 +3,6 @@ import { notifyCandidateApproved, notifyCandidateRejected } from "../utils/notif
 
 const prisma = new PrismaClient();
 
-// Helper function to convert BigInt fields to strings
 const serializeCandidate = (candidate) => {
   if (!candidate) return null;
   return {
@@ -16,7 +15,6 @@ const serializeCandidates = (candidates) => {
   return candidates.map(serializeCandidate);
 };
 
-// Get all pending candidate applications (Admin only)
 export const getPendingCandidates = async (req, res) => {
   try {
     const candidates = await prisma.cANDIDATE.findMany({
@@ -33,7 +31,6 @@ export const getPendingCandidates = async (req, res) => {
       orderBy: { Can_id: "desc" },
     });
 
-    // Serialize BigInt fields
     const serializedCandidates = serializeCandidates(candidates);
 
     res.status(200).json({
@@ -50,10 +47,9 @@ export const getPendingCandidates = async (req, res) => {
   }
 };
 
-// Get all candidates with status filter (Admin only)
 export const getAllCandidates = async (req, res) => {
   try {
-    const { status } = req.query; // Optional: Pending, Approved, Rejected
+    const { status } = req.query; 
 
     const whereClause = status ? { Status: status } : {};
 
@@ -72,7 +68,6 @@ export const getAllCandidates = async (req, res) => {
       orderBy: { Can_id: "desc" },
     });
 
-    // Serialize BigInt fields
     const serializedCandidates = serializeCandidates(candidates);
 
     res.status(200).json({
@@ -89,7 +84,6 @@ export const getAllCandidates = async (req, res) => {
   }
 };
 
-// Approve candidate application (Admin only)
 export const approveCandidate = async (req, res) => {
   try {
     const { candidateId } = req.params;
@@ -101,7 +95,6 @@ export const approveCandidate = async (req, res) => {
       });
     }
 
-    // Check if candidate exists
     const candidate = await prisma.cANDIDATE.findUnique({
       where: { Can_id: parseInt(candidateId) },
     });
@@ -113,7 +106,6 @@ export const approveCandidate = async (req, res) => {
       });
     }
 
-    // Check if already approved
     if (candidate.Status === "Approved") {
       return res.status(400).json({
         success: false,
@@ -121,12 +113,11 @@ export const approveCandidate = async (req, res) => {
       });
     }
 
-    // Approve candidate - just update status
     const updatedCandidate = await prisma.cANDIDATE.update({
       where: { Can_id: parseInt(candidateId) },
       data: {
         Status: "Approved",
-        Rejection_reason: null, // Clear any previous rejection reason
+        Rejection_reason: null,
       },
       include: {
         election: {
@@ -135,7 +126,6 @@ export const approveCandidate = async (req, res) => {
       },
     });
 
-    // Send notification to candidate
     try {
       const adminId = req.user?.userId || null;
       await notifyCandidateApproved(
@@ -147,10 +137,8 @@ export const approveCandidate = async (req, res) => {
       );
     } catch (notifError) {
       console.error("Failed to send approval notification:", notifError);
-      // Continue even if notification fails
     }
 
-    // Serialize BigInt fields
     const serializedCandidate = serializeCandidate(updatedCandidate);
 
     res.status(200).json({
@@ -167,11 +155,10 @@ export const approveCandidate = async (req, res) => {
   }
 };
 
-// Reject candidate application (Admin only)
 export const rejectCandidate = async (req, res) => {
   try {
     const { candidateId } = req.params;
-    const { reason } = req.body; // Optional rejection reason
+    const { reason } = req.body; 
 
     if (!candidateId) {
       return res.status(400).json({
@@ -180,7 +167,6 @@ export const rejectCandidate = async (req, res) => {
       });
     }
 
-    // Check if candidate exists
     const candidate = await prisma.cANDIDATE.findUnique({
       where: { Can_id: parseInt(candidateId) },
     });
@@ -192,7 +178,6 @@ export const rejectCandidate = async (req, res) => {
       });
     }
 
-    // Check if already rejected
     if (candidate.Status === "Rejected") {
       return res.status(400).json({
         success: false,
@@ -200,7 +185,6 @@ export const rejectCandidate = async (req, res) => {
       });
     }
 
-    // Reject candidate with optional reason
     const updatedCandidate = await prisma.cANDIDATE.update({
       where: { Can_id: parseInt(candidateId) },
       data: {
@@ -214,7 +198,6 @@ export const rejectCandidate = async (req, res) => {
       },
     });
 
-    // Send notification to candidate
     try {
       const adminId = req.user?.userId || null;
       await notifyCandidateRejected(
@@ -227,10 +210,8 @@ export const rejectCandidate = async (req, res) => {
       );
     } catch (notifError) {
       console.error("Failed to send rejection notification:", notifError);
-      // Continue even if notification fails
     }
 
-    // Serialize BigInt fields
     const serializedCandidate = serializeCandidate(updatedCandidate);
 
     res.status(200).json({
@@ -247,7 +228,6 @@ export const rejectCandidate = async (req, res) => {
   }
 };
 
-// Get candidate status (for candidate to check their application)
 export const getCandidateStatus = async (req, res) => {
   try {
     const { candidateId } = req.params;
@@ -277,7 +257,6 @@ export const getCandidateStatus = async (req, res) => {
       });
     }
 
-    // Serialize BigInt fields
     const serializedCandidate = serializeCandidate(candidate);
 
     res.status(200).json({
@@ -294,10 +273,8 @@ export const getCandidateStatus = async (req, res) => {
   }
 };
 
-// Get all approved candidates grouped by election (for students to view)
 export const getApprovedCandidates = async (req, res) => {
   try {
-    // Fetch all approved candidates with their election details
     const candidates = await prisma.cANDIDATE.findMany({
       where: { Status: "Approved" },
       include: {
@@ -317,11 +294,9 @@ export const getApprovedCandidates = async (req, res) => {
       ],
     });
 
-    // Group candidates by election
     const electionMap = new Map();
 
     candidates.forEach((candidate) => {
-      // Skip candidates without an election assigned
       if (!candidate.election) {
         return;
       }
@@ -339,16 +314,13 @@ export const getApprovedCandidates = async (req, res) => {
         });
       }
 
-      // Convert profile to base64 if exists
       let profileBase64 = null;
       if (candidate.Profile) {
         let profileBuffer = candidate.Profile;
         
-        // Handle if Profile is already a Buffer object
         if (profileBuffer instanceof Buffer) {
           profileBase64 = `data:image/jpeg;base64,${profileBuffer.toString('base64')}`;
         } 
-        // Handle if Profile is serialized as object with numeric keys
         else if (typeof profileBuffer === 'object' && !Array.isArray(profileBuffer)) {
           profileBuffer = Buffer.from(Object.values(profileBuffer));
           profileBase64 = `data:image/jpeg;base64,${profileBuffer.toString('base64')}`;
@@ -356,8 +328,8 @@ export const getApprovedCandidates = async (req, res) => {
       }
 
       electionMap.get(electionId).candidates.push({
-        id: candidate.Can_id.toString(), // Convert BigInt to string
-        scholarId: candidate.Can_id.toString(), // Scholar ID
+        id: candidate.Can_id.toString(), 
+        scholarId: candidate.Can_id.toString(), 
         name: candidate.Can_name,
         email: candidate.Can_email,
         phone: candidate.Can_phone,
@@ -365,12 +337,11 @@ export const getApprovedCandidates = async (req, res) => {
         year: `${candidate.Year}${candidate.Year === 1 ? 'st' : candidate.Year === 2 ? 'nd' : candidate.Year === 3 ? 'rd' : 'th'} Year`,
         cgpa: candidate.Cgpa,
         position: candidate.Position,
-        manifesto: candidate.Manifesto, // This is text, not a URL
-        photo: profileBase64, // Base64 encoded profile picture or null
+        manifesto: candidate.Manifesto, 
+        photo: profileBase64, 
       });
     });
 
-    // Convert map to array
     const elections = Array.from(electionMap.values());
 
     res.status(200).json({
@@ -387,7 +358,6 @@ export const getApprovedCandidates = async (req, res) => {
   }
 };
 
-// Get candidate document/marksheet (Admin only)
 export const getCandidateDocument = async (req, res) => {
   try {
     const { candidateId } = req.params;
@@ -399,7 +369,6 @@ export const getCandidateDocument = async (req, res) => {
       });
     }
 
-    // Fetch only the document data
     const candidate = await prisma.cANDIDATE.findUnique({
       where: { Can_id: BigInt(candidateId) },
       select: {
@@ -423,14 +392,12 @@ export const getCandidateDocument = async (req, res) => {
       });
     }
 
-    // Set appropriate headers for PDF
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
       `inline; filename="marksheet_${candidate.Can_name.replace(/\s+/g, "_")}.pdf"`
     );
     
-    // Send the binary data
     res.send(candidate.Data);
   } catch (error) {
     console.error("Get candidate document error:", error);
@@ -441,7 +408,6 @@ export const getCandidateDocument = async (req, res) => {
   }
 };
 
-// Get election vote count for a candidate
 export const getElectionVoteCount = async (req, res) => {
   try {
     const { candidateId } = req.params;
@@ -453,7 +419,6 @@ export const getElectionVoteCount = async (req, res) => {
       });
     }
 
-    // Get candidate with election details
     const candidate = await prisma.cANDIDATE.findUnique({
       where: { Can_id: BigInt(candidateId) },
       select: {
@@ -488,14 +453,12 @@ export const getElectionVoteCount = async (req, res) => {
       });
     }
 
-    // Get total votes in the election
     const totalVotesInElection = await prisma.vOTE.count({
       where: {
         Election_id: candidate.Election_id
       }
     });
 
-    // Get count of unique students who voted in this election
     const studentsVoted = await prisma.vOTE.groupBy({
       by: ['Std_id'],
       where: {
@@ -503,7 +466,6 @@ export const getElectionVoteCount = async (req, res) => {
       }
     });
 
-    // Get total number of students (eligible voters)
     const totalStudents = await prisma.sTUDENT.count();
 
     res.status(200).json({

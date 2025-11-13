@@ -1,9 +1,7 @@
-// In-memory storage for pending student registrations
-// TODO: For production, use Redis or a database table for persistence
+
 
 const pendingRegistrations = new Map();
 
-// Cleanup expired registrations every 15 minutes
 setInterval(() => {
   const now = Date.now();
   for (const [email, data] of pendingRegistrations.entries()) {
@@ -15,11 +13,10 @@ setInterval(() => {
 }, 15 * 60 * 1000);
 
 /**
- * Store pending registration data
- * @param {string} email - Student email
- * @param {object} registrationData - All registration data
- * @param {string} otpHash - Hashed OTP
- * @param {Date} expiresAt - OTP expiration time
+ * @param {string} email 
+ * @param {object} registrationData 
+ * @param {string} otpHash 
+ * @param {Date} expiresAt 
  */
 export const storePendingRegistration = (email, registrationData, otpHash, expiresAt) => {
   pendingRegistrations.set(email, {
@@ -32,15 +29,13 @@ export const storePendingRegistration = (email, registrationData, otpHash, expir
 };
 
 /**
- * Get pending registration data
- * @param {string} email - Student email
- * @returns {object|null} Registration data or null if not found/expired
+ * @param {string} email 
+ * @returns {object|null} 
  */
 export const getPendingRegistration = (email) => {
   const data = pendingRegistrations.get(email);
   if (!data) return null;
   
-  // Check if expired
   if (data.expiresAt < Date.now()) {
     pendingRegistrations.delete(email);
     return null;
@@ -50,8 +45,7 @@ export const getPendingRegistration = (email) => {
 };
 
 /**
- * Remove pending registration after successful verification
- * @param {string} email - Student email
+ * @param {string} email 
  */
 export const removePendingRegistration = (email) => {
   const deleted = pendingRegistrations.delete(email);
@@ -62,11 +56,10 @@ export const removePendingRegistration = (email) => {
 };
 
 /**
- * Update OTP for existing pending registration
- * @param {string} email - Student email
- * @param {string} otpHash - New hashed OTP
- * @param {Date} expiresAt - New expiration time
- * @returns {boolean} Success status
+ * @param {string} email 
+ * @param {string} otpHash 
+ * @param {Date} expiresAt 
+ * @returns {boolean} 
  */
 export const updatePendingOTP = (email, otpHash, expiresAt) => {
   const data = pendingRegistrations.get(email);

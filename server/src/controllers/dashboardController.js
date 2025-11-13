@@ -2,10 +2,8 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// Get dashboard statistics (Admin only)
 export const getDashboardStats = async (req, res) => {
   try {
-    // Get counts for different entities
     const [
       totalStudents,
       activeElections,
@@ -20,7 +18,6 @@ export const getDashboardStats = async (req, res) => {
       prisma.eLECTION.count({ where: { Status: "Completed" } }),
     ]);
 
-    // Get voting trends for the last 6 months
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
@@ -35,7 +32,6 @@ export const getDashboardStats = async (req, res) => {
       },
     });
 
-    // Group votes by month
     const votingTrends = {};
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     
@@ -49,7 +45,6 @@ export const getDashboardStats = async (req, res) => {
       votes,
     }));
 
-    // Provide default data if no voting trends exist
     const defaultVotingTrends = votingTrendsArray.length > 0 
       ? votingTrendsArray 
       : [
@@ -89,7 +84,6 @@ export const getDashboardStats = async (req, res) => {
   }
 };
 
-// Get recent activity logs (Admin only)
 export const getRecentActivity = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 20;
@@ -106,7 +100,6 @@ export const getRecentActivity = async (req, res) => {
       },
     });
 
-    // Format logs for display
     const formattedLogs = logs.map((log) => {
       const timeAgo = getTimeAgo(log.Log_time);
       return {
@@ -134,7 +127,6 @@ export const getRecentActivity = async (req, res) => {
   }
 };
 
-// Helper function to get icon for action type
 function getIconForAction(actionType) {
   const icons = {
     "Candidate Request": "📝",
@@ -149,7 +141,6 @@ function getIconForAction(actionType) {
   return icons[actionType] || "📌";
 }
 
-// Helper function to calculate time ago
 function getTimeAgo(date) {
   const seconds = Math.floor((new Date() - new Date(date)) / 1000);
   

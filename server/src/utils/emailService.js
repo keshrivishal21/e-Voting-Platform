@@ -1,11 +1,8 @@
 import nodemailer from 'nodemailer';
 
-// Check if email is enabled (for development, you can disable email)
 const EMAIL_ENABLED = process.env.EMAIL_ENABLED !== 'false';
 
-// Create transporter for sending emails
 const createTransporter = () => {
-  // If email is disabled, return a mock transporter for development
   if (!EMAIL_ENABLED) {
     console.log('Email service disabled - using mock transporter for development');
     return {
@@ -20,13 +17,12 @@ const createTransporter = () => {
   return nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 587,
-    secure: false, // Use STARTTLS
+    secure: false, 
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASSWORD,
     },
-    // Add timeout and connection settings
-    connectionTimeout: 10000, // 10 seconds
+    connectionTimeout: 10000, 
     greetingTimeout: 10000,
     socketTimeout: 10000,
     tls: {
@@ -36,20 +32,17 @@ const createTransporter = () => {
 };
 
 /**
- * Send password reset email
- * @param {string} to - Recipient email address
- * @param {string} resetToken - Password reset token
- * @param {string} userName - User's name
- * @param {string} userType - 'student' or 'candidate'
+ * @param {string} to 
+ * @param {string} resetToken 
+ * @param {string} userName 
+ * @param {string} userType 
  */
 export const sendPasswordResetEmail = async (to, resetToken, userName, userType) => {
   try {
     const transporter = createTransporter();
 
-    // Create reset link
     const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}&type=${userType}`;
 
-    // If email is disabled in development, log reset link to console
     if (!EMAIL_ENABLED) {
       console.log('============================================');
       console.log('PASSWORD RESET (Development Mode)');
@@ -173,9 +166,8 @@ export const sendPasswordResetEmail = async (to, resetToken, userName, userType)
 };
 
 /**
- * Send password reset confirmation email
- * @param {string} to - Recipient email address
- * @param {string} userName - User's name
+ * @param {string} to 
+ * @param {string} userName 
  */
 export const sendPasswordResetConfirmationEmail = async (to, userName) => {
   try {
@@ -262,22 +254,19 @@ export const sendPasswordResetConfirmationEmail = async (to, userName) => {
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('Error sending confirmation email:', error);
-    // Don't throw error for confirmation email - it's not critical
     return { success: false, error: error.message };
   }
 };
 
 /**
- * Send email verification OTP
- * @param {string} to - Recipient email address
- * @param {string} otp - 6-digit OTP code
- * @param {string} userName - User's name
+ * @param {string} to 
+ * @param {string} otp 
+ * @param {string} userName 
  */
 export const sendEmailVerification = async (to, otp, userName) => {
   try {
     const transporter = createTransporter();
 
-    // If email is disabled in development, log OTP to console
     if (!EMAIL_ENABLED) {
       console.log('============================================');
       console.log('EMAIL VERIFICATION (Development Mode)');

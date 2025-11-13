@@ -2,7 +2,6 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// Helper function to serialize student data
 const serializeStudent = (student) => {
   return {
     ...student,
@@ -94,7 +93,6 @@ export const getStudentStats = async (req, res) => {
   try {
     const totalStudents = await prisma.sTUDENT.count();
     
-    // Count students who have voted in any election
     const studentsWhoVoted = await prisma.vOTE.findMany({
       distinct: ['Std_id'],
       select: {
@@ -102,7 +100,6 @@ export const getStudentStats = async (req, res) => {
       },
     });
 
-    // Count students who are also candidates
     const studentCandidates = await prisma.cANDIDATE.findMany({
       select: {
         Can_id: true,

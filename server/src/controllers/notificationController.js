@@ -7,7 +7,6 @@ export const getAllNotifications = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 50;
 
-    // Get recent notifications from the database
     const notifications = await prisma.nOTIFICATION.findMany({
       orderBy: { Notif_time: "desc" },
       take: limit,
@@ -20,7 +19,6 @@ export const getAllNotifications = async (req, res) => {
       },
     });
 
-    // Group notifications by message and time to show summary
     const groupedNotifications = {};
     notifications.forEach(notif => {
       const key = `${notif.Notif_message}_${notif.Notif_time.getTime()}_${notif.Admin_id}`;
@@ -38,7 +36,6 @@ export const getAllNotifications = async (req, res) => {
       groupedNotifications[key].recipientCount++;
     });
 
-    // Format grouped notifications
     const formattedNotifications = Object.values(groupedNotifications).map(group => {
       const recipientTypes = Array.from(group.recipientTypes);
       let recipient = "";
@@ -126,9 +123,6 @@ export const sendNotification = async (req, res) => {
       )
     );
 
-    // Logging for notification sends is disabled by configuration/user request.
-    // Previous behavior created a SYSTEM_LOGS entry here, but per project
-    // preference we avoid persisting logs for sending notifications.
 
     res.status(201).json({
       success: true,
@@ -146,11 +140,10 @@ export const sendNotification = async (req, res) => {
   }
 };
 
-// Get recent notifications for users (Students/Candidates)
 export const getUserNotifications = async (req, res) => {
   try {
-    const userId = BigInt(req.user.userId); // From JWT token
-    const userType = req.user.userType; // From JWT token
+    const userId = BigInt(req.user.userId); 
+    const userType = req.user.userType; 
     const limit = parseInt(req.query.limit) || 10;
 
     const notifications = await prisma.nOTIFICATION.findMany({

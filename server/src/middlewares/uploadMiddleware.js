@@ -2,7 +2,6 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 
-// Create uploads directories if they don't exist
 const candidateUploadDir = 'uploads/candidates';
 const studentUploadDir = 'uploads/students';
 
@@ -16,10 +15,8 @@ if (!fs.existsSync(studentUploadDir)) {
 // Configure storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Determine upload directory based on route or field
     let uploadDir = candidateUploadDir;
     
-    // If it's a student profile upload
     if (req.route && req.route.path.includes('student')) {
       uploadDir = studentUploadDir;
     }
@@ -27,13 +24,11 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    // Generate unique filename: timestamp_random_originalname
     const uniqueName = `${Date.now()}_${Math.round(Math.random() * 1E9)}${path.extname(file.originalname)}`;
     cb(null, uniqueName);
   }
 });
 
-// File filter to accept only certain file types
 const fileFilter = (req, file, cb) => {
   const allowedTypes = [
     'application/pdf',
