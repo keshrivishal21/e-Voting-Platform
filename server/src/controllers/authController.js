@@ -41,7 +41,8 @@ export const adminLogin = async (req, res) => {
     }
 
     // Check password
-    if (password !== admin.Admin_password) {
+    const isPasswordValid = await bcrypt.compare(password, admin.Admin_password);
+    if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
         message: "Invalid credentials",

@@ -13,6 +13,7 @@ export const seedDefaultAdmin = async () => {
 
     console.log("⚠ No admin accounts found. Creating default admin...");
     const defaultAdmin = {
+      Admin_id: parseInt(process.env.DEFAULT_ADMIN_Id) || 2101,
       Admin_name: process.env.DEFAULT_ADMIN_NAME || "System Administrator",
       Admin_email: process.env.DEFAULT_ADMIN_EMAIL || "admin@evoting.com",
       Admin_password: process.env.DEFAULT_ADMIN_PASSWORD || "admin123",
@@ -22,6 +23,7 @@ export const seedDefaultAdmin = async () => {
     const hashedPassword = await  bcrypt.hash(defaultAdmin.Admin_password,12);
     const admin = await prisma.aDMIN.create({
       data: {
+        Admin_id: defaultAdmin.Admin_id,
         Admin_name: defaultAdmin.Admin_name,
         Admin_email: defaultAdmin.Admin_email,
         Admin_password: hashedPassword,
