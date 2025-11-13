@@ -7,11 +7,11 @@ const EMAIL_ENABLED = process.env.EMAIL_ENABLED !== 'false';
 const createTransporter = () => {
   // If email is disabled, return a mock transporter for development
   if (!EMAIL_ENABLED) {
-    console.log('⚠️  Email service disabled - using mock transporter for development');
+    console.log('Email service disabled - using mock transporter for development');
     return {
       sendMail: async (options) => {
-        console.log('📧 [MOCK EMAIL] Would have sent email to:', options.to);
-        console.log('📧 [MOCK EMAIL] Subject:', options.subject);
+        console.log('[MOCK EMAIL] Would have sent email to:', options.to);
+        console.log('[MOCK EMAIL] Subject:', options.subject);
         return { messageId: 'mock-' + Date.now() };
       }
     };
@@ -51,13 +51,13 @@ export const sendPasswordResetEmail = async (to, resetToken, userName, userType)
 
     // If email is disabled in development, log reset link to console
     if (!EMAIL_ENABLED) {
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('🔐 PASSWORD RESET (Development Mode)');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log(`👤 To: ${to}`);
-      console.log(`🔗 Reset Link: ${resetLink}`);
-      console.log(`⏰ Expires in: 15 minutes`);
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('============================================');
+      console.log('PASSWORD RESET (Development Mode)');
+      console.log('============================================');
+      console.log(`To: ${to}`);
+      console.log(`Reset Link: ${resetLink}`);
+      console.log(`Expires in: 15 minutes`);
+      console.log('============================================');
       return { success: true, messageId: 'dev-mode-' + Date.now() };
     }
 
@@ -279,13 +279,13 @@ export const sendEmailVerification = async (to, otp, userName) => {
 
     // If email is disabled in development, log OTP to console
     if (!EMAIL_ENABLED) {
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('📧 EMAIL VERIFICATION (Development Mode)');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log(`👤 To: ${to}`);
-      console.log(`🔑 OTP Code: ${otp}`);
-      console.log(`⏰ Expires in: 10 minutes`);
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('============================================');
+      console.log('EMAIL VERIFICATION (Development Mode)');
+      console.log('============================================');
+      console.log(`To: ${to}`);
+      console.log(`OTP Code: ${otp}`);
+      console.log(`Expires in: 10 minutes`);
+      console.log('============================================');
       return { success: true, messageId: 'dev-mode-' + Date.now() };
     }
 

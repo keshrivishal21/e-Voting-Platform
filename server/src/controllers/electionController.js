@@ -486,9 +486,9 @@ export const declareResults = async (req, res) => {
     const { tieBreaking } = req.body; // Optional tie-breaking decisions { position: candidateId }
     const adminId = req.user.userId;
 
-    console.log(`📊 Declaring results for election ${electionId} by admin ${adminId}`);
+    console.log(`Declaring results for election ${electionId} by admin ${adminId}`);
     if (tieBreaking) {
-      console.log(`🏆 Tie-breaking decisions provided:`, tieBreaking);
+      console.log(`Tie-breaking decisions provided:`, tieBreaking);
     }
 
     if (!electionId) {

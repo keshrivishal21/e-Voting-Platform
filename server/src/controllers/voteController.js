@@ -30,11 +30,11 @@ const transporter = nodemailer.createTransport({
 // Verify transporter configuration on startup (non-blocking)
 transporter.verify()
   .then(() => {
-    console.log('✅ Email transporter is ready to send emails');
+    console.log('Email transporter is ready to send emails');
   })
   .catch((error) => {
-    console.warn('⚠️ Email transporter verification failed:', error.message);
-    console.log('📧 Email service will still attempt to send emails when needed');
+    console.warn('Email transporter verification failed:', error.message);
+    console.log('Email service will still attempt to send emails when needed');
   });
 
 // Generate RSA key pair for election
@@ -190,38 +190,31 @@ const requestVotingOTP = async (req, res) => {
       `
     };
 
-    console.log(`📧 Attempting to send voting OTP to: ${student.Std_email}`);
-    console.log(`🔑 Generated OTP: ${otp} (valid for 10 minutes)`);
+    console.log(`Attempting to send voting OTP to: ${student.Std_email}`);
+    console.log(`Generated OTP: ${otp} (valid for 10 minutes)`);
     
     try {
       const info = await transporter.sendMail(mailOptions);
-      console.log('✅ Voting OTP email sent successfully:', info.messageId);
-      console.log('📬 Email accepted by:', info.accepted);
+      console.log('Voting OTP email sent successfully:', info.messageId);
+      console.log('Email accepted by:', info.accepted);
       
       res.status(200).json({ 
         message: 'OTP sent successfully to your registered email',
         expiresIn: 600 // seconds
       });
     } catch (emailError) {
-      console.error('❌ Failed to send voting OTP email:', emailError);
+      console.error('Failed to send voting OTP email:', emailError);
       
       // Check specific error types
       if (emailError.code === 'ETIMEDOUT') {
-        console.error('⏱️ Connection timeout - Check your internet connection and firewall settings');
+        console.error('Connection timeout - Check your internet connection and firewall settings');
       } else if (emailError.code === 'EAUTH') {
-        console.error('🔐 Authentication failed - Check EMAIL_USER and EMAIL_PASSWORD in .env');
+        console.error('Authentication failed - Check EMAIL_USER and EMAIL_PASSWORD in .env');
       } else if (emailError.code === 'ECONNECTION') {
-        console.error('🌐 Connection failed - SMTP server may be unreachable');
+        console.error('Connection failed - SMTP server may be unreachable');
       }
       
-      // Log OTP to console for development/testing
-      console.log(`\n${'='.repeat(60)}`);
-      console.log('⚠️ EMAIL FAILED - USE THIS OTP FOR TESTING:');
-      console.log(`📝 OTP: ${otp}`);
-      console.log(`👤 Student: ${student.Std_email}`);
-      console.log(`🗳️ Election: ${election.Title}`);
-      console.log(`⏰ Valid until: ${new Date(otpExpiry).toLocaleString()}`);
-      console.log(`${'='.repeat(60)}\n`);
+      
       
       // Still return success so user can continue with OTP from console
       res.status(200).json({ 

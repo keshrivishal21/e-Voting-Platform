@@ -9,7 +9,7 @@ setInterval(() => {
   for (const [email, data] of pendingRegistrations.entries()) {
     if (data.expiresAt < now) {
       pendingRegistrations.delete(email);
-      console.log(`🗑️ Cleaned up expired registration for: ${email}`);
+      console.log(`Cleaned up expired registration for: ${email}`);
     }
   }
 }, 15 * 60 * 1000);
@@ -28,7 +28,7 @@ export const storePendingRegistration = (email, registrationData, otpHash, expir
     expiresAt: expiresAt.getTime(),
     createdAt: Date.now(),
   });
-  console.log(`✅ Stored pending registration for: ${email}`);
+  console.log(`Stored pending registration for: ${email}`);
 };
 
 /**
@@ -55,8 +55,8 @@ export const getPendingRegistration = (email) => {
  */
 export const removePendingRegistration = (email) => {
   const deleted = pendingRegistrations.delete(email);
-  if (deleted) {
-    console.log(`✅ Removed pending registration for: ${email}`);
+    if (deleted) {
+    console.log(`Removed pending registration for: ${email}`);
   }
   return deleted;
 };
@@ -74,6 +74,6 @@ export const updatePendingOTP = (email, otpHash, expiresAt) => {
   
   data.otpHash = otpHash;
   data.expiresAt = expiresAt.getTime();
-  console.log(`✅ Updated OTP for pending registration: ${email}`);
+  console.log(`Updated OTP for pending registration: ${email}`);
   return true;
 };

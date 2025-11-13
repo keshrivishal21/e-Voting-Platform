@@ -80,12 +80,12 @@ const FeedbackManagement = () => {
                         onClick={async () => {
                           try {
                             const res = await AdminAPI.approveFeedback(feedback.id);
-                            if (res && res.response && res.response.ok) {
+                            if (res && res.success) {
                               toast.success('Feedback approved');
                               // update local state
                               setFeedbacks((prev) => prev.map((f) => (f.id === feedback.id ? { ...f, status: 'Approved' } : f)));
                             } else {
-                              toast.error((res && res.data && res.data.message) || 'Failed to approve');
+                              toast.error(res?.message || 'Failed to approve');
                             }
                           } catch (err) {
                             console.error('Approve error', err);
@@ -103,11 +103,11 @@ const FeedbackManagement = () => {
                       onClick={async () => {
                         try {
                           const res = await AdminAPI.deleteFeedback(feedback.id);
-                          if (res && res.response && res.response.ok) {
+                          if (res && res.success) {
                             toast.success('Feedback deleted');
                             setFeedbacks((prev) => prev.filter((f) => f.id !== feedback.id));
                           } else {
-                            toast.error((res && res.data && res.data.message) || 'Failed to delete');
+                            toast.error(res?.message || 'Failed to delete');
                           }
                         } catch (err) {
                           console.error('Delete error', err);

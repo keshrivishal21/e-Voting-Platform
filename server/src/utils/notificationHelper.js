@@ -29,7 +29,7 @@ export async function sendSystemNotification(message, adminId = null) {
     ];
 
     if (recipients.length === 0) {
-      console.log("ℹ️  No recipients found for system notification");
+      console.log("No recipients found for system notification");
       return 0;
     }
 
@@ -48,10 +48,10 @@ export async function sendSystemNotification(message, adminId = null) {
       )
     );
 
-    console.log(`📧 Sent system notification to ${notifications.length} recipient(s): "${message}"`);
+    console.log(`Sent system notification to ${notifications.length} recipient(s): "${message}"`);
     return notifications.length;
   } catch (error) {
-    console.error("❌ Error sending system notification:", error);
+    console.error("Error sending system notification:", error);
     throw error;
   }
 }

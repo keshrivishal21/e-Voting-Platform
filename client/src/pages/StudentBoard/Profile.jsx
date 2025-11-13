@@ -259,7 +259,7 @@ const Profile = () => {
         setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
         setShowPasswordForm(false);
         setMessage({ type: 'success', text: 'Password changed successfully!' });
-        toast.success('🔐 Password changed successfully!');
+        toast.success('Password changed successfully!');
       } else {
         const errorMsg = data.message || 'Failed to change password.';
         setMessage({ type: 'error', text: errorMsg });

@@ -139,7 +139,7 @@ const CandidateProfile = () => {
         setFormData(data.data.profile);
         setIsEditing(false);
         setMessage({ type: 'success', text: 'Profile updated successfully!' });
-        toast.success('✅ Profile updated successfully!');
+        toast.success('Profile updated successfully!');
       } else {
         const errorMsg = data.message || 'Failed to update profile.';
         setMessage({ type: 'error', text: errorMsg });
@@ -187,7 +187,7 @@ const CandidateProfile = () => {
         setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
         setShowPasswordForm(false);
         setMessage({ type: 'success', text: 'Password changed successfully!' });
-        toast.success('🔐 Password changed successfully!');
+        toast.success('Password changed successfully!');
       } else {
         const errorMsg = data.message || 'Failed to change password.';
         setMessage({ type: 'error', text: errorMsg });

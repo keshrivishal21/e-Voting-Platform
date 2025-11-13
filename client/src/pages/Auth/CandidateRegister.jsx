@@ -85,7 +85,7 @@ const CandidateRegister = () => {
           phone: student.phone,
         }));
         setStudentFetched(true);
-        toast.success("✅ Student details fetched successfully!");
+        toast.success("Student details fetched successfully!");
       } else {
         const errorMsg = data?.message || "Failed to fetch student details";
         setError(errorMsg);
@@ -122,7 +122,7 @@ const CandidateRegister = () => {
           setElections(electionsList);
           
           if (electionsList.length === 0) {
-            toast("No upcoming elections available at the moment", { icon: 'ℹ️' });
+            toast("No upcoming elections available at the moment");
           }
         } else {
           const errorMsg = response?.message || "Failed to load elections";

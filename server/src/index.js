@@ -36,12 +36,12 @@ app.get("/", async(req, res) => {
   try {
     const admins = await prisma.aDMIN.findMany();
     res.json({ 
-      message: "✅ E-Voting Platform Server is running!", 
+      message: "E-Voting Platform Server is running!", 
       status: "Connected to database",
       adminCount: admins.length 
     });
   } catch (error) {
-    console.error("❌ Database error:", error);
+    console.error("Database error:", error);
     res.status(500).json({ error: "Database connection failed" });
   }
 });

@@ -78,7 +78,7 @@ async function declareElectionResults(electionId, electionTitle) {
           votes: candidateArray[0].votes,
           candidates: tiedCandidates.map(c => c.name)
         });
-        console.log(`⚠️ TIE DETECTED for ${position}: ${tiedCandidates.map(c => c.name).join(', ')} (${candidateArray[0].votes} votes each)`);
+        console.log(`TIE DETECTED for ${position}: ${tiedCandidates.map(c => c.name).join(', ')} (${candidateArray[0].votes} votes each)`);
       }
     });
 
@@ -177,7 +177,7 @@ async function declareElectionResults(electionId, electionTitle) {
 // Schedule cleanup for a specific election after retention period
 // DISABLED: Cleanup functionality disabled to preserve all election data
 function scheduleCleanupForElection(electionId, title, endDate) {
-  console.log(`ℹ️  Cleanup disabled - all data for election ${electionId} ("${title}") will be preserved`);
+  
   return; // Early return - no cleanup scheduled
   
   /* CLEANUP DISABLED - Code preserved for future implementation
@@ -193,10 +193,10 @@ function scheduleCleanupForElection(electionId, title, endDate) {
     clearTimeout(cleanupTimeouts.get(electionId));
   }
   
-  console.log(`🧹 Scheduled cleanup for election ${electionId} ("${title}") at ${cleanupTime.toLocaleString()} (in ${Math.round(delayMs / 3600000)} hours)`);
+  console.log(`Scheduled cleanup for election ${electionId} ("${title}") at ${cleanupTime.toLocaleString()} (in ${Math.round(delayMs / 3600000)} hours)`);
   
   const timeoutRef = setTimeout(async () => {
-    console.log(`🗑️  Running scheduled cleanup for election ${electionId}...`);
+    console.log(`Running scheduled cleanup for election ${electionId}...`);
     await cleanupSpecificElection(electionId);
     cleanupTimeouts.delete(electionId);
   }, delayMs);
@@ -208,7 +208,7 @@ function scheduleCleanupForElection(electionId, title, endDate) {
 // Cleanup candidates from a specific completed election
 // DISABLED: Cleanup functionality disabled to preserve all election data
 async function cleanupSpecificElection(electionId) {
-  console.log(`ℹ️  Cleanup disabled - data for election ${electionId} will be preserved`);
+  
   return;
   
   /* CLEANUP DISABLED - Code preserved for future implementation
@@ -231,16 +231,16 @@ async function cleanupSpecificElection(electionId) {
     });
 
     if (!election || election.Status !== "Completed") {
-      console.log(`⚠️  Election ${electionId} is not completed, skipping cleanup`);
+      console.log(`Election ${electionId} is not completed, skipping cleanup`);
       return;
     }
 
     if (election.candidates.length === 0) {
-      console.log(`ℹ️  No candidates to cleanup for election ${electionId}`);
+      console.log(`No candidates to cleanup for election ${electionId}`);
       return;
     }
 
-    console.log(`🗑️  Cleaning up ${election.candidates.length} candidates from election ${electionId} ("${election.Title}")`);
+    console.log(`Cleaning up ${election.candidates.length} candidates from election ${electionId} ("${election.Title}")`);
     
     const candidateIds = election.candidates.map(c => c.Can_id);
     
@@ -315,10 +315,10 @@ async function cleanupSpecificElection(electionId) {
         }
       });
 
-      console.log(`✅ Deleted ${deletedCandidates.count} candidates from election ${electionId}`);
+      console.log(`Deleted ${deletedCandidates.count} candidates from election ${electionId}`);
     });
   } catch (error) {
-    console.error(`❌ Failed to cleanup election ${electionId}:`, error);
+    console.error(`Failed to cleanup election ${electionId}:`, error);
   }
   */
 }
@@ -326,7 +326,7 @@ async function cleanupSpecificElection(electionId) {
 // Cleanup candidates from completed elections after retention period (batch cleanup for existing elections)
 // DISABLED: Cleanup functionality disabled to preserve all election data
 async function cleanupCompletedElectionCandidates() {
-  console.log(`ℹ️  Cleanup disabled - all election data will be preserved`);
+  console.log(`Cleanup disabled - all election data will be preserved`);
   return { electionsProcessed: 0, candidatesDeleted: 0 };
   
   /* CLEANUP DISABLED - Code preserved for future implementation
@@ -364,7 +364,7 @@ async function cleanupCompletedElectionCandidates() {
     for (const election of completedElections) {
       if (election.candidates.length === 0) continue;
 
-      console.log(`🗑️  Processing cleanup for election ${election.Election_id} ("${election.Title}") ended on ${election.End_date.toLocaleDateString()}`);
+      console.log(`Processing cleanup for election ${election.Election_id} ("${election.Title}") ended on ${election.End_date.toLocaleDateString()}`);
       
       const candidateIds = election.candidates.map(c => c.Can_id);
       
@@ -509,7 +509,7 @@ async function processElectionTransitions() {
           where: { Election_id: e.Election_id },
           data: { Status: "Completed" },
         });
-        console.log(`✅ Election ${e.Election_id} ("${e.Title}") ended automatically`);
+        console.log(`Election ${e.Election_id} ("${e.Title}") ended automatically`);
         
         // Send notification about election end (don't wait for it)
         notifyElectionEnded(e.Title).catch(err => 
@@ -518,7 +518,7 @@ async function processElectionTransitions() {
         
         // Check if auto-declare is enabled for this election
         if (e.Auto_declare_results === true) {
-          console.log(`🤖 Auto-declare enabled for election ${e.Election_id}, attempting to declare results...`);
+          console.log(`Auto-declare enabled for election ${e.Election_id}, attempting to declare results...`);
           
           // Automatically declare results
           try {
@@ -526,31 +526,31 @@ async function processElectionTransitions() {
             
             if (result && result.success === false) {
               if (result.reason === 'tie_detected') {
-                console.log(`⚠️ Results NOT auto-declared due to tie(s) - Admin must manually declare`);
+                console.log(`Results NOT auto-declared due to tie(s) - Admin must manually declare`);
                 console.log(`   Tied positions: ${result.ties.map(t => t.position).join(', ')}`);
               } else if (result.reason === 'no_votes') {
-                console.log(`⚠️ Results NOT declared - No votes cast`);
+                console.log(`Results NOT declared - No votes cast`);
               }
             } else {
-              console.log(`✅ Results auto-declared successfully for election ${e.Election_id}`);
+              console.log(`Results auto-declared successfully for election ${e.Election_id}`);
             }
           } catch (resultError) {
-            console.error(`⚠️ Failed to declare results for election ${e.Election_id}, but election still marked as completed:`, resultError);
+            console.error(`Failed to declare results for election ${e.Election_id}, but election still marked as completed:`, resultError);
           }
         } else {
-          console.log(`⏸️ Auto-declare DISABLED for election ${e.Election_id} - Admin must manually declare results`);
+          console.log(`Auto-declare DISABLED for election ${e.Election_id} - Admin must manually declare results`);
         }
         
         // Schedule cleanup for this election after retention period
         scheduleCleanupForElection(e.Election_id, e.Title, e.End_date);
       } catch (err) {
-        console.error(`❌ Failed to end election ${e.Election_id}:`, err);
+        console.error(`Failed to end election ${e.Election_id}:`, err);
       }
     }
 
     return { started: toStart.length, ended: toEnd.length };
   } catch (error) {
-    console.error("❌ Election scheduler error:", error);
+    console.error("Election scheduler error:", error);
     return { started: 0, ended: 0 };
   }
 }
@@ -602,7 +602,7 @@ async function calculateNextRunTime() {
 
     return { nextRunTime, reason };
   } catch (error) {
-    console.error("❌ Error calculating next run time:", error);
+    console.error("Error calculating next run time:", error);
     return { nextRunTime: null, reason: null };
   }
 }
@@ -620,7 +620,7 @@ async function scheduleNextRun() {
   if (!nextRunTime) {
     // No upcoming elections, check again in fallback interval
     const fallbackMs = parseInt(process.env.SCHEDULER_FALLBACK_MS) || 300000; // default 5 minutes
-    console.log(`📅 No scheduled elections. Checking again in ${fallbackMs / 1000}s`);
+    console.log(`No scheduled elections. Checking again in ${fallbackMs / 1000}s`);
     
     timeoutId = setTimeout(() => scheduleNextRun(), fallbackMs);
     return;
@@ -638,19 +638,19 @@ async function scheduleNextRun() {
   const actualDelayMs = Math.min(totalDelayMs, maxDelayMs);
 
   const nextRunDate = new Date(now.getTime() + actualDelayMs);
-  console.log(`⏰ Next scheduler run: ${nextRunDate.toLocaleString()} (in ${Math.round(actualDelayMs / 1000)}s) to ${reason}`);
+  console.log(`Next scheduler run: ${nextRunDate.toLocaleString()} (in ${Math.round(actualDelayMs / 1000)}s) to ${reason}`);
 
   timeoutId = setTimeout(() => scheduleNextRun(), actualDelayMs);
 }
 
 export function startElectionScheduler(options = {}) {
   if (isRunning) {
-    console.warn("⚠️  Election scheduler already running");
+    console.warn("Election scheduler already running");
     return;
   }
 
   isRunning = true;
-  console.log("🚀 Starting smart election scheduler...");
+  console.log("Starting smart election scheduler...");
   
   // Start election transitions
   scheduleNextRun();
@@ -662,7 +662,7 @@ export function startElectionScheduler(options = {}) {
 // Schedule cleanups for existing completed elections on startup
 // DISABLED: Cleanup functionality disabled to preserve all election data
 async function scheduleExistingCompletedElections() {
-  console.log(`ℹ️  Cleanup disabled - no election data will be cleaned up`);
+  console.log(`Cleanup disabled - no election data will be cleaned up`);
   return;
   
   /* CLEANUP DISABLED - Code preserved for future implementation
@@ -691,7 +691,7 @@ async function scheduleExistingCompletedElections() {
       
       if (cleanupTime <= now) {
         // Retention period already passed, cleanup immediately
-        console.log(`🗑️  Retention period passed for election ${election.Election_id}, cleaning up now...`);
+        console.log(`Retention period passed for election ${election.Election_id}, cleaning up now...`);
         await cleanupSpecificElection(election.Election_id);
       } else {
         // Schedule future cleanup
@@ -700,10 +700,10 @@ async function scheduleExistingCompletedElections() {
     }
     
     if (completedElections.length > 0) {
-      console.log(`✅ Scheduled cleanup for ${completedElections.length} existing completed elections`);
+      console.log(`Scheduled cleanup for ${completedElections.length} existing completed elections`);
     }
   } catch (error) {
-    console.error("❌ Error scheduling existing completed elections:", error);
+    console.error("Error scheduling existing completed elections:", error);
   }
   */
 }
@@ -724,12 +724,12 @@ export function stopElectionScheduler() {
   }
   cleanupTimeouts.clear();
   
-  console.log("🛑 Election scheduler stopped");
+  console.log("Election scheduler stopped");
 }
 
 // Export for manual trigger (useful for testing or after admin creates election)
 export async function triggerSchedulerCheck() {
-  console.log("🔄 Manual scheduler check triggered");
+  console.log("Manual scheduler check triggered");
   await processElectionTransitions();
   
   // Reschedule if running
