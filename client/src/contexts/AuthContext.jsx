@@ -13,20 +13,17 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userType, setUserType] = useState(null); // 'Student', 'Candidate', 'Admin'
+  const [userType, setUserType] = useState(null); 
   const [loading, setLoading] = useState(true);
 
-  // Initialize auth state from localStorage
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        // Clean up any unwanted keys first
-        localStorage.removeItem('token'); // Remove this extra key if it exists
-        localStorage.removeItem('authToken'); // Legacy cleanup
-        localStorage.removeItem('userType'); // Legacy cleanup  
-        localStorage.removeItem('userData'); // Legacy cleanup
+        localStorage.removeItem('token'); 
+        localStorage.removeItem('authToken'); 
+        localStorage.removeItem('userType');   
+        localStorage.removeItem('userData'); 
 
-        // Check for current user type
         const currentUserType = localStorage.getItem('currentUserType');
 
         if (currentUserType) {
@@ -34,7 +31,6 @@ export const AuthProvider = ({ children }) => {
           const token = localStorage.getItem(tokenKey);
 
           if (!token) {
-            // No token stored
             localStorage.removeItem('currentUserType');
             setIsAuthenticated(false);
             setUserType(null);
@@ -42,21 +38,18 @@ export const AuthProvider = ({ children }) => {
             return;
           }
 
-          // Prefer server-side validation of the token when possible
           try {
             const { response, data } = await AuthAPI.verifyToken();
             if (response && response.ok && data && data.success) {
               setIsAuthenticated(true);
               setUserType(currentUserType);
             } else {
-              // Token invalid on server -> cleanup
               localStorage.removeItem(tokenKey);
               localStorage.removeItem('currentUserType');
               setIsAuthenticated(false);
               setUserType(null);
             }
           } catch (err) {
-            // Network or server error while validating. Fall back to client-side expiry check.
             console.warn('Server token validation failed, falling back to local expiry check:', err.message || err);
             if (token && !isTokenExpired(token)) {
               setIsAuthenticated(true);
@@ -79,15 +72,12 @@ export const AuthProvider = ({ children }) => {
     initializeAuth();
   }, []);
 
-  // Listen for global unauthorized events dispatched by apiClient
   useEffect(() => {
     const handleGlobalUnauthorized = (event) => {
-      // Prevent the apiClient from doing a fallback redirect
       if (event && typeof event.preventDefault === 'function') {
         event.preventDefault();
       }
 
-      // Perform client-side logout and redirect to login
       try {
         logout();
         if (typeof window !== 'undefined') {
@@ -105,7 +95,6 @@ export const AuthProvider = ({ children }) => {
   // Simple login function - just token and type
   const login = (token, type) => {
     try {
-      // Store token with role-specific key
       const tokenKey = `${type.toLowerCase()}Token`;
       localStorage.setItem(tokenKey, token);
       localStorage.setItem('currentUserType', type);
@@ -119,17 +108,15 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    // Clear ONLY the tokens we want to store
     localStorage.removeItem('currentUserType');
     localStorage.removeItem('studentToken');
     localStorage.removeItem('candidateToken');
     
-    // Clean up any legacy or unwanted keys
-    localStorage.removeItem('token'); // Remove this extra key
-    localStorage.removeItem('authToken'); // Legacy cleanup
-    localStorage.removeItem('userType'); // Legacy cleanup
-    localStorage.removeItem('userData'); // Legacy cleanup
-    localStorage.removeItem('adminToken'); // Not needed for your use case
+    localStorage.removeItem('token'); 
+    localStorage.removeItem('authToken'); 
+    localStorage.removeItem('userType'); 
+    localStorage.removeItem('userData'); 
+    localStorage.removeItem('adminToken'); 
     
     setIsAuthenticated(false);
     setUserType(null);
@@ -139,7 +126,6 @@ export const AuthProvider = ({ children }) => {
     if (!userType) return null;
     const token = localStorage.getItem(`${userType.toLowerCase()}Token`);
     if (!token) return null;
-    // Return null and cleanup if token expired
     if (isTokenExpired(token)) {
       localStorage.removeItem(`${userType.toLowerCase()}Token`);
       localStorage.removeItem('currentUserType');
@@ -150,18 +136,17 @@ export const AuthProvider = ({ children }) => {
     return token;
   };
 
-  // Check JWT expiry (returns true if token is expired)
+
   const isTokenExpired = (token) => {
     try {
       const payloadBase64 = token.split('.')[1];
       if (!payloadBase64) return true;
-      // Add padding if necessary
       const pad = payloadBase64.length % 4;
       const b64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
       const padded = pad ? b64 + '='.repeat(4 - pad) : b64;
       const decoded = atob(padded);
       const payload = JSON.parse(decoded);
-      if (!payload.exp) return false; // tokens without exp considered valid
+      if (!payload.exp) return false; 
       const nowSec = Math.floor(Date.now() / 1000);
       return payload.exp <= nowSec;
     } catch (err) {
@@ -175,12 +160,10 @@ export const AuthProvider = ({ children }) => {
     return !!token;
   };
 
-  // Helper functions for role checking
   const isStudent = () => userType === 'Student';
   const isCandidate = () => userType === 'Candidate';
   const isAdmin = () => userType === 'Admin';
 
-  // Debug function to check what's stored
   const getStorageInfo = () => {
     return {
       currentUserType: localStorage.getItem('currentUserType'),
@@ -201,7 +184,7 @@ export const AuthProvider = ({ children }) => {
     isStudent,
     isCandidate,
     isAdmin,
-    getStorageInfo, // Debug helper
+    getStorageInfo, 
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

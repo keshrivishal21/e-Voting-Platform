@@ -16,7 +16,6 @@ class ElectionAPI {
     }
   }
 
-  // Get all elections (optional: filter by status)
   static async getElections(status = null) {
     try {
       const path = status ? `/election/elections?status=${status}` : `/election/elections`;
@@ -41,7 +40,6 @@ class ElectionAPI {
     return this.getElections('Completed');
   }
 
-  // Get a single election by ID
   static async getElectionById(electionId) {
     try {
       return await apiFetch(`/election/elections/${electionId}`, { method: 'GET' });
@@ -59,7 +57,6 @@ class ElectionAPI {
     }
   }
 
-  // Admin: Start an election
   static async startElection(electionId, force = false) {
     try {
       return await apiFetch(`/election/admin/elections/${electionId}/start`, { method: 'POST', body: { force } });
@@ -68,7 +65,6 @@ class ElectionAPI {
     }
   }
 
-  // Admin: End an election
   static async endElection(electionId, force = false) {
     try {
       return await apiFetch(`/election/admin/elections/${electionId}/end`, { method: 'POST', body: { force } });
@@ -77,7 +73,6 @@ class ElectionAPI {
     }
   }
 
-  // Admin: Declare results for an election
   static async declareResults(electionId) {
     try {
       return await apiFetch(`/election/admin/elections/${electionId}/declare-results`, { method: 'POST' });
@@ -86,7 +81,6 @@ class ElectionAPI {
     }
   }
 
-  // Get election results (public - no auth required)
   static async getElectionResults() {
     try {
       const response = await fetch('http://localhost:5000/api/election/results', {

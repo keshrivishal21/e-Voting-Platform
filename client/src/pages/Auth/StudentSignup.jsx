@@ -21,7 +21,6 @@ function Signup() {
   const [error, setError] = useState('');
   const [scholarNo, setScholarNo] = useState('');
   
-  // OTP verification state
   const [otpSent, setOtpSent] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);
   const [otp, setOtp] = useState('');
@@ -33,13 +32,11 @@ function Signup() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     
-    // Check for whitespace in email and password fields
     if ((name === 'email' || name === 'password' || name === 'confirmPassword') && /\s/.test(value)) {
       const fieldName = name === 'email' ? 'Email' : name === 'confirmPassword' ? 'Confirm Password' : 'Password';
       const errorMsg = `${fieldName} cannot contain whitespace`;
       setError(errorMsg);
       toast.error(errorMsg);
-      // Don't update state - reject the input
       return;
     }
     
@@ -48,15 +45,13 @@ function Signup() {
       [name]: value
     }));
 
-    // Clear error when user starts typing valid input
     if (error) setError('');
 
-    // Extract scholar number from email for display purposes
     if (name === 'email' && value) {
       const match = value.match(collegeEmailRegex);
       if (match) {
-        setScholarNo(match[1]); // Show extracted scholar number
-        setError(''); // Clear error if email format is valid
+        setScholarNo(match[1]); 
+        setError(''); 
       } else if (value) {
         setError("Please enter a valid college email (e.g. 123456@stu.manit.ac.in)");
         setScholarNo('');
@@ -67,7 +62,6 @@ function Signup() {
   const handleProfilePictureChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file type
       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
       if (!allowedTypes.includes(file.type)) {
         const errorMsg = "Only JPEG, JPG, and PNG files are allowed for profile picture";
@@ -76,7 +70,6 @@ function Signup() {
         return;
       }
 
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         const errorMsg = "Profile picture must be less than 5MB";
         setError(errorMsg);
@@ -85,7 +78,6 @@ function Signup() {
       }
 
       setProfilePicture(file);
-      // Create preview URL
       const reader = new FileReader();
       reader.onloadend = () => {
         setProfilePreview(reader.result);
@@ -100,7 +92,6 @@ function Signup() {
     setProfilePreview(null);
   };
 
-  // Send OTP to email
   const handleSendOTP = async () => {
     if (!formData.email) {
       toast.error('Please enter your email address');
@@ -178,7 +169,6 @@ function Signup() {
         return;
       }
 
-      // Validate email format
       const match = formData.email.match(collegeEmailRegex);
       if (!match) {
         const errorMsg = "Please enter a valid college email (e.g. 123456@stu.manit.ac.in)";
@@ -187,7 +177,6 @@ function Signup() {
         return;
       }
 
-      // Check if email is verified
       if (!otpVerified) {
         const errorMsg = "Please verify your email before registering";
         setError(errorMsg);
@@ -195,7 +184,6 @@ function Signup() {
         return;
       }
 
-      // Validate password match
       if (formData.password !== formData.confirmPassword) {
         const errorMsg = "Passwords do not match";
         setError(errorMsg);
@@ -203,7 +191,6 @@ function Signup() {
         return;
       }
 
-      // Prepare data for API (backend extracts scholarNo from email)
       const registrationData = new FormData();
       registrationData.append('name', formData.name.trim());
       registrationData.append('email', formData.email.trim());
@@ -212,7 +199,6 @@ function Signup() {
       registrationData.append('password', formData.password);
       registrationData.append('confirmPassword', formData.confirmPassword);
       
-      // Add profile picture if selected
       if (profilePicture) {
         registrationData.append('profile', profilePicture);
       }
@@ -221,7 +207,6 @@ function Signup() {
 
       if (response.ok && data.success) {
         toast.success("Registration successful! You can now log in.");
-        // Redirect to login page
         setTimeout(() => navigate('/student/login'), 1500);
       } else {
         const errorMsg = data.message || 'Registration failed. Please try again.';

@@ -1,4 +1,3 @@
-// src/pages/Home.jsx
 
 import { useNavigate } from 'react-router-dom';
 import backgroundImage from '../assets/background.jpg';

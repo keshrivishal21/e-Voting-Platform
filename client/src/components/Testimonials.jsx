@@ -8,7 +8,6 @@ const Testimonials = ({ userType = "Student" }) => {
   const [feedbackText, setFeedbackText] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // Get user ID from JWT token based on userType
   const getUserIdFromToken = () => {
     try {
       const tokenKey = userType === "Student" ? "studentToken" : "candidateToken";
@@ -24,7 +23,6 @@ const Testimonials = ({ userType = "Student" }) => {
     }
   };
 
-  // Submit feedback to API
   const handleSubmitFeedback = async () => {
     if (!feedbackText.trim()) {
       toast.error("Please enter your feedback");
@@ -74,9 +72,7 @@ const Testimonials = ({ userType = "Student" }) => {
     }
   };
   
-  // Static testimonial data for demonstration
-  // TODO: Replace with API call to fetch real testimonials from database
-  // Live feedbacks fetched from server (approved only)
+
   const [cardsData, setCardsData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
@@ -89,7 +85,6 @@ const Testimonials = ({ userType = "Student" }) => {
       try {
         const { response, data } = await apiFetch('/feedback/feedbacks', { method: 'GET', auth: false });
         if (response && response.ok && data && data.success) {
-          // data.data.feedbacks expected
           const fbList = (data.data && data.data.feedbacks) || [];
           if (mounted) setCardsData(fbList);
         } else {

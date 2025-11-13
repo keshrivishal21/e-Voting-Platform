@@ -34,18 +34,13 @@ const Results = () => {
     }
   };
 
-  // Get profile picture URL
   const getProfilePicUrl = (profilePic) => {
     if (!profilePic) return null;
-    // If it's already a data URL (base64), return as-is
     if (profilePic.startsWith('data:')) return profilePic;
-    // If it's an HTTP URL, return as-is
     if (profilePic.startsWith('http')) return profilePic;
-    // Otherwise, treat as a relative path
     return `http://localhost:5000${profilePic}`;
   };
 
-  // Get elections with results
   const electionsWithResults = elections.filter(election => election.hasResults);
 
   return (

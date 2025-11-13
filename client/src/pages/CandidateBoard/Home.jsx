@@ -11,23 +11,20 @@ const Home = () => {
   const [candidate, setCandidate] = useState(null);
   const [notifications, setNotifications] = useState([]);
 
-  // Get candidate ID from JWT token
   const getCandidateIdFromToken = () => {
     try {
       const token = AuthAPI.getCurrentToken();
       if (!token) return null;
       
-      // Decode JWT token (format: header.payload.signature)
       const payload = token.split('.')[1];
       const decodedPayload = JSON.parse(atob(payload));
-      return decodedPayload.userId; // This will be a string after our BigInt fix
+      return decodedPayload.userId; 
     } catch (error) {
       console.error('Error decoding token:', error);
       return null;
     }
   };
 
-  // Load candidate profile on component mount
   useEffect(() => {
     const loadProfile = async () => {
       const candidateId = getCandidateIdFromToken();
@@ -53,7 +50,7 @@ const Home = () => {
             manifesto: profile.Manifesto,
             position: profile.Position,
             cgpa: profile.Cgpa,
-            votes: 0, // Don't show individual votes (privacy)
+            votes: 0, 
             totalVotes: 0,
             electionTitle: '',
             electionStatus: '',
@@ -61,7 +58,7 @@ const Home = () => {
             totalStudents: 0,
           });
 
-          // Load election vote count
+          
           try {
             const voteCountData = await getElectionVoteCount(candidateId);
             console.log('Vote count data received:', voteCountData);
@@ -82,7 +79,6 @@ const Home = () => {
           } catch (voteError) {
             console.error('Error loading vote count:', voteError);
             toast.error(`Failed to load election data: ${voteError.message}`);
-            // Not a critical error, continue without vote count
           }
         } else {
           toast.error(data.message || 'Failed to load profile');
@@ -103,7 +99,6 @@ const Home = () => {
         }
       } catch (error) {
         console.error('Error loading notifications:', error);
-        // Don't show error toast for notifications, it's not critical
       }
     };
 

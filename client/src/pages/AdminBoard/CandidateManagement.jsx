@@ -12,7 +12,6 @@ const CandidateManagement = () => {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
 
-  // Fetch pending candidates from server
   const fetchPendingCandidates = async () => {
     try {
       setLoading(true);
@@ -28,7 +27,6 @@ const CandidateManagement = () => {
     }
   };
 
-  // Fetch approved candidates from server
   const fetchApprovedCandidates = async () => {
     try {
       setLoading(true);
@@ -44,13 +42,11 @@ const CandidateManagement = () => {
     }
   };
 
-  // Load data on component mount
   useEffect(() => {
     fetchPendingCandidates();
     fetchApprovedCandidates();
   }, []);
 
-  // Approve a pending candidate
   const approveCandidate = async (candidate) => {
     try {
       console.log("Approving candidate with ID:", candidate.Can_id);
@@ -59,7 +55,6 @@ const CandidateManagement = () => {
       
       if (response.success) {
         toast.success("Candidate approved successfully!");
-        // Refresh both lists
         fetchPendingCandidates();
         fetchApprovedCandidates();
       } else {
@@ -71,33 +66,28 @@ const CandidateManagement = () => {
     }
   };
 
-  // Open view modal
   const viewCandidateDetails = (candidate) => {
     setSelectedCandidate(candidate);
     setShowModal(true);
   };
 
-  // Close view modal
   const closeModal = () => {
     setShowModal(false);
     setSelectedCandidate(null);
   };
 
-  // Open reject modal
   const openRejectModal = (candidate) => {
     setSelectedCandidate(candidate);
     setRejectionReason("");
     setShowRejectModal(true);
   };
 
-  // Close reject modal
   const closeRejectModal = () => {
     setShowRejectModal(false);
     setSelectedCandidate(null);
     setRejectionReason("");
   };
 
-  // Reject/Remove a candidate
   const removeCandidate = async () => {
     if (!rejectionReason.trim()) {
       toast.error("Please provide a rejection reason");
@@ -234,7 +224,6 @@ const CandidateManagement = () => {
           </div>
         </div>
       ) : (
-        // Current Candidates Table
         <div>
           <h2 className="text-2xl font-semibold mb-4 text-indigo-600">
             Current Candidates

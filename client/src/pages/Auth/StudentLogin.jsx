@@ -55,15 +55,12 @@ function Login() {
             const { response, data } = await AuthAPI.studentLogin(formData.email, formData.password);
 
             if (response.ok && data.success) {
-                // Use auth context to login - just token and type
                 login(data.data.token, 'Student');
                 
-                // Remove candidate token only after student login is successful
                 localStorage.removeItem("candidateToken");
                 
                 toast.success('Welcome back!');
 
-                // Navigate to intended page or student dashboard
                 const from = location.state?.from?.pathname || '/student';
                 navigate(from);
             } else {

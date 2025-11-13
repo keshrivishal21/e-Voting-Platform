@@ -8,16 +8,14 @@ const CandidateProfile = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
-  // Get candidate ID from JWT token
   const getCandidateIdFromToken = () => {
     try {
       const token = AuthAPI.getCurrentToken();
       if (!token) return null;
       
-      // Decode JWT token (format: header.payload.signature)
       const payload = token.split('.')[1];
       const decodedPayload = JSON.parse(atob(payload));
-      return decodedPayload.userId; // This will be a string after our BigInt fix
+      return decodedPayload.userId; 
     } catch (error) {
       console.error('Error decoding token:', error);
       return null;
@@ -49,7 +47,6 @@ const CandidateProfile = () => {
   });
   const [showPasswordForm, setShowPasswordForm] = useState(false);
 
-  // Load candidate profile on component mount
   useEffect(() => {
     const loadProfile = async () => {
       if (!currentCandidateId) {
@@ -83,7 +80,6 @@ const CandidateProfile = () => {
     loadProfile();
   }, [currentCandidateId]);
 
-  // Handle form input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -94,18 +90,15 @@ const CandidateProfile = () => {
     }));
   };
 
-  // Handle password form input changes
   const handlePasswordChange = (e) => {
     const { name, value } = e.target;
     
-    // Check for whitespace in password fields
     if (/\s/.test(value)) {
       const fieldName = name === 'currentPassword' ? 'Current Password' : 
                        name === 'newPassword' ? 'New Password' : 'Confirm Password';
       const errorMsg = `${fieldName} cannot contain whitespace`;
       setMessage({ type: 'error', text: errorMsg });
       toast.error(errorMsg);
-      // Don't update state - reject the input
       return;
     }
     
@@ -114,20 +107,17 @@ const CandidateProfile = () => {
       [name]: value
     }));
     
-    // Clear error when valid input
     if (message.type === 'error') {
       setMessage({ type: '', text: '' });
     }
   };
 
-  // Handle profile update
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage({ type: '', text: '' });
 
     try {
-      // Only send phone and manifesto (editable fields)
       const profileData = {
         phone: formData.Can_phone,
         manifesto: formData.Manifesto
@@ -155,7 +145,6 @@ const CandidateProfile = () => {
     }
   };
 
-  // Handle password change
   const handlePasswordUpdate = async (e) => {
     e.preventDefault();
     
@@ -203,7 +192,6 @@ const CandidateProfile = () => {
     }
   };
 
-  // Cancel editing
   const cancelEdit = () => {
     setFormData(candidateData);
     setIsEditing(false);

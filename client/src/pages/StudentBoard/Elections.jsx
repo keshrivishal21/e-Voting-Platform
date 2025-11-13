@@ -12,7 +12,6 @@ const Elections = () => {
   const [error, setError] = useState('');
   const hasLoadedRef = useRef(false);
 
-  // Fetch elections on component mount
   useEffect(() => {
     if (!hasLoadedRef.current) {
       hasLoadedRef.current = true;
@@ -25,13 +24,10 @@ const Elections = () => {
     setError('');
     
     try {
-      // Fetch ongoing elections
       const { response: ongoingResponse, data: ongoingData } = await ElectionAPI.getOngoingElections();
       
-      // Fetch upcoming elections
       const { response: upcomingResponse, data: upcomingData } = await ElectionAPI.getUpcomingElections();
 
-      // Fetch completed elections
       const { response: completedResponse, data: completedData } = await ElectionAPI.getCompletedElections();
 
       let hasSuccess = false;
@@ -64,12 +60,10 @@ const Elections = () => {
         hasError = true;
       }
 
-      // Show single success toast if at least one request succeeded
       if (hasSuccess) {
         toast.success('Elections loaded successfully');
       }
       
-      // Show error toast only if all failed
       if (!hasSuccess && hasError) {
         toast.error('Failed to load elections');
       }

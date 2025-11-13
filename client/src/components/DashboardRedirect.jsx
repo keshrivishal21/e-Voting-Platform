@@ -20,7 +20,6 @@ const DashboardRedirect = () => {
     return <Navigate to="/" replace />;
   }
 
-  // Redirect to appropriate dashboard based on user type
   const dashboards = {
     Student: '/student',
     Candidate: '/candidate',

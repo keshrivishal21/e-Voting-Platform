@@ -1,6 +1,4 @@
-// Reusable Framer Motion animation variants
 
-// Page transitions
 export const pageVariants = {
   initial: { opacity: 0, y: 20 },
   animate: { 
@@ -15,7 +13,6 @@ export const pageVariants = {
   }
 };
 
-// Stagger container for lists/grids
 export const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -27,7 +24,6 @@ export const containerVariants = {
   }
 };
 
-// Item animation for stagger children
 export const itemVariants = {
   hidden: { y: 20, opacity: 0 },
   visible: {
@@ -37,7 +33,6 @@ export const itemVariants = {
   }
 };
 
-// Card hover effects
 export const cardHoverVariants = {
   rest: { scale: 1 },
   hover: { 
@@ -51,13 +46,11 @@ export const cardHoverVariants = {
   }
 };
 
-// Button interactions
 export const buttonVariants = {
   hover: { scale: 1.05 },
   tap: { scale: 0.95 }
 };
 
-// Modal animations
 export const modalBackdropVariants = {
   hidden: { opacity: 0 },
   visible: { 
@@ -90,7 +83,6 @@ export const modalContentVariants = {
   }
 };
 
-// Fade in animation
 export const fadeInVariants = {
   hidden: { opacity: 0 },
   visible: { 
@@ -99,7 +91,6 @@ export const fadeInVariants = {
   }
 };
 
-// Slide in from left
 export const slideInLeftVariants = {
   hidden: { x: -50, opacity: 0 },
   visible: { 
@@ -109,7 +100,6 @@ export const slideInLeftVariants = {
   }
 };
 
-// Slide in from right
 export const slideInRightVariants = {
   hidden: { x: 50, opacity: 0 },
   visible: { 
@@ -119,7 +109,6 @@ export const slideInRightVariants = {
   }
 };
 
-// Scale in
 export const scaleInVariants = {
   hidden: { scale: 0.8, opacity: 0 },
   visible: { 
@@ -129,7 +118,6 @@ export const scaleInVariants = {
   }
 };
 
-// Loading spinner rotation
 export const spinVariants = {
   animate: {
     rotate: 360,

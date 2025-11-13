@@ -20,7 +20,6 @@ function AdminLogin() {
     const handleInputChange = (e) => {
         const { name, value } = e.target;
 
-        // Check for whitespace in email and password fields
         if ((name === 'email' || name === 'password') && /\s/.test(value)) {
             const errorMsg = `${name === 'email' ? 'Email' : 'Password'} cannot contain whitespace`;
             setError(errorMsg);
@@ -33,7 +32,6 @@ function AdminLogin() {
             [name]: value
         }));
         
-        // Clear error when user starts typing valid input
         if (error) setError('');
     };
 

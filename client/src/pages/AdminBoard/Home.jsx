@@ -1,4 +1,3 @@
-// pages/AdminBoard/Home.jsx
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import AdminAPI from "../../utils/adminAPI";
@@ -28,7 +27,6 @@ import {
 } from "@heroicons/react/24/outline";
 
 const Home = () => {
-  // State for modal and form
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -53,9 +51,8 @@ const Home = () => {
   const [recentActivity, setRecentActivity] = useState([]);
   const [dashboardLoading, setDashboardLoading] = useState(true);
 
-  const COLORS = ["#6366F1", "#E5E7EB"]; // Indigo + Gray
+  const COLORS = ["#6366F1", "#E5E7EB"]; 
 
-  // Fetch dashboard data
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -85,14 +82,12 @@ const Home = () => {
     fetchDashboardData();
   }, []);
 
-  // Handle form input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setError("");
   };
 
-  // Handle form submission
   const handleCreateElection = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -108,7 +103,6 @@ const Home = () => {
       return;
     }
 
-    // Validate positions
     if (!formData.positions || formData.positions.length === 0) {
       const errorMsg = "Please add at least one position for the election";
       setError(errorMsg);
@@ -121,7 +115,6 @@ const Home = () => {
     const endDate = new Date(formData.endDate);
     const now = new Date();
 
-    // Validate start date is not in the past
     if (startDate < now) {
       const errorMsg = "Start date cannot be in the past";
       setError(errorMsg);
@@ -130,7 +123,6 @@ const Home = () => {
       return;
     }
 
-    // Validate end date is after start date
     if (endDate <= startDate) {
       const errorMsg = "End date must be after start date";
       setError(errorMsg);
@@ -149,7 +141,6 @@ const Home = () => {
     //   return;
     // }
 
-    // Validate maximum election duration (not more than 30 days)
     const maxDuration = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
     if (endDate - startDate > maxDuration) {
       const errorMsg = "Election duration cannot exceed 30 days";

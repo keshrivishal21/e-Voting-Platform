@@ -1,16 +1,6 @@
 import React from 'react'
 
 const CampaignOverview = () => {
-  // TODO: Implement campaign overview dashboard
-  // Required features:
-  // 1. Campaign statistics (views, engagement, reach)
-  // 2. Vote trend charts over time
-  // 3. Demographic breakdown of supporters
-  // 4. Campaign milestones and timeline
-  // Required APIs:
-  // - GET /api/candidate/:id/campaign/stats - Campaign statistics
-  // - GET /api/candidate/:id/campaign/trends - Vote trends over time
-  // - GET /api/candidate/:id/campaign/demographics - Supporter demographics
   
   return (
     <div className="bg-gradient-to-b from-indigo-50 to-white p-8 min-h-screen">

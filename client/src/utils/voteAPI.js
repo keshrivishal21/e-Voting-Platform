@@ -25,7 +25,6 @@ class VoteAPI {
     }
   }
 
-  // Get election public key for encryption
   static async getElectionPublicKey(electionId) {
     try {
       return await apiFetch(`/vote/election/${electionId}/public-key`, { method: 'GET' });
@@ -34,7 +33,6 @@ class VoteAPI {
     }
   }
 
-  // Request OTP for voting
   static async requestVotingOTP(electionId) {
     try {
       return await apiFetch('/vote/request-otp', { method: 'POST', body: { electionId } });
@@ -43,7 +41,6 @@ class VoteAPI {
     }
   }
 
-  // Verify OTP
   static async verifyOTP(electionId, otp) {
     try {
       return await apiFetch('/vote/verify-otp', { method: 'POST', body: { electionId, otp } });
@@ -52,7 +49,6 @@ class VoteAPI {
     }
   }
 
-  // Get ballot (after OTP verification)
   static async getBallot(electionId) {
     try {
       return await apiFetch(`/vote/ballot/${electionId}`, { method: 'GET' });
@@ -61,7 +57,6 @@ class VoteAPI {
     }
   }
 
-  // Cast vote (with encrypted votes)
   static async castVote(electionId, encryptedVotes) {
     try {
       return await apiFetch('/vote/cast', { method: 'POST', body: { electionId, encryptedVotes } });
@@ -70,7 +65,6 @@ class VoteAPI {
     }
   }
 
-  // Check vote status
   static async checkVoteStatus(electionId) {
     try {
       return await apiFetch(`/vote/status/${electionId}`, { method: 'GET' });
@@ -79,18 +73,14 @@ class VoteAPI {
     }
   }
 
-  // Encrypt vote using public key (RSA encryption)
   static async encryptVote(candidateId, publicKey) {
     try {
       
-      // Remove PEM headers and footers, and all whitespace
       const pemHeader = "-----BEGIN PUBLIC KEY-----";
       const pemFooter = "-----END PUBLIC KEY-----";
       
-      // Clean the public key string
       let cleanKey = publicKey.trim();
       
-      // Remove headers if present
       if (cleanKey.includes(pemHeader)) {
         cleanKey = cleanKey.replace(pemHeader, '');
       }
@@ -98,12 +88,10 @@ class VoteAPI {
         cleanKey = cleanKey.replace(pemFooter, '');
       }
       
-      // Remove all whitespace (spaces, newlines, tabs, etc.)
       const pemContents = cleanKey.replace(/\s/g, '');
       
      
       
-      // Convert base64 to ArrayBuffer
       const binaryDer = atob(pemContents);
       const binaryDerArray = new Uint8Array(binaryDer.length);
       for (let i = 0; i < binaryDer.length; i++) {
@@ -112,7 +100,6 @@ class VoteAPI {
 
       
 
-      // Import the public key
       const cryptoKey = await window.crypto.subtle.importKey(
         'spki',
         binaryDerArray.buffer,
@@ -125,7 +112,6 @@ class VoteAPI {
       );
 
 
-      // Encrypt the candidate ID
       const encoder = new TextEncoder();
       const data = encoder.encode(candidateId.toString());
       const encrypted = await window.crypto.subtle.encrypt(
@@ -134,7 +120,6 @@ class VoteAPI {
         data
       );
 
-      // Convert to base64
       const encryptedArray = new Uint8Array(encrypted);
       const encryptedBase64 = btoa(String.fromCharCode(...encryptedArray));
 

@@ -5,7 +5,7 @@ import VoteAPI from "../../utils/voteAPI";
 import toast from "react-hot-toast";
 
 const CastVote = () => {
-  const [step, setStep] = useState("elections"); // elections, otp-request, otp-verify, ballot, confirmation
+  const [step, setStep] = useState("elections");
   const [elections, setElections] = useState([]);
   const [selectedElection, setSelectedElection] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -104,7 +104,6 @@ const CastVote = () => {
     try {
       setLoading(true);
       
-      // Fetch ballot and public key in parallel
       const [ballotResult, keyResult] = await Promise.all([
         VoteAPI.getBallot(selectedElection.Election_id),
         VoteAPI.getElectionPublicKey(selectedElection.Election_id)
@@ -133,7 +132,6 @@ const CastVote = () => {
   };
 
   const submitVote = async () => {
-    // Check if all positions have been voted for
     const positions = Object.keys(ballot.positions);
     const votedPositions = Object.keys(selectedVotes);
 
@@ -142,7 +140,6 @@ const CastVote = () => {
       return;
     }
 
-    // Validate that all selected votes have valid candidate IDs
     const hasInvalidVotes = Object.values(selectedVotes).some(
       candidateId => !candidateId || candidateId === null || candidateId === undefined
     );
@@ -152,7 +149,6 @@ const CastVote = () => {
       return;
     }
 
-    // Ensure no empty selections
     if (Object.keys(selectedVotes).length === 0) {
       toast.error("Please select at least one candidate");
       return;
@@ -161,7 +157,6 @@ const CastVote = () => {
     try {
       setSubmitting(true);
       
-      // Encrypt votes
       const encryptedVotes = {};
       for (const [position, candidateId] of Object.entries(selectedVotes)) {
         const encryptedVote = await VoteAPI.encryptVote(candidateId, publicKey);
@@ -237,7 +232,6 @@ This is an official vote receipt from the e-Voting Platform.
 ═══════════════════════════════════════════════════════
 `;
 
-    // Create blob and download
     const blob = new Blob([content], { type: 'text/plain' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -265,7 +259,6 @@ This is an official vote receipt from the e-Voting Platform.
     });
   };
 
-  // Step 1: Elections List
   const renderElectionsList = () => (
     <motion.div
       initial={{ opacity: 0 }}
@@ -327,7 +320,6 @@ This is an official vote receipt from the e-Voting Platform.
     </motion.div>
   );
 
-  // Step 2: OTP Request
   const renderOTPRequest = () => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -379,7 +371,6 @@ This is an official vote receipt from the e-Voting Platform.
     </motion.div>
   );
 
-  // Step 3: OTP Verification
   const renderOTPVerification = () => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -451,7 +442,6 @@ This is an official vote receipt from the e-Voting Platform.
     </motion.div>
   );
 
-  // Step 4: Ballot
   const renderBallot = () => (
     <motion.div
       initial={{ opacity: 0 }}
@@ -583,7 +573,6 @@ This is an official vote receipt from the e-Voting Platform.
     </motion.div>
   );
 
-  // Step 5: Confirmation
   const renderConfirmation = () => (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}

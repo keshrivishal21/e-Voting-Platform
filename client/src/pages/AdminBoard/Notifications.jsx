@@ -9,7 +9,6 @@ const Notifications = () => {
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
 
-  // Fetch notifications from backend
   useEffect(() => {
     const fetchNotifications = async () => {
       try {

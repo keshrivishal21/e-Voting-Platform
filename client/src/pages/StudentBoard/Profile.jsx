@@ -28,12 +28,10 @@ const Profile = () => {
   });
   const [showPasswordForm, setShowPasswordForm] = useState(false);
 
-  // Decode JWT token to get student ID
   useEffect(() => {
     const token = localStorage.getItem('studentToken');
     if (token) {
       try {
-        // JWT tokens have 3 parts separated by dots
         const base64Url = token.split('.')[1];
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
         const jsonPayload = decodeURIComponent(atob(base64).split('').map((c) => {
@@ -57,7 +55,6 @@ const Profile = () => {
     }
   }, []);
 
-  // Load student profile when ID is available
   useEffect(() => {
     if (!currentStudentId) return;
 
@@ -73,7 +70,7 @@ const Profile = () => {
           const formattedProfile = {
             ...profile,
             Dob: profile.Dob ? profile.Dob.split('T')[0] : '',
-            Profile: profile.Profile // Explicitly preserve the Profile field
+            Profile: profile.Profile 
           };
       
           setStudentData(formattedProfile);
@@ -97,13 +94,11 @@ const Profile = () => {
     loadProfile();
   }, [currentStudentId]);
 
-  // Format date for display
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     return new Date(dateString).toLocaleDateString('en-US', options);
   };
 
-  // Handle form input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -112,18 +107,15 @@ const Profile = () => {
     }));
   };
 
-  // Handle password form input changes
   const handlePasswordChange = (e) => {
     const { name, value } = e.target;
     
-    // Check for whitespace in password fields
     if (/\s/.test(value)) {
       const fieldName = name === 'currentPassword' ? 'Current Password' : 
                        name === 'newPassword' ? 'New Password' : 'Confirm Password';
       const errorMsg = `${fieldName} cannot contain whitespace`;
       setMessage({ type: 'error', text: errorMsg });
       toast.error(errorMsg);
-      // Don't update state - reject the input
       return;
     }
     
@@ -132,17 +124,14 @@ const Profile = () => {
       [name]: value
     }));
     
-    // Clear error when valid input
     if (message.type === 'error') {
       setMessage({ type: '', text: '' });
     }
   };
 
-  // Handle profile picture change
   const handleProfilePictureChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file type
       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
       if (!allowedTypes.includes(file.type)) {
         const errorMsg = "Only JPEG, JPG, and PNG files are allowed";
@@ -151,7 +140,6 @@ const Profile = () => {
         return;
       }
 
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         const errorMsg = "Profile picture must be less than 5MB";
         setMessage({ type: 'error', text: errorMsg });
@@ -160,7 +148,6 @@ const Profile = () => {
       }
 
       setNewProfilePicture(file);
-      // Create preview URL
       const reader = new FileReader();
       reader.onloadend = () => {
         setProfilePreview(reader.result);
@@ -175,14 +162,12 @@ const Profile = () => {
     setProfilePreview(null);
   };
 
-  // Handle profile update
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage({ type: '', text: '' });
 
     try {
-      // Create FormData if profile picture is being updated
       let updateData;
       if (newProfilePicture) {
         updateData = new FormData();
@@ -190,7 +175,6 @@ const Profile = () => {
         updateData.append('dob', formData.Dob);
         updateData.append('profile', newProfilePicture);
       } else {
-        // Only send editable fields (phone and dob)
         updateData = {
           phone: formData.Std_phone,
           dob: formData.Dob
@@ -275,7 +259,6 @@ const Profile = () => {
     }
   };
 
-  // Cancel editing
   const cancelEdit = () => {
     setFormData(studentData);
     setIsEditing(false);

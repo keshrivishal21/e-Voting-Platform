@@ -1,15 +1,6 @@
 import React from 'react'
 
 const Manifesto = () => {
-  // TODO: Implement manifesto management page
-  // Required features:
-  // 1. Display current manifesto from candidate profile
-  // 2. Upload/Update manifesto document (PDF/DOC)
-  // 3. Preview manifesto content
-  // Required APIs:
-  // - GET /api/candidate/:id/manifesto - Fetch manifesto
-  // - PUT /api/candidate/:id/manifesto - Update manifesto text
-  // - POST /api/candidate/:id/manifesto/upload - Upload manifesto document
   
   return (
     <div className="bg-gradient-to-b from-indigo-50 to-white p-8 min-h-screen">

@@ -9,7 +9,7 @@ const CandidateRegister = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const hasFetched = useRef(false); 
-  const [scholarNo, setScholarNo] = useState(""); // Will be set from fetched data
+  const [scholarNo, setScholarNo] = useState(""); 
   const [studentFetched, setStudentFetched] = useState(false);
   const [fetchingStudent, setFetchingStudent] = useState(false);
   const [formData, setFormData] = useState({
@@ -43,24 +43,21 @@ const CandidateRegister = () => {
     "Biotechnology",
   ];
 
-  const [positions, setPositions] = useState([]); // Dynamic positions based on selected election
+  const [positions, setPositions] = useState([]);
 
   const years = [1, 2, 3, 4];
 
-  // Fetch authenticated student details from token
   const handleFetchStudent = async () => {
     setFetchingStudent(true);
     setError("");
 
     try {
-      // Get student token from localStorage
       const token = localStorage.getItem('studentToken');
       
       if (!token) {
         const errorMsg = "You must be logged in as a student to register as a candidate";
         setError(errorMsg);
         toast.error(errorMsg);
-        // Redirect to student login
         setTimeout(() => navigate('/student/login'), 2000);
         return;
       }
@@ -77,7 +74,7 @@ const CandidateRegister = () => {
 
       if (response.ok && data.success) {
         const student = data.data;
-        setScholarNo(student.scholarNo); // Set the scholar number from response
+        setScholarNo(student.scholarNo);
         setFormData((prev) => ({
           ...prev,
           name: student.name,
@@ -92,7 +89,6 @@ const CandidateRegister = () => {
         toast.error(errorMsg);
         setStudentFetched(false);
         
-        // If unauthorized, redirect to login
         if (response.status === 401 || response.status === 403) {
           setTimeout(() => navigate('/student/login'), 2000);
         }
@@ -149,7 +145,6 @@ const CandidateRegister = () => {
       return;
     }
     
-    // When election is selected, update positions
     if (name === 'electionId') {
       const selectedElection = elections.find(e => e.Election_id.toString() === value);
       console.log("Selected election:", selectedElection);
@@ -158,7 +153,6 @@ const CandidateRegister = () => {
       if (selectedElection && selectedElection.Positions && Array.isArray(selectedElection.Positions) && selectedElection.Positions.length > 0) {
         setPositions(selectedElection.Positions);
         console.log("Positions set to:", selectedElection.Positions);
-        // Reset position field if previously selected position is not in new election
         if (formData.position && !selectedElection.Positions.includes(formData.position)) {
           setFormData((prev) => ({
             ...prev,
@@ -169,7 +163,6 @@ const CandidateRegister = () => {
         }
       } else {
         console.log("No positions found in election, using fallback");
-        // Fallback to default positions if none found
         setPositions(["President", "Vice President", "Secretary", "Treasurer"]);
       }
     }
@@ -185,7 +178,6 @@ const CandidateRegister = () => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file size (5MB limit)
       if (file.size > 5 * 1024 * 1024) {
         const errorMsg = "File size should not exceed 5MB";
         setError(errorMsg);
@@ -193,7 +185,6 @@ const CandidateRegister = () => {
         return;
       }
 
-      // Validate file type
       const allowedTypes = [
         "application/pdf",
         "image/jpeg",
@@ -219,7 +210,6 @@ const CandidateRegister = () => {
   const handleProfileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // file size 2mb
       if (file.size > 2 * 1024 * 1024) {
         const errorMsg = "Profile picture size should not exceed 2MB";
         setError(errorMsg);
@@ -277,7 +267,6 @@ const CandidateRegister = () => {
         return;
       }
 
-      // Validate election selection specifically
       if (!formData.electionId) {
         const errorMsg = "Please select an election to contest";
         setError(errorMsg);
@@ -286,7 +275,6 @@ const CandidateRegister = () => {
         return;
       }
 
-      // Validate file upload
       if (!selectedFile) {
         const errorMsg = "Please upload a document file (marksheet)";
         setError(errorMsg);
@@ -295,7 +283,6 @@ const CandidateRegister = () => {
         return;
       }
 
-      // Validate password match
       if (formData.password !== formData.confirmPassword) {
         const errorMsg = "Passwords do not match";
         setError(errorMsg);
@@ -303,14 +290,12 @@ const CandidateRegister = () => {
         return;
       }
 
-      // Create FormData for file upload
       const formDataToSend = new FormData();
       Object.keys(formData).forEach((key) => {
         formDataToSend.append(key, formData[key]);
       });
       formDataToSend.append("document", selectedFile);
       
-      // Add profile picture if selected (optional)
       if (selectedProfile) {
         formDataToSend.append("profile", selectedProfile);
       }
@@ -321,7 +306,6 @@ const CandidateRegister = () => {
 
       if (response.ok && data.success) {
         toast.success("Registration successful! Please login.");
-        // Navigate to candidate login
         navigate("/candidate/login");
       } else {
         const errorMsg = data?.message || "Registration failed. Please try again.";

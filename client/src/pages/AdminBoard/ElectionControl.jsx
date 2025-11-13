@@ -44,7 +44,6 @@ const ElectionControl = () => {
       const response = await AdminAPI.getAllElections();
       if (response.success) {
         setElections(response.data.elections || []);
-        // Auto-select first election if available
         if (response.data.elections?.length > 0 && !selectedElection) {
           handleSelectElection(response.data.elections[0].Election_id);
         }
@@ -90,7 +89,6 @@ const ElectionControl = () => {
         await fetchElections();
         await handleSelectElection(electionId);
       } else {
-        // Handle force requirement
         if (response.message?.includes("force: true")) {
           const confirm = window.confirm(
             `${response.message}\n\nDo you want to start this election now?`
@@ -119,7 +117,6 @@ const ElectionControl = () => {
         await fetchElections();
         await handleSelectElection(electionId);
       } else {
-        // Handle force requirement
         if (response.message?.includes("force: true")) {
           const confirm = window.confirm(
             `${response.message}\n\nDo you want to end this election now?`
@@ -145,23 +142,19 @@ const ElectionControl = () => {
       return;
     }
 
-    // Check if election is completed
     if (stats.election.status !== "Completed") {
       toast.error("Results can only be declared for completed elections");
       return;
     }
 
-    // Check if there are votes
     if (stats.votes.total === 0) {
       toast.error("Cannot declare results: No votes cast in this election");
       return;
     }
 
-    // Check for ties
     const ties = detectTies();
     
     if (ties.length > 0) {
-      // Open tie-breaking modal
       setTieBreakData({
         electionId,
         ties,
@@ -201,7 +194,6 @@ const ElectionControl = () => {
           (hasActiveTies ? `\nNote: ${ties.length} position(s) have ties` : ''),
           { duration: hasActiveTies ? 8000 : 5000 }
         );
-        // Refresh election stats to show updated results status
         await handleSelectElection(electionId);
       } else {
         toast.error(response.message || "Failed to declare results");
@@ -215,7 +207,6 @@ const ElectionControl = () => {
     }
   };
 
-  // Detect ties in current election stats
   const detectTies = () => {
     if (!stats || !stats.candidates.byPosition) return [];
     
@@ -224,10 +215,8 @@ const ElectionControl = () => {
     Object.entries(stats.candidates.byPosition).forEach(([position, candidates]) => {
       if (candidates.length < 2) return;
       
-      // Sort by votes descending
       const sorted = [...candidates].sort((a, b) => b.voteCount - a.voteCount);
       
-      // Check if top candidates have same votes
       if (sorted[0].voteCount === sorted[1].voteCount && sorted[0].voteCount > 0) {
         const tiedCandidates = sorted.filter(c => c.voteCount === sorted[0].voteCount);
         ties.push({
@@ -242,7 +231,6 @@ const ElectionControl = () => {
     return ties;
   };
 
-  // Handle tie-breaking winner selection
   const handleSelectWinner = (position, candidateId) => {
     setSelectedWinners(prev => ({
       ...prev,
@@ -250,11 +238,9 @@ const ElectionControl = () => {
     }));
   };
 
-  // Declare results with tie-breaking
   const handleDeclareWithTieBreaking = async () => {
     if (!tieBreakData) return;
 
-    // Check if all tied positions have a winner selected
     const allSelected = tieBreakData.ties.every(tie => selectedWinners[tie.position]);
     
     if (!allSelected) {
@@ -280,7 +266,6 @@ const ElectionControl = () => {
       console.log("Declaring results with tie-breaking for election:", tieBreakData.electionId);
       console.log("Selected winners:", selectedWinners);
       
-      // Pass tie-breaking decisions to backend
       const response = await AdminAPI.declareElectionResults(
         tieBreakData.electionId,
         { tieBreaking: selectedWinners }
@@ -296,7 +281,6 @@ const ElectionControl = () => {
         setShowTieBreakModal(false);
         setTieBreakData(null);
         setSelectedWinners({});
-        // Refresh election stats
         await handleSelectElection(tieBreakData.electionId);
       } else {
         toast.error(response.message || "Failed to declare results");

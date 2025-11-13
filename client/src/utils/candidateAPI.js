@@ -1,11 +1,9 @@
 import { apiFetch } from './apiClient';
 
-// Keep API_BASE_URL for document URL generation
 const API_BASE_URL = "http://localhost:5000/api";
 
 /**
- * Get all approved candidates grouped by election
- * @returns {Promise} Response with elections array containing candidates
+ * @returns {Promise} 
  */
 export const getApprovedCandidates = async () => {
   try {
@@ -18,9 +16,8 @@ export const getApprovedCandidates = async () => {
 };
 
 /**
- * Get candidates for a specific election
- * @param {number} electionId - The ID of the election
- * @returns {Promise} Response with candidates array
+ * @param {number} electionId 
+ * @returns {Promise} 
  */
 export const getCandidatesByElection = async (electionId) => {
   try {
@@ -33,9 +30,8 @@ export const getCandidatesByElection = async (electionId) => {
 };
 
 /**
- * Get candidate status (for candidates to check their own application)
- * @param {number} candidateId - The ID of the candidate
- * @returns {Promise} Response with candidate status
+ * @param {number} candidateId 
+ * @returns {Promise} 
  */
 export const getCandidateStatus = async (candidateId) => {
   try {
@@ -48,9 +44,8 @@ export const getCandidateStatus = async (candidateId) => {
 };
 
 /**
- * Get total vote count for the election a candidate is registered in
- * @param {number} candidateId - The ID of the candidate
- * @returns {Promise} Response with election vote count
+ * @param {number} candidateId 
+ * @returns {Promise} 
  */
 export const getElectionVoteCount = async (candidateId) => {
   try {

@@ -1,11 +1,9 @@
 import { apiFetch } from './apiClient';
 
-// Keep API_BASE_URL for document URL construction
 const API_BASE_URL = "http://localhost:5000/api";
 
 /**
- * Get all pending candidate applications
- * @returns {Promise} Response with pending candidates array
+ * @returns {Promise} 
  */
 export const getPendingCandidates = async () => {
   try {
@@ -18,9 +16,8 @@ export const getPendingCandidates = async () => {
 };
 
 /**
- * Get all candidates with optional status filter
- * @param {string} status - Optional: "Pending", "Approved", "Rejected"
- * @returns {Promise} Response with candidates array
+ * @param {string} status 
+ * @returns {Promise} 
  */
 export const getAllCandidates = async (status = null) => {
   try {
@@ -34,9 +31,8 @@ export const getAllCandidates = async (status = null) => {
 };
 
 /**
- * Approve a candidate application
- * @param {number} candidateId - The ID of the candidate to approve
- * @returns {Promise} Response with updated candidate data
+ * @param {number} candidateId 
+ * @returns {Promise} 
  */
 export const approveCandidate = async (candidateId) => {
   try {
@@ -49,10 +45,9 @@ export const approveCandidate = async (candidateId) => {
 };
 
 /**
- * Reject a candidate application
- * @param {number} candidateId - The ID of the candidate to reject
- * @param {string} reason - Optional rejection reason
- * @returns {Promise} Response with updated candidate data
+ * @param {number} candidateId 
+ * @param {string} reason 
+ * @returns {Promise} 
  */
 export const rejectCandidate = async (candidateId, reason = null) => {
   try {
@@ -65,9 +60,8 @@ export const rejectCandidate = async (candidateId, reason = null) => {
 };
 
 /**
- * Get candidate document/marksheet URL
- * @param {number} candidateId - The ID of the candidate
- * @returns {string} URL to view the document
+ * @param {number} candidateId 
+ * @returns {string} 
  */
 export const getCandidateDocumentUrl = (candidateId) => {
   const token = localStorage.getItem('adminToken');
@@ -75,8 +69,7 @@ export const getCandidateDocumentUrl = (candidateId) => {
 };
 
 /**
- * Get dashboard statistics
- * @returns {Promise} Response with dashboard stats
+ * @returns {Promise} 
  */
 export const getDashboardStats = async () => {
   try {
@@ -89,9 +82,8 @@ export const getDashboardStats = async () => {
 };
 
 /**
- * Get recent activity logs
- * @param {number} limit - Number of records to fetch
- * @returns {Promise} Response with recent activity
+ * @param {number} limit 
+ * @returns {Promise} 
  */
 export const getRecentActivity = async (limit = 20) => {
   try {
@@ -104,8 +96,7 @@ export const getRecentActivity = async (limit = 20) => {
 };
 
 /**
- * Get all feedbacks
- * @returns {Promise} Response with feedbacks array
+ * @returns {Promise} 
  */
 export const getAllFeedbacks = async () => {
   try {
@@ -118,7 +109,6 @@ export const getAllFeedbacks = async () => {
 };
 
 /**
- * Approve a feedback by id
  * @param {number} feedbackId
  */
 export const approveFeedback = async (feedbackId) => {
@@ -132,7 +122,6 @@ export const approveFeedback = async (feedbackId) => {
 };
 
 /**
- * Delete a feedback (admin)
  * @param {number} feedbackId
  */
 export const deleteFeedback = async (feedbackId) => {
@@ -146,8 +135,7 @@ export const deleteFeedback = async (feedbackId) => {
 };
 
 /**
- * Get all notifications
- * @returns {Promise} Response with notifications array
+ * @returns {Promise} 
  */
 export const getAllNotifications = async () => {
   try {
@@ -161,9 +149,9 @@ export const getAllNotifications = async () => {
 
 /**
  * Send notification
- * @param {string} recipientType - "Students", "Candidates", or "All"
- * @param {string} message - Notification message
- * @returns {Promise} Response with sent notification data
+ * @param {string} recipientType 
+ * @param {string} message 
+ * @returns {Promise} 
  */
 export const sendNotification = async (recipientType, message) => {
   try {
@@ -176,8 +164,7 @@ export const sendNotification = async (recipientType, message) => {
 };
 
 /**
- * Get all students
- * @returns {Promise} Response with students array
+ * @returns {Promise}
  */
 export const getAllStudents = async () => {
   try {
@@ -190,9 +177,8 @@ export const getAllStudents = async () => {
 };
 
 /**
- * Get student by ID
- * @param {string} studentId - Student ID
- * @returns {Promise} Response with student data
+ * @param {string} studentId 
+ * @returns {Promise} 
  */
 export const getStudentById = async (studentId) => {
   try {
@@ -205,8 +191,7 @@ export const getStudentById = async (studentId) => {
 };
 
 /**
- * Get student statistics
- * @returns {Promise} Response with student stats
+ * @returns {Promise} 
  */
 export const getStudentStats = async () => {
   try {
@@ -219,9 +204,8 @@ export const getStudentStats = async () => {
 };
 
 /**
- * Get student voting history
- * @param {string} studentId - Student ID
- * @returns {Promise} Response with voting history
+ * @param {string} studentId 
+ * @returns {Promise} 
  */
 export const getStudentVotingHistory = async (studentId) => {
   try {
@@ -234,9 +218,8 @@ export const getStudentVotingHistory = async (studentId) => {
 };
 
 /**
- * Get all elections
- * @param {string} status - Optional: filter by status
- * @returns {Promise} Response with elections array
+ * @param {string} status 
+ * @returns {Promise} 
  */
 export const getAllElections = async (status = null) => {
   try {
@@ -250,9 +233,8 @@ export const getAllElections = async (status = null) => {
 };
 
 /**
- * Get election statistics
- * @param {number} electionId - Election ID
- * @returns {Promise} Response with detailed election stats
+ * @param {number} electionId 
+ * @returns {Promise} 
  */
 export const getElectionStats = async (electionId) => {
   try {
@@ -265,10 +247,9 @@ export const getElectionStats = async (electionId) => {
 };
 
 /**
- * Declare results for an election
- * @param {number} electionId - Election ID
- * @param {object} options - Optional: { tieBreaking: { position: candidateId } }
- * @returns {Promise} Response with declared results
+ * @param {number} electionId 
+ * @param {object} options 
+ * @returns {Promise} 
  */
 export const declareElectionResults = async (electionId, options = {}) => {
   try {
@@ -284,10 +265,9 @@ export const declareElectionResults = async (electionId, options = {}) => {
 };
 
 /**
- * Start an election
- * @param {number} electionId - Election ID
- * @param {boolean} force - Force start (override scheduler)
- * @returns {Promise} Response with updated election
+ * @param {number} electionId 
+ * @param {boolean} force 
+ * @returns {Promise} 
  */
 export const startElection = async (electionId, force = false) => {
   try {
@@ -303,10 +283,9 @@ export const startElection = async (electionId, force = false) => {
 };
 
 /**
- * End an election
- * @param {number} electionId - Election ID
- * @param {boolean} force - Force end (override scheduler)
- * @returns {Promise} Response with updated election
+ * @param {number} electionId 
+ * @param {boolean} force 
+ * @returns {Promise} 
  */
 export const endElection = async (electionId, force = false) => {
   try {

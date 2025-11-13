@@ -68,7 +68,6 @@ class AuthAPI {
     }
   }
 
-  // Get current active token
   static getCurrentToken() {
     try {
       const currentUserType = localStorage.getItem('currentUserType');
@@ -83,7 +82,6 @@ class AuthAPI {
     }
   }
 
-  // Verify token
   static async verifyToken() {
     try {
       return await apiFetch('/auth/validate', { method: 'GET' });
@@ -92,7 +90,6 @@ class AuthAPI {
     }
   }
 
-  // Check candidate status for student
   static async checkCandidateStatus() {
     try {
       return await apiFetch('/auth/student/candidate-status', { method: 'GET' });
@@ -101,7 +98,6 @@ class AuthAPI {
     }
   }
 
-  // Get student profile
   static async getStudentProfile(studentId) {
     try {
       return await apiFetch(`/auth/student/${studentId}/profile`, { method: 'GET' });
@@ -110,7 +106,6 @@ class AuthAPI {
     }
   }
 
-  // Update student profile
   static async updateStudentProfile(studentId, profileData) {
     try {
       const isFormData = profileData instanceof FormData;
@@ -124,7 +119,6 @@ class AuthAPI {
     }
   }
 
-  // Change student password
   static async changeStudentPassword(studentId, passwordData) {
     try {
       return await apiFetch(`/auth/student/${studentId}/change-password`, {
@@ -136,7 +130,6 @@ class AuthAPI {
     }
   }
 
-  // Get candidate profile
   static async getCandidateProfile(candidateId) {
     try {
       return await apiFetch(`/auth/candidate/${candidateId}/profile`, { method: 'GET' });
@@ -145,7 +138,6 @@ class AuthAPI {
     }
   }
 
-  // Update candidate profile
   static async updateCandidateProfile(candidateId, profileData) {
     try {
       return await apiFetch(`/auth/candidate/${candidateId}/profile`, {
@@ -157,7 +149,6 @@ class AuthAPI {
     }
   }
 
-  // Change candidate password
   static async changeCandidatePassword(candidateId, passwordData) {
     try {
       return await apiFetch(`/auth/candidate/${candidateId}/change-password`, {
@@ -169,7 +160,6 @@ class AuthAPI {
     }
   }
 
-  // ==================== FORGOT PASSWORD METHODS ====================
 
   // Request password reset
   static async requestPasswordReset(email, userType = 'student') {
@@ -183,7 +173,6 @@ class AuthAPI {
     }
   }
 
-  // Reset password with token
   static async resetPassword(token, newPassword, userType = 'student') {
     try {
       const path = userType === 'student'
@@ -195,7 +184,6 @@ class AuthAPI {
     }
   }
 
-  // Get public elections (no auth required)
   static async getPublicElections() {
     try {
       const { data } = await apiFetch('/election/public/elections?status=Upcoming', { method: 'GET', auth: false });
@@ -205,7 +193,6 @@ class AuthAPI {
     }
   }
 
-  // Submit feedback (Candidate)
   static async submitCandidateFeedback(feedbackText) {
     try {
       return await apiFetch('/feedback/candidate/feedbacks', {
@@ -217,7 +204,6 @@ class AuthAPI {
     }
   }
 
-  // Get user notifications (Student/Candidate)
   static async getUserNotifications(limit = 10) {
     try {
       const { data } = await apiFetch(`/notification/notifications?limit=${limit}`, {

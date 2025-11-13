@@ -27,18 +27,15 @@ export default function Navbar() {
             const notifications = response.data.notifications;
             setNotificationCount(notifications.length);
             
-            // Check if there are NEW notifications (arrived after last view)
             const lastViewedTime = localStorage.getItem('lastNotificationView');
             
             if (notifications.length === 0) {
               setHasUnreadNotifications(false);
               setNewNotificationCount(0);
             } else if (!lastViewedTime) {
-              // Never viewed before, all notifications are new
               setHasUnreadNotifications(true);
               setNewNotificationCount(notifications.length);
             } else {
-              // Count notifications newer than last viewed time
               const lastViewed = new Date(lastViewedTime);
               const newNotifications = notifications.filter(notif => {
                 const notifTime = new Date(notif.time);
@@ -58,13 +55,11 @@ export default function Navbar() {
 
     fetchNotificationCount();
 
-    // Refresh notification count every 30 seconds
     const interval = setInterval(fetchNotificationCount, 30000);
 
     return () => clearInterval(interval);
-  }, [isStudent, isCandidate, userType, location.pathname, isOnNotificationPage]); // Re-fetch when location changes
+  }, [isStudent, isCandidate, userType, location.pathname, isOnNotificationPage]); 
 
-  // Mark notifications as read when user is on notification page
   useEffect(() => {
     if (isOnNotificationPage && (isStudent() || isCandidate())) {
       localStorage.setItem('lastNotificationView', new Date().toISOString());
@@ -73,7 +68,6 @@ export default function Navbar() {
     }
   }, [isOnNotificationPage, isStudent, isCandidate]);
 
-  // Handle notification icon click
   const handleNotificationClick = () => {
     setMenuOpen(false);
     localStorage.setItem('lastNotificationView', new Date().toISOString());
@@ -82,12 +76,10 @@ export default function Navbar() {
   };
 
   const handleLogout = () => {
-    // Save the user type before logout clears it
     const currentUserType = userType;
     
     logout();
     
-    // Use window.location to force full page navigation and avoid race condition with ProtectedRoute
     if (currentUserType === 'Student') {
       window.location.href = "/student/login";
     } else if (currentUserType === 'Candidate') {

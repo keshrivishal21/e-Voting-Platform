@@ -4,13 +4,12 @@ import { useAuth } from '../contexts/AuthContext';
 
 const ProtectedRoute = ({ 
   children, 
-  requiredRole = null, // 'Student', 'Candidate', 'Admin'
+  requiredRole = null, 
   redirectTo = '/' 
 }) => {
   const { isAuthenticated, userType, loading } = useAuth();
   const location = useLocation();
 
-  // Show loading spinner while checking authentication
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
@@ -22,14 +21,11 @@ const ProtectedRoute = ({
     );
   }
 
-  // Redirect to login if not authenticated
   if (!isAuthenticated) {
     return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 
-  // Check role-based access
   if (requiredRole && userType !== requiredRole) {
-    // Redirect based on user type
     const userDashboards = {
       Student: '/student',
       Candidate: '/candidate',

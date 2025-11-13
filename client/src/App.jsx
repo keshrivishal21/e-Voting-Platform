@@ -41,7 +41,6 @@ function AppContent() {
   const { isAuthenticated, userType } = useAuth();
   const location = useLocation();
   
-  // Routes where navbar should be hidden
   const noNavbarRoutes = ['/', '/candidate/register', '/candidate/login', '/student/login', '/admin/login', '/student/signup', '/forgot-password', '/reset-password', '/404', '/not-found'];
   const shouldHideNavbar = noNavbarRoutes.includes(location.pathname);
   const noFooterRoutes = ['/'];
@@ -210,7 +209,6 @@ function AppContent() {
   );
 }
 
-// Helper function to get dashboard route based on user type
 function getUserDashboard(userType) {
   const dashboards = {
     Student: '/student',

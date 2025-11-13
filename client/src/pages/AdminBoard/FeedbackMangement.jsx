@@ -6,7 +6,6 @@ const FeedbackManagement = () => {
   const [feedbacks, setFeedbacks] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch feedbacks from server
   useEffect(() => {
     const fetchFeedbacks = async () => {
       try {
@@ -82,7 +81,6 @@ const FeedbackManagement = () => {
                             const res = await AdminAPI.approveFeedback(feedback.id);
                             if (res && res.success) {
                               toast.success('Feedback approved');
-                              // update local state
                               setFeedbacks((prev) => prev.map((f) => (f.id === feedback.id ? { ...f, status: 'Approved' } : f)));
                             } else {
                               toast.error(res?.message || 'Failed to approve');

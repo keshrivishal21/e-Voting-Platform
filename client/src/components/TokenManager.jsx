@@ -16,12 +16,10 @@ const TokenManager = () => {
     
     localStorage.removeItem(tokenKey);
     
-    // If clearing current active session, logout completely
     const activeSession = JSON.parse(localStorage.getItem('activeSession') || '{}');
     if (activeSession.userType === role) {
       logout();
     } else {
-      // Just refresh to update UI
       window.location.reload();
     }
   };
@@ -33,7 +31,6 @@ const TokenManager = () => {
       hasToken: hasSessionFor(role),
       tokenKey: `${role.toLowerCase()}Token`,
       token: localStorage.getItem(`${role.toLowerCase()}Token`)?.substring(0, 20) + '...' || 'None',
-      // No separate userData storage anymore - data is in activeSession only
     }));
   };
 
