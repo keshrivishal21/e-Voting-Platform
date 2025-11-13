@@ -8,6 +8,15 @@ const otpStore = new Map();
 
 const electionKeys = new Map();
 
+// Helper function to hash student ID for anonymity
+const hashStudentId = (studentId, electionId) => {
+  const salt = process.env.VOTE_HASH_SALT || 'evoting-platform-secure-salt-2024';
+  return crypto
+    .createHash('sha256')
+    .update(`${studentId}-${electionId}-${salt}`)
+    .digest('hex');
+};
+
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 587,
@@ -135,9 +144,11 @@ const requestVotingOTP = async (req, res) => {
       });
     }
 
+    // Check if student has already voted using hashed ID
+    const studentIdHash = hashStudentId(studentId, electionIdInt);
     const existingVote = await prisma.vOTE.findFirst({
       where: {
-        Std_id: studentId,
+        Std_id_hash: studentIdHash,
         Election_id: electionIdInt
       }
     });
@@ -260,9 +271,11 @@ const getBallot = async (req, res) => {
       return res.status(401).json({ message: 'OTP verification required' });
     }
 
+    // Check if student has already voted using hashed ID
+    const studentIdHash = hashStudentId(studentId, electionIdInt);
     const existingVote = await prisma.vOTE.findFirst({
       where: {
-        Std_id: studentId,
+        Std_id_hash: studentIdHash,
         Election_id: electionIdInt
       }
     });
@@ -392,9 +405,11 @@ const castVote = async (req, res) => {
       return res.status(401).json({ message: 'OTP verification required' });
     }
 
+    // Check if student has already voted using hashed ID
+    const studentIdHash = hashStudentId(studentId, electionIdInt);
     const existingVote = await prisma.vOTE.findFirst({
       where: {
-        Std_id: studentId,
+        Std_id_hash: studentIdHash,
         Election_id: electionIdInt
       }
     });
@@ -508,18 +523,20 @@ const castVote = async (req, res) => {
       const candidateId = BigInt(voteData.candidateId);
       const encryptedVote = voteData.encryptedVote;
 
+      // Create anonymous vote with hashed student ID
       const vote = await prisma.vOTE.create({
         data: {
-          Std_id: studentId,
+          Std_id_hash: studentIdHash,
           Can_id: candidateId,
           Election_id: electionIdInt,
+          Position: position,
           Encrypted_vote: encryptedVote
         }
       });
 
       const receiptHash = crypto
         .createHash('sha256')
-        .update(`${vote.Vote_id}-${studentId}-${candidateId}-${electionIdInt}-${position}-${vote.Vote_time.toISOString()}`)
+        .update(`${vote.Vote_id}-${candidateId}-${electionIdInt}-${position}-${vote.Vote_time.toISOString()}`)
         .digest('hex');
 
       const voteReceipt = await prisma.vOTE_RECEIPT.create({
@@ -569,9 +586,11 @@ const checkVoteStatus = async (req, res) => {
     const { electionId } = req.params;
     const electionIdInt = parseInt(electionId);
 
+    // Check if student has voted using hashed ID
+    const studentIdHash = hashStudentId(studentId, electionIdInt);
     const vote = await prisma.vOTE.findFirst({
       where: {
-        Std_id: studentId,
+        Std_id_hash: studentIdHash,
         Election_id: electionIdInt
       }
     });

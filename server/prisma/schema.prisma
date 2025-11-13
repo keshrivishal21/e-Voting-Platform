@@ -91,7 +91,6 @@ model STUDENT {
   Reset_token_expiry DateTime?
 
   user        USERS     @relation(fields: [Std_id, User_type], references: [User_id, User_type])
-  votes       VOTE[]
 
   @@unique([Std_id, User_type])
 }
@@ -127,20 +126,21 @@ model CANDIDATE {
 
 
 model VOTE {
-  Vote_id       Int       @id @default(autoincrement())
-  Std_id        BigInt
-  Can_id        BigInt
-  Election_id   Int
-  Vote_time     DateTime  @default(now())
-  Encrypted_vote String   @db.Text
+  Vote_id         Int       @id @default(autoincrement())
+  Std_id_hash     String    @db.VarChar(64)
+  Can_id          BigInt
+  Election_id     Int
+  Position        String    @db.VarChar(30)
+  Vote_time       DateTime  @default(now())
+  Encrypted_vote  String    @db.Text
 
-  student   STUDENT   @relation(fields: [Std_id], references: [Std_id])
   candidate CANDIDATE @relation(fields: [Can_id], references: [Can_id])
   election  ELECTION  @relation(fields: [Election_id], references: [Election_id])
   receipt   VOTE_RECEIPT?
 
-  @@unique([Std_id, Election_id, Can_id])
-  @@index([Std_id, Election_id])
+  @@unique([Std_id_hash, Election_id, Position])
+  @@index([Election_id, Can_id])
+  @@index([Std_id_hash, Election_id])
 }
 
 model VOTE_RECEIPT {

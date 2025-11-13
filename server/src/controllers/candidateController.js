@@ -487,7 +487,7 @@ export const getElectionVoteCount = async (req, res) => {
     });
 
     const studentsVoted = await prisma.vOTE.groupBy({
-      by: ['Std_id'],
+      by: ['Std_id_hash'],
       where: {
         Election_id: candidate.Election_id
       }

@@ -93,10 +93,11 @@ export const getStudentStats = async (req, res) => {
   try {
     const totalStudents = await prisma.sTUDENT.count();
     
-    const studentsWhoVoted = await prisma.vOTE.findMany({
-      distinct: ['Std_id'],
+    // Count unique hashed student IDs (unique voters across all elections)
+    const uniqueVoters = await prisma.vOTE.findMany({
+      distinct: ['Std_id_hash'],
       select: {
-        Std_id: true,
+        Std_id_hash: true,
       },
     });
 
@@ -111,7 +112,7 @@ export const getStudentStats = async (req, res) => {
       message: "Student statistics retrieved successfully",
       data: {
         totalStudents,
-        activeVoters: studentsWhoVoted.length,
+        activeVoters: uniqueVoters.length,
         studentCandidates: studentCandidates.length,
       },
     });
@@ -125,55 +126,13 @@ export const getStudentStats = async (req, res) => {
   }
 };
 
-// Get student voting history (Admin only)
+// Get student voting history - REMOVED for anonymity
+// Votes are now anonymous and cannot be traced back to individual students
 export const getStudentVotingHistory = async (req, res) => {
   try {
-    const { studentId } = req.params;
-
-    const votes = await prisma.vOTE.findMany({
-      where: {
-        Std_id: BigInt(studentId),
-      },
-      include: {
-        election: {
-          select: {
-            Election_id: true,
-            Title: true,
-            Start_date: true,
-            End_date: true,
-          },
-        },
-        candidate: {
-          select: {
-            Can_name: true,
-            Position: true,
-          },
-        },
-      },
-      orderBy: {
-        Vote_time: "desc",
-      },
-    });
-
-    const formattedVotes = votes.map((vote) => ({
-      voteId: vote.Vote_id,
-      election: {
-        id: vote.election.Election_id,
-        title: vote.election.Title,
-        startDate: vote.election.Start_date,
-        endDate: vote.election.End_date,
-      },
-      candidate: {
-        name: vote.candidate.Can_name,
-        position: vote.candidate.Position,
-      },
-      voteTime: vote.Vote_time,
-    }));
-
-    res.status(200).json({
-      success: true,
-      message: "Voting history retrieved successfully",
-      data: { votes: formattedVotes },
+    res.status(403).json({
+      success: false,
+      message: "Voting history is not available. Votes are anonymous to protect voter privacy.",
     });
   } catch (error) {
     console.error("Get voting history error:", error);

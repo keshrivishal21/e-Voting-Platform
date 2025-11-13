@@ -363,13 +363,13 @@ export const getElectionStats = async (req, res) => {
       where: { Election_id: electionIdInt },
       select: {
         Vote_id: true,
-        Std_id: true,
+        Std_id_hash: true,
         Can_id: true,
         Vote_time: true
       }
     });
 
-    const uniqueVoters = [...new Set(votes.map(v => v.Std_id.toString()))];
+    const uniqueVoters = [...new Set(votes.map(v => v.Std_id_hash))];
 
     const votesByCandidate = {};
     votes.forEach(vote => {
