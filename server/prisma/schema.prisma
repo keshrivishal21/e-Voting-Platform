@@ -28,7 +28,9 @@ enum CandidateStatus {
 }
 
 enum LogType {
-  Authentication
+  System
+  Admin
+  Security
   Audit
 }
 

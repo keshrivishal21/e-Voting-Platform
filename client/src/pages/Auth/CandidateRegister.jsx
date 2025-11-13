@@ -283,10 +283,21 @@ const CandidateRegister = () => {
         return;
       }
 
+      // Validate phone number (Indian format: 10 digits starting with 6-9)
+      const phoneRegex = /^[6-9]\d{9}$/;
+      if (!phoneRegex.test(formData.phone.trim())) {
+        const errorMsg = "Please enter a valid 10-digit phone number starting with 6-9";
+        setError(errorMsg);
+        toast.error(errorMsg);
+        setLoading(false);
+        return;
+      }
+
       if (formData.password !== formData.confirmPassword) {
         const errorMsg = "Passwords do not match";
         setError(errorMsg);
         toast.error(errorMsg);
+        setLoading(false);
         return;
       }
 

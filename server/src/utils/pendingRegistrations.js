@@ -7,7 +7,6 @@ setInterval(() => {
   for (const [email, data] of pendingRegistrations.entries()) {
     if (data.expiresAt < now) {
       pendingRegistrations.delete(email);
-      console.log(`Cleaned up expired registration for: ${email}`);
     }
   }
 }, 15 * 60 * 1000);

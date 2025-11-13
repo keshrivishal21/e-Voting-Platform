@@ -92,6 +92,16 @@ export const createElection = async (req, res) => {
       console.error("Failed to trigger scheduler check:", err)
     );
 
+    // Log election creation
+    await prisma.sYSTEM_LOGS.create({
+      data: {
+        Admin_id: adminId,
+        Log_time: new Date(),
+        Log_type: 'Admin',
+        Action: `Admin created election "${title}" (ID: ${election.Election_id}) scheduled from ${start.toLocaleDateString()} to ${end.toLocaleDateString()}`
+      }
+    });
+
     res.status(201).json({
       success: true,
       message: "Election created successfully",
@@ -446,11 +456,6 @@ export const declareResults = async (req, res) => {
     const { tieBreaking } = req.body; 
     const adminId = req.user.userId;
 
-    console.log(`Declaring results for election ${electionId} by admin ${adminId}`);
-    if (tieBreaking) {
-      console.log(`Tie-breaking decisions provided:`, tieBreaking);
-    }
-
     if (!electionId) {
       return res.status(400).json({
         success: false,
@@ -470,7 +475,6 @@ export const declareResults = async (req, res) => {
     });
 
     if (!election) {
-      console.log(`Election ${electionId} not found`);
       return res.status(404).json({
         success: false,
         message: "Election not found",
@@ -478,7 +482,6 @@ export const declareResults = async (req, res) => {
     }
 
     if (election.Status !== "Completed") {
-      console.log(`Election ${electionId} is ${election.Status}, not Completed`);
       return res.status(400).json({
         success: false,
         message: `Can only declare results for completed elections. Current status: ${election.Status}`,
@@ -499,10 +502,7 @@ export const declareResults = async (req, res) => {
       }
     });
 
-    console.log(`Found ${votes.length} votes for election ${electionId}`);
-
     if (votes.length === 0) {
-      console.log(`No votes found for election ${electionId}`);
       return res.status(400).json({
         success: false,
         message: "No votes found for this election",
@@ -589,10 +589,15 @@ export const declareResults = async (req, res) => {
       console.error("Failed to send results declared notification:", err)
     );
 
-    console.log(`Results declared successfully for election ${electionId}`);
-    console.log(`   - Total votes: ${votes.length}`);
-    console.log(`   - Candidates with votes: ${results.length}`);
-    console.log(`   - Positions: ${Object.keys(resultsByPosition).join(', ')}`);
+    // Log manual result declaration
+    await prisma.sYSTEM_LOGS.create({
+      data: {
+        Admin_id: adminId,
+        Log_time: new Date(),
+        Log_type: 'Admin',
+        Action: `Admin manually declared results for election "${election.Title}" (ID: ${electionIdInt}). Total votes: ${votes.length}, Candidates: ${results.length}`
+      }
+    });
 
     res.status(200).json({
       success: true,

@@ -25,8 +25,7 @@ export async function sendSystemNotification(message, adminId = null) {
     ];
 
     if (recipients.length === 0) {
-      console.log("No recipients found for system notification");
-      return 0;
+      return;
     }
 
     // Create notifications for all recipients

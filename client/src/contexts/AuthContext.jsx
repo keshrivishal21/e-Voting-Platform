@@ -112,12 +112,6 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('studentToken');
     localStorage.removeItem('candidateToken');
     
-    localStorage.removeItem('token'); 
-    localStorage.removeItem('authToken'); 
-    localStorage.removeItem('userType'); 
-    localStorage.removeItem('userData'); 
-    localStorage.removeItem('adminToken'); 
-    
     setIsAuthenticated(false);
     setUserType(null);
   };

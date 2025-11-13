@@ -156,20 +156,18 @@ async function declareElectionResults(electionId, electionTitle) {
       }
     }
 
-    console.log(`Results auto-declared successfully for election ${electionId}:`);
-    console.log(`   - Total votes cast: ${votes.length}`);
-    console.log(`   - Results recorded for ${results.length} candidates`);
-    
-    candidatesByPosition.forEach((candidates, position) => {
-      const sortedCandidates = Array.from(candidates.values())
-        .sort((a, b) => b.votes - a.votes);
-      const winner = sortedCandidates[0];
-      console.log(`   - ${position}: ${winner.name} (${winner.votes} votes)`);
-    });
-
     notifyResultsDeclared(electionTitle, votes.length).catch(err => 
       console.error("Failed to send results declared notification:", err)
     );
+
+    // Log automatic result declaration
+    await prisma.sYSTEM_LOGS.create({
+      data: {
+        Log_time: new Date(),
+        Log_type: 'System',
+        Action: `Results auto-declared for election "${electionTitle}" (ID: ${electionId}). Total votes: ${votes.length}, Candidates: ${results.length}`
+      }
+    }).catch(err => console.error('Failed to log auto result declaration:', err));
 
     return { success: true, results };
   } catch (error) {
@@ -480,7 +478,15 @@ async function processElectionTransitions() {
           where: { Election_id: e.Election_id },
           data: { Status: "Ongoing" },
         });
-        console.log(`Election ${e.Election_id} ("${e.Title}") started automatically`);
+        
+        // Log election auto-start
+        await prisma.sYSTEM_LOGS.create({
+          data: {
+            Log_time: new Date(),
+            Log_type: 'System',
+            Action: `Election "${e.Title}" (ID: ${e.Election_id}) started automatically`
+          }
+        }).catch(err => console.error('Failed to log election start:', err));
         
         // Send notification about election start (don't wait for it)
         notifyElectionStarted(e.Title, e.End_date).catch(err => 
@@ -511,7 +517,15 @@ async function processElectionTransitions() {
           where: { Election_id: e.Election_id },
           data: { Status: "Completed" },
         });
-        console.log(`Election ${e.Election_id} ("${e.Title}") ended automatically`);
+        
+        // Log election auto-end
+        await prisma.sYSTEM_LOGS.create({
+          data: {
+            Log_time: new Date(),
+            Log_type: 'System',
+            Action: `Election "${e.Title}" (ID: ${e.Election_id}) ended automatically`
+          }
+        }).catch(err => console.error('Failed to log election end:', err));
         
         // Send notification about election end (don't wait for it)
         notifyElectionEnded(e.Title).catch(err => 
@@ -520,27 +534,16 @@ async function processElectionTransitions() {
         
         // Check if auto-declare is enabled for this election
         if (e.Auto_declare_results === true) {
-          console.log(`Auto-declare enabled for election ${e.Election_id}, attempting to declare results...`);
-          
           // Automatically declare results
           try {
             const result = await declareElectionResults(e.Election_id, e.Title);
             
             if (result && result.success === false) {
-              if (result.reason === 'tie_detected') {
-                console.log(`Results NOT auto-declared due to tie(s) - Admin must manually declare`);
-                console.log(`   Tied positions: ${result.ties.map(t => t.position).join(', ')}`);
-              } else if (result.reason === 'no_votes') {
-                console.log(`Results NOT declared - No votes cast`);
-              }
-            } else {
-              console.log(`Results auto-declared successfully for election ${e.Election_id}`);
+              // Auto-declare failed due to tie or no votes
             }
           } catch (resultError) {
             console.error(`Failed to declare results for election ${e.Election_id}, but election still marked as completed:`, resultError);
           }
-        } else {
-          console.log(`Auto-declare DISABLED for election ${e.Election_id} - Admin must manually declare results`);
         }
         
         // Schedule cleanup for this election after retention period

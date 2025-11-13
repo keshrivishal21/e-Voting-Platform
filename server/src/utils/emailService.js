@@ -157,7 +157,6 @@ export const sendPasswordResetEmail = async (to, resetToken, userName, userType)
 
     // Send email
     const info = await transporter.sendMail(mailOptions);
-    console.log('Password reset email sent:', info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('Error sending password reset email:', error);
@@ -250,7 +249,6 @@ export const sendPasswordResetConfirmationEmail = async (to, userName) => {
 
     // Send email
     const info = await transporter.sendMail(mailOptions);
-    console.log('Password reset confirmation email sent:', info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('Error sending confirmation email:', error);
@@ -384,7 +382,6 @@ export const sendEmailVerification = async (to, otp, userName) => {
 
     // Send email
     const info = await transporter.sendMail(mailOptions);
-    console.log('Verification OTP email sent:', info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('Error sending verification email:', error);

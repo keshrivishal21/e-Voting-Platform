@@ -139,6 +139,16 @@ export const approveCandidate = async (req, res) => {
       console.error("Failed to send approval notification:", notifError);
     }
 
+    // Log candidate approval
+    await prisma.sYSTEM_LOGS.create({
+      data: {
+        Admin_id: req.user?.userId || null,
+        Log_time: new Date(),
+        Log_type: 'Admin',
+        Action: `Admin approved candidate "${updatedCandidate.Can_name}" (ID: ${updatedCandidate.Can_id}) for position "${updatedCandidate.Position}" in election "${updatedCandidate.election.Title}"`
+      }
+    });
+
     const serializedCandidate = serializeCandidate(updatedCandidate);
 
     res.status(200).json({
@@ -212,6 +222,16 @@ export const rejectCandidate = async (req, res) => {
       console.error("Failed to send rejection notification:", notifError);
     }
 
+    // Log candidate rejection
+    await prisma.sYSTEM_LOGS.create({
+      data: {
+        Admin_id: req.user?.userId || null,
+        Log_time: new Date(),
+        Log_type: 'Admin',
+        Action: `Admin rejected candidate "${updatedCandidate.Can_name}" (ID: ${updatedCandidate.Can_id}) for position "${updatedCandidate.Position}" in election "${updatedCandidate.election.Title}"${reason ? `. Reason: ${reason}` : ''}`
+      }
+    });
+
     const serializedCandidate = serializeCandidate(updatedCandidate);
 
     res.status(200).json({
@@ -276,7 +296,14 @@ export const getCandidateStatus = async (req, res) => {
 export const getApprovedCandidates = async (req, res) => {
   try {
     const candidates = await prisma.cANDIDATE.findMany({
-      where: { Status: "Approved" },
+      where: { 
+        Status: "Approved",
+        election: {
+          Status: {
+            not: "Completed"
+          }
+        }
+      },
       include: {
         election: {
           select: {

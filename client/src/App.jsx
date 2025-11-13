@@ -5,18 +5,15 @@ import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import StudentHome from './pages/StudentBoard/Home';
 import CandidateList from './pages/StudentBoard/CandidateList';
-import StudentNotifications from './pages/StudentBoard/Notifications';
+import StudentNotifications from './pages/Notifications';
 import StudentProfile from './pages/StudentBoard/Profile';
 import CandidateHome from './pages/CandidateBoard/Home';
-import CandidateLiveVotes from './pages/CandidateBoard/LiveVotes';
-import CandidateCampaignOverview from './pages/CandidateBoard/CampaignOverview';
 import CandidateProfile from './pages/CandidateBoard/Profile';
 import AdminHome from './pages/AdminBoard/Home';
 import AdminCandidateManagement from './pages/AdminBoard/CandidateManagement';
 import AdminElectionControl from './pages/AdminBoard/ElectionControl';
 import AdminFeedbackManagement from './pages/AdminBoard/FeedbackMangement';
 import AdminNotifications from './pages/AdminBoard/Notifications';
-//import AdminResultManagement from './pages/AdminBoard/ResultMangement';
 import AdminStudentManagement from './pages/AdminBoard/StudentMangement';
 import Login from './pages/Auth/StudentLogin';
 import AdminLogin from './pages/Auth/AdminLogin';
@@ -26,7 +23,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import Signup from './pages/Auth/StudentSignup';
 import Elections from './pages/StudentBoard/Elections';
-import Results from './pages/StudentBoard/Results';
+import Results from './pages/Results';
 import CastVote from './pages/StudentBoard/CastVote';
 import CandidateLogin from './pages/Auth/CandidateLogin';
 import ForgotPassword from './pages/Auth/ForgotPassword';
@@ -35,8 +32,6 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import DashboardRedirect from './components/DashboardRedirect';
 
 
-
-// Component to handle authentication-based routing logic
 function AppContent() {
   const { isAuthenticated, userType } = useAuth();
   const location = useLocation();
@@ -75,11 +70,11 @@ function AppContent() {
           )
         } />
         
-        {/* Candidate auth pages - accessible even when logged in as student */}
+        {/* Candidate auth pages */}
         <Route path="/candidate/register" element={<CanRegister />} />
         <Route path="/candidate/login" element={<CandidateLogin />} />
         
-        {/* Student signup - redirect if already authenticated */}
+        {/* Student signup */}
         <Route path="/student/signup" element={
           isAuthenticated ? (
             <Navigate to={getUserDashboard(userType)} replace />
@@ -92,7 +87,7 @@ function AppContent() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
 
-        {/* Student Board - Only accessible by students */}
+        {/* Student Board */}
         <Route path="/student" element={
           <ProtectedRoute requiredRole="Student">
             <StudentHome />
@@ -129,20 +124,10 @@ function AppContent() {
           </ProtectedRoute>
         } />
 
-        {/* Candidate Board - Only accessible by candidates */}
+        {/* Candidate Board */}
         <Route path="/candidate" element={
           <ProtectedRoute requiredRole="Candidate">
             <CandidateHome />
-          </ProtectedRoute>
-        } />
-        <Route path="/candidate/live-votes" element={
-          <ProtectedRoute requiredRole="Candidate">
-            <CandidateLiveVotes />
-          </ProtectedRoute>
-        } />
-        <Route path="/candidate/campaign" element={
-          <ProtectedRoute requiredRole="Candidate">
-            <CandidateCampaignOverview />
           </ProtectedRoute>
         } />
         <Route path="/candidate/profile" element={
@@ -161,7 +146,7 @@ function AppContent() {
           </ProtectedRoute>
         } />
 
-        {/* Admin Board - Only accessible by admins */}
+        {/* Admin Board */}
         <Route path="/admin" element={
           <ProtectedRoute requiredRole="Admin">
             <AdminHome />
@@ -187,11 +172,7 @@ function AppContent() {
             <AdminNotifications />
           </ProtectedRoute>
         } />
-        {/* <Route path="/admin/results" element={
-          <ProtectedRoute requiredRole="Admin">
-            <AdminResultManagement />
-          </ProtectedRoute>
-        } /> */}
+        
         <Route path="/admin/students" element={
           <ProtectedRoute requiredRole="Admin">
             <AdminStudentManagement />

@@ -198,6 +198,16 @@ export const deleteFeedback = async (req, res) => {
       console.error("Failed to send feedback deletion notification:", notifError);
     }
 
+    // Log feedback deletion
+    await prisma.sYSTEM_LOGS.create({
+      data: {
+        Admin_id: req.user?.userId || null,
+        Log_time: new Date(),
+        Log_type: 'Admin',
+        Action: `Admin deleted feedback (ID: ${feedbackId}) from ${feedback.User_type} (ID: ${feedback.User_id})`
+      }
+    });
+
     res.status(200).json({
       success: true,
       message: "Feedback deleted successfully",
@@ -232,6 +242,16 @@ export const approveFeedback = async (req, res) => {
     } catch (notifError) {
       console.error("Failed to send feedback approval notification:", notifError);
     }
+
+    // Log feedback approval
+    await prisma.sYSTEM_LOGS.create({
+      data: {
+        Admin_id: req.user?.userId || null,
+        Log_time: new Date(),
+        Log_type: 'Admin',
+        Action: `Admin approved feedback (ID: ${feedbackId}) from ${updated.User_type} (ID: ${updated.User_id})`
+      }
+    });
 
     res.status(200).json({ success: true, message: 'Feedback approved', data: { feedback: { ...updated, User_id: updated.User_id.toString() } } });
   } catch (error) {

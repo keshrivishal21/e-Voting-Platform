@@ -51,6 +51,16 @@ export const adminLogin = async (req, res) => {
 
     const token = generateToken(admin.Admin_id, "Admin");
 
+    // Log admin login
+    await prisma.sYSTEM_LOGS.create({
+      data: {
+        Admin_id: admin.Admin_id,
+        Log_time: new Date(),
+        Log_type: 'System',
+        Action: `Admin "${admin.Admin_name}" (ID: ${admin.Admin_id}) logged in`
+      }
+    });
+
     res.status(200).json({
       success: true,
       message: "Admin login successful",
@@ -116,6 +126,17 @@ export const studentLogin = async (req, res) => {
     }
 
     const token = generateToken(student.Std_id, "Student");
+
+    // Log student login
+    await prisma.sYSTEM_LOGS.create({
+      data: {
+        User_id: student.Std_id,
+        User_type: 'Student',
+        Log_time: new Date(),
+        Log_type: 'System',
+        Action: `Student "${student.Std_name}" (ID: ${student.Std_id}) logged in`
+      }
+    });
 
     res.status(200).json({
       success: true,
@@ -254,6 +275,17 @@ export const studentRegister = async (req, res) => {
       }
 
       removePendingRegistration(email);
+
+      // Log student registration
+      await prisma.sYSTEM_LOGS.create({
+        data: {
+          User_id: student.Std_id,
+          User_type: 'Student',
+          Log_time: new Date(),
+          Log_type: 'System',
+          Action: `New student registered: "${student.Std_name}" (ID: ${student.Std_id}, Email: ${student.Std_email})`
+        }
+      });
 
       res.status(201).json({
         success: true,
@@ -593,6 +625,17 @@ export const candidateRegister = async (req, res) => {
       ? "Candidate re-registration successful! You have been registered for the new election."
       : "Candidate registration successful";
 
+    // Log candidate registration
+    await prisma.sYSTEM_LOGS.create({
+      data: {
+        User_id: candidate.Can_id,
+        User_type: 'Candidate',
+        Log_time: new Date(),
+        Log_type: 'System',
+        Action: `${isReRegistration ? 'Candidate re-registered' : 'New candidate registered'}: "${candidate.Can_name}" (ID: ${candidate.Can_id}) for position "${candidate.Position}" in election ID ${electionId}`
+      }
+    });
+
     res.status(201).json({
       success: true,
       message: successMessage,
@@ -788,6 +831,17 @@ export const candidateLogin = async (req, res) => {
 
     const token = generateToken(candidate.Can_id, "Candidate");
 
+    // Log candidate login
+    await prisma.sYSTEM_LOGS.create({
+      data: {
+        User_id: candidate.Can_id,
+        User_type: 'Candidate',
+        Log_time: new Date(),
+        Log_type: 'System',
+        Action: `Candidate "${candidate.Can_name}" (ID: ${candidate.Can_id}) logged in`
+      }
+    });
+
     res.status(200).json({
       success: true,
       message: "Candidate login successful",
@@ -853,7 +907,6 @@ export const getStudentProfile = async (req, res) => {
         }
         
         profileBase64 = `data:image/jpeg;base64,${buffer.toString('base64')}`;
-        console.log('Profile image converted successfully, length:', profileBase64.length);
       } catch (error) {
         console.error('Error converting profile image:', error);
         console.error('Profile type:', typeof student.Profile);
@@ -1030,6 +1083,17 @@ export const changeStudentPassword = async (req, res) => {
       data: {
         Std_password: hashedNewPassword,
       },
+    });
+
+    // Log password change
+    await prisma.sYSTEM_LOGS.create({
+      data: {
+        User_id: student.Std_id,
+        User_type: 'Student',
+        Log_time: new Date(),
+        Log_type: 'Security',
+        Action: `Student "${student.Std_name}" (ID: ${student.Std_id}) changed their password`
+      }
     });
 
     res.status(200).json({
@@ -1249,6 +1313,17 @@ export const changeCandidatePassword = async (req, res) => {
       },
     });
 
+    // Log password change
+    await prisma.sYSTEM_LOGS.create({
+      data: {
+        User_id: candidate.Can_id,
+        User_type: 'Candidate',
+        Log_time: new Date(),
+        Log_type: 'Security',
+        Action: `Candidate "${candidate.Can_name}" (ID: ${candidate.Can_id}) changed their password`
+      }
+    });
+
     res.status(200).json({
       success: true,
       message: "Password changed successfully",
@@ -1425,6 +1500,17 @@ export const resetStudentPassword = async (req, res) => {
       },
     });
 
+    // Log password reset
+    await prisma.sYSTEM_LOGS.create({
+      data: {
+        User_id: student.Std_id,
+        User_type: 'Student',
+        Log_time: new Date(),
+        Log_type: 'Security',
+        Action: `Student "${student.Std_name}" (ID: ${student.Std_id}) reset their password via email link`
+      }
+    });
+
     try {
       await sendPasswordResetConfirmationEmail(student.Std_email, student.Std_name);
     } catch (emailError) {
@@ -1490,6 +1576,17 @@ export const resetCandidatePassword = async (req, res) => {
         Reset_token: null,
         Reset_token_expiry: null,
       },
+    });
+
+    // Log password reset
+    await prisma.sYSTEM_LOGS.create({
+      data: {
+        User_id: candidate.Can_id,
+        User_type: 'Candidate',
+        Log_time: new Date(),
+        Log_type: 'Security',
+        Action: `Candidate "${candidate.Can_name}" (ID: ${candidate.Can_id}) reset their password via email link`
+      }
     });
 
     try {

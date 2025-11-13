@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import ElectionAPI from "../../utils/electionAPI";
+import ElectionAPI from "../utils/electionAPI";
 import toast from "react-hot-toast";
 
 const Results = () => {
