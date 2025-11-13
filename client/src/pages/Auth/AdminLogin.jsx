@@ -55,9 +55,8 @@ function AdminLogin() {
             }
         } catch (error) {
             console.error('Admin login error:', error);
-            const errorMsg = 'Network error. Please check your connection and try again.';
-            setError(errorMsg);
-            toast.error(errorMsg);
+            setError("An error occurred during login. Please try again.");
+            toast.error("An error occurred during login. Please try again.");
         } finally {
             setLoading(false);
         }

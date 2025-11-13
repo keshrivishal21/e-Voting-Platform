@@ -66,8 +66,13 @@ export async function apiFetch(path, options = {}) {
 
   const resp = await fetch(url, init);
 
-  if (resp.status === 401) {
+  if (resp.status === 401 && auth) {
     handleUnauthorized();
+    const text = await resp.text().catch(() => '');
+    throw new Error(`Unauthorized: ${text}`);
+  }
+
+  if (resp.status === 401 && !auth) {
     const text = await resp.text().catch(() => '');
     throw new Error(`Unauthorized: ${text}`);
   }

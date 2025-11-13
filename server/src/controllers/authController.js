@@ -58,9 +58,6 @@ export const adminLogin = async (req, res) => {
         token,
         user: {
           id: admin.Admin_id.toString(),
-          email: admin.Admin_email,
-          name: admin.Admin_name,
-          phone: admin.Admin_phone,
           userType: "Admin",
         },
       },

@@ -864,7 +864,7 @@ cleanupSpecificElection(electionId);
 ### Real-World Analogy
 
 **Bad approach (Cron):**
-```
+``` 
 "Wake me up every minute to check if it's 3 PM yet"
 → Wastes energy, annoying
 ```
