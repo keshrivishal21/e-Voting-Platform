@@ -410,8 +410,28 @@ export const candidateRegister = async (req, res) => {
     const candidateId = parseInt(email.split("@")[0]);
 
     const previousCandidateRecord = await prisma.cANDIDATE.findUnique({
-      where: { Can_id: candidateId }
+      where: { Can_id: candidateId },
+      include: {
+        election: {
+          select: {
+            Election_id: true,
+            Title: true,
+            Status: true
+          }
+        }
+      }
     });
+    
+    // Check if candidate has participated in a previous election that is not completed
+    if (previousCandidateRecord && previousCandidateRecord.election) {
+      if (previousCandidateRecord.election.Status !== 'Completed') {
+        return res.status(400).json({
+          success: false,
+          message: `You are already registered for the "${previousCandidateRecord.election.Title}" election which is ${previousCandidateRecord.election.Status}. Please wait until it is completed before registering for a new election.`,
+        });
+      }
+    }
+    
     const isReRegistration = previousCandidateRecord !== null;
 
     let documentBuffer = Buffer.from("");

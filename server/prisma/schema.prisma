@@ -157,6 +157,7 @@ model RESULT {
   Can_id      BigInt
   Election_id Int
   Vote_count  Int
+  Position    String    @db.VarChar(30)
   Admin_id    Int
 
   candidate   CANDIDATE @relation(fields: [Can_id], references: [Can_id])

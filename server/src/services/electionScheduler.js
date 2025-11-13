@@ -101,6 +101,22 @@ async function declareElectionResults(electionId, electionTitle) {
     for (const candidateId of candidateIds) {
       const voteCount = voteCounts.get(candidateId.toString()) || 0;
       
+      // Get the candidate's position for this election
+      const candidate = await prisma.cANDIDATE.findFirst({
+        where: {
+          Can_id: candidateId,
+          Election_id: electionId
+        },
+        select: {
+          Position: true
+        }
+      });
+
+      if (!candidate) {
+        console.error(`Candidate ${candidateId} not found for election ${electionId}`);
+        continue;
+      }
+      
       const existingResult = await prisma.rESULT.findUnique({
         where: {
           Election_id_Can_id: {
@@ -120,7 +136,8 @@ async function declareElectionResults(electionId, electionTitle) {
             }
           },
           data: {
-            Vote_count: voteCount
+            Vote_count: voteCount,
+            Position: candidate.Position
           }
         });
         results.push(updated);
@@ -131,6 +148,7 @@ async function declareElectionResults(electionId, electionTitle) {
             Can_id: candidateId,
             Election_id: electionId,
             Vote_count: voteCount,
+            Position: candidate.Position,
             Admin_id: adminId
           }
         });

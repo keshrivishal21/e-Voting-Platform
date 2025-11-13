@@ -521,6 +521,22 @@ export const declareResults = async (req, res) => {
     for (const candidateId of candidateIds) {
       const voteCount = voteCounts.get(candidateId.toString()) || 0;
       
+      // Get the candidate's position for this election
+      const candidate = await prisma.cANDIDATE.findFirst({
+        where: {
+          Can_id: candidateId,
+          Election_id: electionIdInt
+        },
+        select: {
+          Position: true
+        }
+      });
+
+      if (!candidate) {
+        console.error(`Candidate ${candidateId} not found for election ${electionIdInt}`);
+        continue;
+      }
+      
       const result = await prisma.rESULT.upsert({
         where: {
           Election_id_Can_id: {
@@ -529,12 +545,14 @@ export const declareResults = async (req, res) => {
           }
         },
         update: {
-          Vote_count: voteCount
+          Vote_count: voteCount,
+          Position: candidate.Position
         },
         create: {
           Can_id: candidateId,
           Election_id: electionIdInt,
           Vote_count: voteCount,
+          Position: candidate.Position,
           Admin_id: adminId
         },
         include: {
@@ -625,6 +643,7 @@ export const getElectionResults = async (req, res) => {
 
     const electionsWithResults = await Promise.all(
       completedElections.map(async (election) => {
+        // Only get results if they exist in RESULT table (results have been declared)
         const results = await prisma.rESULT.findMany({
           where: {
             Election_id: election.Election_id
@@ -635,7 +654,6 @@ export const getElectionResults = async (req, res) => {
                 Can_id: true,
                 Can_name: true,
                 Can_email: true,
-                Position: true,
                 Branch: true,
                 Year: true,
                 Profile: true
@@ -647,9 +665,41 @@ export const getElectionResults = async (req, res) => {
           }
         });
 
+        // Skip this election if no results have been declared
+        if (results.length === 0) {
+          return null;
+        }
+
+        // Get all votes for transparency (timestamps only, no voter identity)
+        const allVotes = await prisma.vOTE.findMany({
+          where: {
+            Election_id: election.Election_id
+          },
+          select: {
+            Vote_id: true,
+            Vote_time: true,
+            Can_id: true,
+            candidate: {
+              select: {
+                Position: true,
+                Can_name: true
+              }
+            },
+            receipt: {
+              select: {
+                Receipt_token: true,
+                Generated_at: true
+              }
+            }
+          },
+          orderBy: {
+            Vote_time: 'asc'
+          }
+        });
+
         const resultsByPosition = {};
         results.forEach(result => {
-          const position = result.candidate.Position;
+          const position = result.Position; // Use position from RESULT table, not CANDIDATE table
           if (!resultsByPosition[position]) {
             resultsByPosition[position] = [];
           }
@@ -671,7 +721,7 @@ export const getElectionResults = async (req, res) => {
             candidateId: result.Can_id.toString(),
             candidateName: result.candidate.Can_name,
             candidateEmail: result.candidate.Can_email,
-            position: result.candidate.Position,
+            position: result.Position, // Use position from RESULT table
             branch: result.candidate.Branch,
             year: result.candidate.Year,
             profilePic: profileBase64,
@@ -680,6 +730,13 @@ export const getElectionResults = async (req, res) => {
           });
         });
 
+        // Format vote records for transparency (anonymous) - full receipt hash for verification
+        const voteRecords = allVotes.map((vote, index) => ({
+          voteNumber: index + 1,
+          timestamp: vote.Vote_time,
+          receiptHash: vote.receipt?.Receipt_token || null
+        }));
+
         return {
           electionId: election.Election_id,
           title: election.Title,
@@ -687,15 +744,20 @@ export const getElectionResults = async (req, res) => {
           endDate: election.End_date,
           status: election.Status,
           hasResults: results.length > 0,
-          results: resultsByPosition
+          totalVotesCast: allVotes.length,
+          results: resultsByPosition,
+          voteRecords: voteRecords
         };
       })
     );
 
+    // Filter out elections without declared results
+    const electionsWithDeclaredResults = electionsWithResults.filter(election => election !== null);
+
     res.status(200).json({
       success: true,
       data: {
-        elections: electionsWithResults
+        elections: electionsWithDeclaredResults
       }
     });
   } catch (error) {
