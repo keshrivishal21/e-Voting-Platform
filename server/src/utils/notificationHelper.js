@@ -119,3 +119,94 @@ export async function notifyResultsDeclared(electionTitle, totalVotes) {
   const message = `🏆 Results Declared: The results for "${electionTitle}" are now available! ${totalVotes} votes were cast. Check the results page to see the winners!`;
   return await sendSystemNotification(message);
 }
+
+/**
+ * Send individual notification to a specific user
+ * @param {number|bigint} userId - The user ID
+ * @param {string} userType - User type: 'Student' or 'Candidate'
+ * @param {string} message - The notification message
+ * @param {number|null} adminId - Admin ID who triggered the notification
+ */
+export async function sendIndividualNotification(userId, userType, message, adminId = null) {
+  try {
+    // If no adminId provided, use the first admin or default to 1
+    if (!adminId) {
+      const admin = await prisma.aDMIN.findFirst({
+        select: { Admin_id: true }
+      });
+      adminId = admin?.Admin_id || 1;
+    }
+
+    // Convert BigInt to regular number if needed
+    const userIdInt = typeof userId === 'bigint' ? Number(userId) : parseInt(userId);
+
+    const notification = await prisma.nOTIFICATION.create({
+      data: {
+        User_id: userIdInt,
+        User_type: userType,
+        Notif_message: message,
+        Notif_time: new Date(),
+        Admin_id: parseInt(adminId),
+      },
+    });
+
+    console.log(`Sent individual notification to ${userType} ${userId}: "${message}"`);
+    return notification;
+  } catch (error) {
+    console.error("Error sending individual notification:", error);
+    throw error;
+  }
+}
+
+/**
+ * Notify candidate when their application is approved
+ * @param {number|bigint} candidateId - Candidate ID
+ * @param {string} candidateName - Candidate name
+ * @param {string} position - Position applied for
+ * @param {string} electionTitle - Election title
+ * @param {number} adminId - Admin who approved
+ */
+export async function notifyCandidateApproved(candidateId, candidateName, position, electionTitle, adminId) {
+  const message = `✅ Congratulations ${candidateName}! Your candidacy for ${position} in "${electionTitle}" has been APPROVED. Good luck with your campaign!`;
+  return await sendIndividualNotification(candidateId, 'Candidate', message, adminId);
+}
+
+/**
+ * Notify candidate when their application is rejected
+ * @param {number|bigint} candidateId - Candidate ID
+ * @param {string} candidateName - Candidate name
+ * @param {string} position - Position applied for
+ * @param {string} electionTitle - Election title
+ * @param {string|null} reason - Rejection reason
+ * @param {number} adminId - Admin who rejected
+ */
+export async function notifyCandidateRejected(candidateId, candidateName, position, electionTitle, reason, adminId) {
+  let message = `❌ Dear ${candidateName}, your candidacy for ${position} in "${electionTitle}" has been rejected.`;
+  if (reason) {
+    message += ` Reason: ${reason}`;
+  }
+  message += ` You may contact the admin for more information.`;
+  return await sendIndividualNotification(candidateId, 'Candidate', message, adminId);
+}
+
+/**
+ * Notify student when their feedback is approved
+ * @param {number|bigint} studentId - Student ID
+ * @param {string} userType - 'Student' or 'Candidate'
+ * @param {number} adminId - Admin who approved
+ */
+export async function notifyFeedbackApproved(studentId, userType, adminId) {
+  const message = `✅ Great news! Your feedback has been approved and is now visible on the public testimonials page. Thank you for sharing your thoughts!`;
+  return await sendIndividualNotification(studentId, userType, message, adminId);
+}
+
+/**
+ * Notify student when their feedback is deleted
+ * @param {number|bigint} studentId - Student ID
+ * @param {string} userType - 'Student' or 'Candidate'
+ * @param {number} adminId - Admin who deleted
+ */
+export async function notifyFeedbackDeleted(studentId, userType, adminId) {
+  const message = `❌ Your feedback has been removed by the administrator. If you have questions, please contact the admin.`;
+  return await sendIndividualNotification(studentId, userType, message, adminId);
+}

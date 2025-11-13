@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { notifyFeedbackApproved, notifyFeedbackDeleted } from "../utils/notificationHelper.js";
 
 const prisma = new PrismaClient();
 
@@ -176,9 +177,30 @@ export const deleteFeedback = async (req, res) => {
       });
     }
 
+    // Get feedback before deleting to send notification
+    const feedback = await prisma.fEEDBACK.findUnique({
+      where: { FB_id: parseInt(feedbackId) },
+    });
+
+    if (!feedback) {
+      return res.status(404).json({
+        success: false,
+        message: "Feedback not found",
+      });
+    }
+
     await prisma.fEEDBACK.delete({
       where: { FB_id: parseInt(feedbackId) },
     });
+
+    // Send notification to user
+    try {
+      const adminId = req.user?.userId || null;
+      await notifyFeedbackDeleted(feedback.User_id, feedback.User_type, adminId);
+    } catch (notifError) {
+      console.error("Failed to send feedback deletion notification:", notifError);
+      // Continue even if notification fails
+    }
 
     res.status(200).json({
       success: true,
@@ -206,6 +228,15 @@ export const approveFeedback = async (req, res) => {
       where: { FB_id: parseInt(feedbackId) },
       data: { Status: 'Approved' },
     });
+
+    // Send notification to user
+    try {
+      const adminId = req.user?.userId || null;
+      await notifyFeedbackApproved(updated.User_id, updated.User_type, adminId);
+    } catch (notifError) {
+      console.error("Failed to send feedback approval notification:", notifError);
+      // Continue even if notification fails
+    }
 
     res.status(200).json({ success: true, message: 'Feedback approved', data: { feedback: { ...updated, User_id: updated.User_id.toString() } } });
   } catch (error) {

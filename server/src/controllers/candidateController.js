@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { notifyCandidateApproved, notifyCandidateRejected } from "../utils/notificationHelper.js";
 
 const prisma = new PrismaClient();
 
@@ -134,6 +135,21 @@ export const approveCandidate = async (req, res) => {
       },
     });
 
+    // Send notification to candidate
+    try {
+      const adminId = req.user?.userId || null;
+      await notifyCandidateApproved(
+        updatedCandidate.Can_id,
+        updatedCandidate.Can_name,
+        updatedCandidate.Position,
+        updatedCandidate.election.Title,
+        adminId
+      );
+    } catch (notifError) {
+      console.error("Failed to send approval notification:", notifError);
+      // Continue even if notification fails
+    }
+
     // Serialize BigInt fields
     const serializedCandidate = serializeCandidate(updatedCandidate);
 
@@ -197,6 +213,22 @@ export const rejectCandidate = async (req, res) => {
         },
       },
     });
+
+    // Send notification to candidate
+    try {
+      const adminId = req.user?.userId || null;
+      await notifyCandidateRejected(
+        updatedCandidate.Can_id,
+        updatedCandidate.Can_name,
+        updatedCandidate.Position,
+        updatedCandidate.election.Title,
+        reason,
+        adminId
+      );
+    } catch (notifError) {
+      console.error("Failed to send rejection notification:", notifError);
+      // Continue even if notification fails
+    }
 
     // Serialize BigInt fields
     const serializedCandidate = serializeCandidate(updatedCandidate);
