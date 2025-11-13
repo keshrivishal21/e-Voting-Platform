@@ -4,9 +4,9 @@ const prisma = new PrismaClient();
 
 /**
  * Send automatic system notification to all users
- * @param {string} message - The notification message
- * @param {number|null} adminId - Admin ID (optional, defaults to system admin)
- * @returns {Promise<number>} Number of notifications sent
+ * @param {string} message 
+ * @param {number|null} adminId 
+ * @returns {Promise<number>} 
  */
 export async function sendSystemNotification(message, adminId = null) {
   try {

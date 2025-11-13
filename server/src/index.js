@@ -11,6 +11,7 @@ import notificationRoutes from "./routes/notificationRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
 import voteRoutes from "./routes/voteRoutes.js";
 import { startElectionScheduler } from "./services/electionScheduler.js";
+import { seedDefaultAdmin } from "./utils/seedAdmin.js";
 
 dotenv.config();
 
@@ -49,9 +50,17 @@ app.get("/", async(req, res) => {
 
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
-// Start automatic election scheduler unless disabled
-if (process.env.ENABLE_SCHEDULER !== 'false') {
-  startElectionScheduler();
-}
+// Initialize server
+app.listen(PORT, async () => {
+  console.log(`Server running on port ${PORT}`);
+  try {
+    await seedDefaultAdmin();
+  } catch (error) {
+    console.error("Failed to seed default admin:", error);
+  }
+  
+  if (process.env.ENABLE_SCHEDULER !== 'false') {
+    startElectionScheduler();
+  }
+});
