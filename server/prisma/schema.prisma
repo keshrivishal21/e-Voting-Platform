@@ -1,0 +1,208 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserType {
+  Student
+  Candidate
+  Admin
+}
+
+enum ElectionStatus {
+  Upcoming
+  Ongoing
+  Completed
+}
+
+enum CandidateStatus {
+  Pending
+  Approved
+  Rejected
+}
+
+enum LogType {
+  System
+  Admin
+  Security
+  Audit
+}
+
+model USERS {
+  User_id   BigInt    
+  User_type UserType
+
+  student   STUDENT?
+  candidate CANDIDATE?
+  feedbacks FEEDBACK[]
+  logs      SYSTEM_LOGS[]
+  notif     NOTIFICATION[]
+
+  @@id([User_id, User_type])
+}
+
+model ADMIN {
+  Admin_id      Int           @id
+  Admin_name    String        @db.VarChar(30)
+  Admin_email   String        @db.VarChar(50)
+  Admin_phone   String        @db.VarChar(15)
+  Admin_password String       @db.VarChar(255)
+
+  elections        ELECTION[]
+  results          RESULT[]
+  feedbacks        FEEDBACK[]
+  logs             SYSTEM_LOGS[]
+  notifications    NOTIFICATION[]
+}
+
+model ELECTION {
+  Election_id Int              @id @default(autoincrement())
+  Title       String           @db.VarChar(100)
+  Start_date  DateTime     
+  End_date    DateTime       
+  Status      ElectionStatus
+  Created_by  Int
+  Auto_declare_results Boolean @default(true)
+  Positions   String?          @db.Text
+
+  admin       ADMIN            @relation(fields: [Created_by], references: [Admin_id])
+  candidates  CANDIDATE[]
+  votes       VOTE[]
+  results     RESULT[]
+}
+
+model STUDENT {
+  Std_id      BigInt    @id
+  Std_name    String    @db.VarChar(30)
+  Std_phone   String    @db.VarChar(15)
+  Std_password String   @db.VarChar(255)
+  Dob         DateTime  
+  Std_email   String    @db.VarChar(50)
+  Email_verified Boolean @default(false)
+  User_type   UserType  @default(Student)
+  Profile      Bytes?    @db.MediumBlob
+  Reset_token String?   @db.VarChar(255)
+  Reset_token_expiry DateTime?
+
+  user        USERS     @relation(fields: [Std_id, User_type], references: [User_id, User_type])
+
+  @@unique([Std_id, User_type])
+}
+
+model CANDIDATE {
+  Can_id       BigInt       @id
+  Can_name     String    @db.VarChar(30)
+  Position     String    @db.VarChar(30)
+  Can_email    String    @db.VarChar(50)
+  Can_phone    String    @db.VarChar(15)
+  Can_password String    @db.VarChar(255)
+  Manifesto    String    @db.Text
+  Election_id  Int
+  Branch       String    @db.VarChar(50)
+  Year         Int
+  Cgpa         Float
+  Data         Bytes     @db.MediumBlob
+  Profile      Bytes?    @db.MediumBlob
+  User_type    UserType  @default(Candidate)
+  Status           CandidateStatus @default(Pending)
+  Rejection_reason String?         @db.Text
+  Reset_token String?   @db.VarChar(255)
+  Reset_token_expiry DateTime?
+
+  election     ELECTION   @relation(fields: [Election_id], references: [Election_id])
+  user         USERS     @relation(fields: [Can_id, User_type], references: [User_id, User_type])
+  votes        VOTE[]
+  results      RESULT[]
+
+  @@unique([Can_id, User_type])
+  @@unique([Can_id, Election_id])
+}
+
+
+model VOTE {
+  Vote_id         Int       @id @default(autoincrement())
+  Std_id_hash     String    @db.VarChar(64)
+  Can_id          BigInt
+  Election_id     Int
+  Position        String    @db.VarChar(30)
+  Vote_time       DateTime  @default(now())
+  Encrypted_vote  String    @db.Text
+
+  candidate CANDIDATE @relation(fields: [Can_id], references: [Can_id])
+  election  ELECTION  @relation(fields: [Election_id], references: [Election_id])
+  receipt   VOTE_RECEIPT?
+
+  @@unique([Std_id_hash, Election_id, Position])
+  @@index([Election_id, Can_id])
+  @@index([Std_id_hash, Election_id])
+}
+
+model VOTE_RECEIPT {
+  Receipt_id        Int       @id @default(autoincrement())
+  Vote_id           Int       @unique
+  Receipt_token     String    @unique @db.VarChar(255)
+  Generated_at      DateTime  @default(now())
+
+  vote              VOTE      @relation(fields: [Vote_id], references: [Vote_id], onDelete: Cascade)
+
+  @@index([Receipt_token])
+}
+
+model RESULT {
+  R_id        Int       @id @default(autoincrement())
+  Can_id      BigInt
+  Election_id Int
+  Vote_count  Int
+  Position    String    @db.VarChar(30)
+  Admin_id    Int
+
+  candidate   CANDIDATE @relation(fields: [Can_id], references: [Can_id])
+  election    ELECTION  @relation(fields: [Election_id], references: [Election_id])
+  admin       ADMIN     @relation(fields: [Admin_id], references: [Admin_id])
+
+  @@unique([Election_id, Can_id])
+}
+
+model FEEDBACK {
+  FB_id     Int       @id @default(autoincrement())
+  User_id   BigInt
+  User_type UserType
+  FB_time   DateTime  @db.Timestamp(0)
+  Message   String    @db.Text
+  Status    String    @db.VarChar(50)
+  Admin_id  Int?
+
+  user      USERS     @relation(fields: [User_id, User_type], references: [User_id, User_type])
+  admin     ADMIN?    @relation(fields: [Admin_id], references: [Admin_id])
+}
+
+model SYSTEM_LOGS {
+  Log_id    Int      @id @default(autoincrement())
+  User_id   BigInt?
+  User_type UserType?
+  Admin_id  Int?
+  Log_time  DateTime @db.Timestamp(0)
+  Log_type  LogType
+  Action    String   @db.Text
+
+  user      USERS?   @relation(fields: [User_id, User_type], references: [User_id, User_type])
+  admin     ADMIN?  @relation(fields: [Admin_id], references: [Admin_id])
+}
+
+model NOTIFICATION {
+  N_id          Int      @id @default(autoincrement())
+  User_id       BigInt
+  User_type     UserType
+  Notif_time    DateTime @db.Timestamp(0)
+  Notif_message String   @db.Text
+  Admin_id      Int?
+
+  user          USERS   @relation(fields: [User_id, User_type], references: [User_id, User_type])
+  admin         ADMIN?  @relation(fields: [Admin_id], references: [Admin_id])
+}

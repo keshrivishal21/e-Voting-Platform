@@ -1,14 +1,66 @@
-const express = require("express");
-const cors = require("cors");
-require("dotenv").config();
+import { PrismaClient } from "@prisma/client";
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import authRoutes from "./routes/authRoutes.js";
+import electionRoutes from "./routes/electionRoutes.js";
+import candidateRoutes from "./routes/candidateRoutes.js";
+import dashboardRoutes from "./routes/dashboardRoutes.js";
+import feedbackRoutes from "./routes/feedbackRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import studentRoutes from "./routes/studentRoutes.js";
+import voteRoutes from "./routes/voteRoutes.js";
+import { startElectionScheduler } from "./services/electionScheduler.js";
+import { seedDefaultAdmin } from "./utils/seedAdmin.js";
 
+dotenv.config();
+
+const prisma = new PrismaClient();
 const app = express();
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.send("Backend running...");
+// Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/election", electionRoutes);
+app.use("/api/candidate", candidateRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/feedback", feedbackRoutes);
+app.use("/api/notification", notificationRoutes);
+app.use("/api/student", studentRoutes);
+app.use("/api/vote", voteRoutes);
+
+// Health check route
+app.get("/", async(req, res) => {
+  try {
+    const admins = await prisma.aDMIN.findMany();
+    res.json({ 
+      message: "E-Voting Platform Server is running!", 
+      status: "Connected to database",
+      adminCount: admins.length 
+    });
+  } catch (error) {
+    console.error("Database error:", error);
+    res.status(500).json({ error: "Database connection failed" });
+  }
 });
 
+
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+// Initialize server
+app.listen(PORT, async () => {
+  console.log(`Server running on port ${PORT}`);
+  try {
+    await seedDefaultAdmin();
+  } catch (error) {
+    console.error("Failed to seed default admin:", error);
+  }
+  
+  if (process.env.ENABLE_SCHEDULER !== 'false') {
+    startElectionScheduler();
+  }
+});

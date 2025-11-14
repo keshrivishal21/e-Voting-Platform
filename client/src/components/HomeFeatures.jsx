@@ -11,9 +11,9 @@ export default function HomeFeatures() {
     },
     {
       icon: <BarChart3 className="w-10 h-10 text-indigo-600" />,
-      title: "Real-Time Results",
+      title: "Fast Result Declaration",
       description:
-        "Track accurate results live as votes are counted, ensuring complete transparency in the process.",
+        "Access official election results immediately after admin declaration, with complete transparency and detailed analytics.",
     },
     {
       icon: <ShieldCheck className="w-10 h-10 text-indigo-600" />,
@@ -32,7 +32,7 @@ export default function HomeFeatures() {
         </h2>
         <p className="text-gray-600 mt-3 max-w-2xl mx-auto text-base md:text-lg">
           Our platform ensures a seamless election experience with secure voting, 
-          live result tracking, and complete transparency every step of the way.
+          instant result access, and complete transparency every step of the way.
         </p>
 
         {/* Features Grid */}
