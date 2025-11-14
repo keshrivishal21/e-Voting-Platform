@@ -610,6 +610,7 @@ const getOngoingElections = async (req, res) => {
   try {
     const studentId = req.user.userId;
 
+    // Fetch ongoing elections and their approved candidates
     const elections = await prisma.eLECTION.findMany({
       where: { Status: 'Ongoing' },
       include: {
@@ -619,16 +620,43 @@ const getOngoingElections = async (req, res) => {
             Can_id: true,
             Position: true
           }
-        },
-        votes: {
-          where: { Std_id: studentId },
-          select: {
-            Vote_id: true,
-            Vote_time: true
-          }
         }
       },
       orderBy: { Start_date: 'desc' }
+    });
+
+    // If no elections, return empty
+    if (!elections || elections.length === 0) {
+      return res.status(200).json({ elections: [] });
+    }
+
+    // Build hashes for each election to check if the student has voted
+    const electionIds = elections.map(e => e.Election_id);
+    const electionHashMap = new Map(); // electionId -> hash
+    const hashes = elections.map(e => {
+      const h = hashStudentId(studentId, e.Election_id);
+      electionHashMap.set(e.Election_id, h);
+      return h;
+    });
+
+    // Batch query votes for these elections where Std_id_hash matches any of the computed hashes
+    const votes = await prisma.vOTE.findMany({
+      where: {
+        Election_id: { in: electionIds },
+        Std_id_hash: { in: hashes }
+      },
+      select: {
+        Election_id: true,
+        Vote_time: true
+      }
+    });
+
+    const voteMap = new Map(); // electionId -> Vote_time
+    votes.forEach(v => {
+      // Ensure only one entry per election (first vote)
+      if (!voteMap.has(v.Election_id)) {
+        voteMap.set(v.Election_id, v.Vote_time);
+      }
     });
 
     const electionsWithStatus = elections.map(election => ({
@@ -638,8 +666,8 @@ const getOngoingElections = async (req, res) => {
       End_date: election.End_date,
       candidateCount: election.candidates.length,
       positions: [...new Set(election.candidates.map(c => c.Position))],
-      hasVoted: election.votes.length > 0,
-      voteTime: election.votes.length > 0 ? election.votes[0].Vote_time : null
+      hasVoted: voteMap.has(election.Election_id),
+      voteTime: voteMap.has(election.Election_id) ? voteMap.get(election.Election_id) : null
     }));
 
     res.status(200).json({ elections: electionsWithStatus });
