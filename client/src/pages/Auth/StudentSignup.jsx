@@ -184,10 +184,46 @@ function Signup() {
         return;
       }
 
+      // Validate name (only alphabets and spaces)
+      const nameRegex = /^[A-Za-z\s]+$/;
+      if (!nameRegex.test(formData.name.trim())) {
+        const errorMsg = "Name should only contain alphabets and spaces";
+        setError(errorMsg);
+        toast.error(errorMsg);
+        return;
+      }
+
+      // Validate date of birth (must be valid and reasonable)
+      const today = new Date();
+      const birthDate = new Date(formData.dob);
+      
+      if (birthDate >= today) {
+        const errorMsg = "Date of birth cannot be today or in the future";
+        setError(errorMsg);
+        toast.error(errorMsg);
+        return;
+      }
+
+      const age = today.getFullYear() - birthDate.getFullYear();
+      if (age > 100) {
+        const errorMsg = "Please enter a valid date of birth";
+        setError(errorMsg);
+        toast.error(errorMsg);
+        return;
+      }
+
       // Validate phone number (Indian format: 10 digits starting with 6-9)
       const phoneRegex = /^[6-9]\d{9}$/;
       if (!phoneRegex.test(formData.phone.trim())) {
         const errorMsg = "Please enter a valid 10-digit phone number starting with 6-9";
+        setError(errorMsg);
+        toast.error(errorMsg);
+        return;
+      }
+
+      // Validate password length
+      if (formData.password.length < 6) {
+        const errorMsg = "Password must be at least 6 characters long";
         setError(errorMsg);
         toast.error(errorMsg);
         return;
@@ -285,6 +321,8 @@ function Signup() {
                 value={formData.name}
                 onChange={handleInputChange}
                 placeholder="Enter your full name"
+                pattern="[A-Za-z\s]+"
+                title="Name should only contain alphabets and spaces"
                 className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
                 required
                 disabled={loading}
@@ -425,6 +463,7 @@ function Signup() {
                   type="date"
                   value={formData.dob}
                   onChange={handleInputChange}
+                  max={new Date().toISOString().split('T')[0]}
                   className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
                   required
                   disabled={loading}
@@ -457,7 +496,8 @@ function Signup() {
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
-                placeholder="Create a strong password"
+                placeholder="Create a strong password (min. 6 characters)"
+                minLength={6}
                 className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
                 required
                 disabled={loading}
@@ -475,6 +515,7 @@ function Signup() {
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
                 placeholder="Confirm your password"
+                minLength={6}
                 className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
                 required
                 disabled={loading}

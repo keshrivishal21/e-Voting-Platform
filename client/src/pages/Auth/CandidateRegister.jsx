@@ -283,10 +283,29 @@ const CandidateRegister = () => {
         return;
       }
 
-      // Validate phone number (Indian format: 10 digits starting with 6-9)
+      // Validate name (only alphabets and spaces)
+      const nameRegex = /^[A-Za-z\s]+$/;
+      if (!nameRegex.test(formData.name.trim())) {
+        const errorMsg = "Name should only contain alphabets and spaces";
+        setError(errorMsg);
+        toast.error(errorMsg);
+        setLoading(false);
+        return;
+      }
+
+      // Validate phone number (10 digits starting with 6-9)
       const phoneRegex = /^[6-9]\d{9}$/;
       if (!phoneRegex.test(formData.phone.trim())) {
         const errorMsg = "Please enter a valid 10-digit phone number starting with 6-9";
+        setError(errorMsg);
+        toast.error(errorMsg);
+        setLoading(false);
+        return;
+      }
+
+      // Validate password length
+      if (formData.password.length < 6) {
+        const errorMsg = "Password must be at least 6 characters long";
         setError(errorMsg);
         toast.error(errorMsg);
         setLoading(false);
@@ -437,6 +456,8 @@ const CandidateRegister = () => {
                   value={formData.name}
                   onChange={handleInputChange}
                   placeholder={studentFetched ? "Fetched from student records" : "Enter your full name"}
+                  pattern="[A-Za-z\s]+"
+                  title="Name should only contain alphabets and spaces"
                   className={`w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 ${
                     studentFetched ? "bg-gray-100 cursor-not-allowed" : "bg-white"
                   }`}
@@ -695,11 +716,13 @@ const CandidateRegister = () => {
                   type="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  placeholder="Create a strong password"
+                  placeholder="Create a strong password (min. 6 characters)"
+                  minLength={6}
                   className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
                   required
                   disabled={loading}
                 />
+                
               </div>
 
               <div>
@@ -712,6 +735,7 @@ const CandidateRegister = () => {
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
                   placeholder="Confirm your password"
+                  minLength={6}
                   className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
                   required
                   disabled={loading}
