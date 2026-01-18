@@ -268,11 +268,11 @@ const Profile = () => {
   };
 
   return (
-    <div className="px-10 md:px-20 max-w-7xl mt-28 items-center mx-auto mb-20">
+    <div className="px-4 sm:px-6 md:px-10 lg:px-20 max-w-7xl mt-24 sm:mt-28 items-center mx-auto mb-20">
       {/* Header Section */}
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-black-600">Student Profile</h1>
-        <p className="text-center text-gray-600 mt-2 px-5">
+      <div className="text-center mb-8 sm:mb-12">
+        <h1 className="text-3xl sm:text-4xl font-bold text-black-600">Student Profile</h1>
+        <p className="text-center text-sm sm:text-base text-gray-600 mt-2 px-2 sm:px-5">
           Manage your personal information and account settings securely.<br />
           Keep your profile updated for seamless voting experience.
         </p>

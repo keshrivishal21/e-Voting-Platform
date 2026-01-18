@@ -45,9 +45,9 @@ const StudentNotifications = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6">
-  <div className="mt-20 max-w-7xl mx-auto mb-18">
-    <h1 className="text-3xl font-bold mb-6 text-center text-indigo-700">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4 sm:p-6">
+  <div className="mt-20 sm:mt-24 max-w-7xl mx-auto mb-18">
+    <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-center text-indigo-700">
     Notifications
   </h1>
 

@@ -84,9 +84,9 @@ const Elections = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6 ">
-        <div className="mt-20 max-w-6xl mx-auto mb-18">
-      <h1 className="text-3xl font-bold text-indigo-600 mb-6">Elections</h1>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4 sm:p-6">
+        <div className="mt-20 sm:mt-24 max-w-6xl mx-auto mb-18">
+      <h1 className="text-2xl sm:text-3xl font-bold text-indigo-600 mb-4 sm:mb-6">Elections</h1>
 
       {/* Error Message */}
       {error && (
@@ -96,10 +96,10 @@ const Elections = () => {
       )}
 
       {/* Toggle Buttons */}
-      <div className="flex space-x-4 mb-6">
+      <div className="flex flex-wrap gap-2 sm:gap-4 mb-4 sm:mb-6">
         <button
           onClick={() => setActiveTab('current')}
-          className={`px-4 py-2 rounded-full font-medium transition ${
+          className={`px-3 sm:px-4 py-2 text-sm sm:text-base rounded-full font-medium transition ${
             activeTab === 'current'
               ? 'bg-indigo-600 text-white'
               : 'bg-indigo-100 text-indigo-600'
@@ -109,7 +109,7 @@ const Elections = () => {
         </button>
         <button
           onClick={() => setActiveTab('upcoming')}
-          className={`px-4 py-2 rounded-full font-medium transition ${
+          className={`px-3 sm:px-4 py-2 text-sm sm:text-base rounded-full font-medium transition ${
             activeTab === 'upcoming'
               ? 'bg-indigo-600 text-white'
               : 'bg-indigo-100 text-indigo-600'
@@ -119,7 +119,7 @@ const Elections = () => {
         </button>
         <button
           onClick={() => setActiveTab('completed')}
-          className={`px-4 py-2 rounded-full font-medium transition ${
+          className={`px-3 sm:px-4 py-2 text-sm sm:text-base rounded-full font-medium transition ${
             activeTab === 'completed'
               ? 'bg-indigo-600 text-white'
               : 'bg-indigo-100 text-indigo-600'

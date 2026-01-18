@@ -205,28 +205,28 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-      <div className="p-6 mt-20 max-w-7xl mx-auto mb-18">
+      <div className="p-4 sm:p-6 mt-20 max-w-7xl mx-auto mb-18">
         {/* Hero Header */}
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-3xl shadow-2xl p-8 mb-8 text-white">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div>
-              <h1 className="text-4xl font-bold mb-2">Admin Dashboard</h1>
-              <p className="text-indigo-100">
+        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-8 mb-6 sm:mb-8 text-white">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="text-center md:text-left">
+              <h1 className="text-3xl sm:text-4xl font-bold mb-2">Admin Dashboard</h1>
+              <p className="text-sm sm:text-base text-indigo-100">
                 Welcome back! Manage your e-voting platform
               </p>
             </div>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="mt-4 md:mt-0 bg-white text-indigo-600 px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex items-center gap-2"
+              className="bg-white text-indigo-600 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex items-center gap-2"
             >
-              <PlusCircleIcon className="w-6 h-6" />
+              <PlusCircleIcon className="w-5 h-5 sm:w-6 sm:h-6" />
               Create Election
             </button>
           </div>
         </div>
 
         {/* Stats Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <div className="bg-white shadow-lg rounded-2xl p-6 hover:shadow-xl transition-shadow duration-300 border-l-4 border-indigo-500">
             <div className="flex items-center justify-between">
               <div>

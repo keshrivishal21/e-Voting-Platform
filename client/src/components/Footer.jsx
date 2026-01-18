@@ -2,19 +2,19 @@ import React from "react";
 
 const Footer = () => {
   return (
-    <footer className="flex flex-col items-center justify-center w-full py-12 bg-gradient-to-b from-[#5524B7] to-[#380B60] text-white/70">
+    <footer className="flex flex-col items-center justify-center w-full py-8 sm:py-12 px-4 bg-gradient-to-b from-[#5524B7] to-[#380B60] text-white/70">
       {/* Project Name / Logo */}
-      <h2 className="text-2xl font-bold text-white tracking-wide">
+      <h2 className="text-xl sm:text-2xl font-bold text-white tracking-wide text-center">
         e-Voting Platform for College Elections
       </h2>
 
       {/* Copyright */}
-      <p className="mt-4 text-center text-sm">
+      <p className="mt-4 text-center text-xs sm:text-sm">
         © {new Date().getFullYear()} e-Voting Platform. All rights reserved.
       </p>
 
       {/* Social Icons */}
-      <div className="flex items-center gap-4 mt-5">
+      <div className="flex items-center gap-3 sm:gap-4 mt-5">
         {/* Facebook */}
         <a href="#" className="hover:-translate-y-0.5 transition-all duration-300">
           <svg

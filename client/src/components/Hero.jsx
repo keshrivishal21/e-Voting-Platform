@@ -8,7 +8,7 @@ export default function Hero({ electionLive }) {
       id="section"
       className="bg-gradient-to-b from-[#F5F7FF] via-[#fffbee] to-[#E6EFFF] min-h-screen relative flex items-center"
     >
-      <main className="flex flex-col md:flex-row items-center max-md:text-center px-6 sm:px-10 md:px-16 max-w-7xl mx-auto w-full">
+      <main className="flex flex-col md:flex-row items-center max-md:text-center px-4 sm:px-6 md:px-10 lg:px-16 max-w-7xl mx-auto w-full">
         
         {/* Left Content */}
         <div className="flex flex-col items-center md:items-start md:flex-1">

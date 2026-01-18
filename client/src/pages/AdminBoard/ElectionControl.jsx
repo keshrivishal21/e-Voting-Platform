@@ -29,6 +29,7 @@ const ElectionControl = () => {
   const [showTieBreakModal, setShowTieBreakModal] = useState(false);
   const [tieBreakData, setTieBreakData] = useState(null);
   const [selectedWinners, setSelectedWinners] = useState({});
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   useEffect(() => {
     fetchElections();

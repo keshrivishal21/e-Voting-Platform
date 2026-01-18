@@ -133,17 +133,17 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white py-6 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto pt-20">
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">
+      <div className="max-w-7xl mx-auto pt-16 sm:pt-20">
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6 sm:mb-8">
         Welcome Back, {candidate.name}!
       </h1>
 
       {/* Profile Section */}
-      <div className="bg-white border border-gray-200 shadow-md rounded-2xl p-8 flex flex-col md:flex-row items-center md:items-start gap-8 mb-8">
+      <div className="bg-white border border-gray-200 shadow-md rounded-2xl p-4 sm:p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start gap-4 sm:gap-6 md:gap-8 mb-6 sm:mb-8">
         <img
           src={candidate.photo}
           alt={candidate.name}
-          className="w-32 h-32 object-cover rounded-full border-4 border-indigo-300 shadow-lg"
+          className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 object-cover rounded-full border-4 border-indigo-300 shadow-lg"
           onError={(e) => {
             e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(candidate.name)}&background=6366f1&color=fff&size=128`;
           }}

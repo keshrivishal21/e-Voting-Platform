@@ -263,11 +263,11 @@ This is an official vote receipt from the e-Voting Platform.
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="max-w-4xl mx-auto"
+      className="max-w-4xl mx-auto px-4 sm:px-6"
     >
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-indigo-600 mb-2">Cast Your Vote</h1>
-        <p className="text-gray-600">Select an election to participate in</p>
+      <div className="text-center mb-6 sm:mb-8">
+        <h1 className="text-3xl sm:text-4xl font-bold text-indigo-600 mb-2">Cast Your Vote</h1>
+        <p className="text-sm sm:text-base text-gray-600">Select an election to participate in</p>
       </div>
 
       {loading ? (

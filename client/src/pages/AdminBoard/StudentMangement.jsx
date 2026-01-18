@@ -124,18 +124,18 @@ const StudentManagement = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-      <div className="p-8 pt-24 max-w-7xl mx-auto">
+      <div className="p-4 sm:p-6 md:p-8 pt-20 sm:pt-24 max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 flex items-center gap-3">
-            <UserGroupIcon className="h-10 w-10 text-blue-600" />
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 flex items-center gap-2 sm:gap-3">
+            <UserGroupIcon className="h-8 w-8 sm:h-10 sm:w-10 text-blue-600" />
             Student Management
           </h1>
-          <p className="text-gray-600 mt-3 text-lg">View and manage student information</p>
+          <p className="text-gray-600 mt-2 sm:mt-3 text-base sm:text-lg">View and manage student information</p>
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 border-l-4 border-blue-500">
             <div className="flex items-center justify-between">
               <div>

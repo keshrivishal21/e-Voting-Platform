@@ -69,13 +69,13 @@ const CandidateList = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="px-10 md:px-20 max-w-7xl mt-28 items-center mx-auto mb-20 min-h-[calc(100vh-200px)]"
+      className="px-4 sm:px-6 md:px-10 lg:px-20 max-w-7xl mt-24 sm:mt-28 items-center mx-auto mb-20 min-h-[calc(100vh-200px)]"
     >
       <motion.h1 
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6 }}
-        className="text-4xl font-bold text-black-600 text-center"
+        className="text-3xl sm:text-4xl font-bold text-black-600 text-center"
       >
         Candidates List
       </motion.h1>
@@ -84,7 +84,7 @@ const CandidateList = () => {
         initial={{ y: -10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.2, duration: 0.6 }}
-        className="text-center text-gray-600 mt-2 px-5"
+        className="text-center text-sm sm:text-base text-gray-600 mt-2 px-2 sm:px-5"
       >
        Discover the brilliant candidates running for the elections this year! They are ready to lead, inspire, and make a difference in our college community. <br />
   Choose wisely and cast your vote!
@@ -112,9 +112,9 @@ const CandidateList = () => {
               {election.title}
             </motion.h2>
 
-            {/* Flex container: left-aligned with wrap */}
+            {/* Flex container: centered on mobile, left-aligned on larger screens */}
             {election.candidates && election.candidates.length > 0 ? (
-              <div className="flex flex-wrap items-start justify-start gap-6">
+              <div className="flex flex-wrap items-start justify-center sm:justify-start gap-4 sm:gap-6">
                 {election.candidates.map((candidate, candidateIndex) => (
                   <motion.div
                     key={candidate.id}

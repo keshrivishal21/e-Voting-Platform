@@ -199,7 +199,7 @@ const CandidateProfile = () => {
   };
 
   return (
-    <div className="px-10 md:px-20 max-w-7xl mt-28 items-center mx-auto mb-20">
+    <div className="px-4 sm:px-6 md:px-10 lg:px-20 max-w-7xl mt-24 sm:mt-28 items-center mx-auto mb-20">
       {/* Header Section */}
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold text-black-600">Candidate Profile</h1>

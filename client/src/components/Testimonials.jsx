@@ -196,11 +196,11 @@ const Testimonials = ({ userType = "Student" }) => {
 </button>
 
 {showModal && (
-        <div className="fixed inset-0 bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => {
+        <div className="fixed inset-0 bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-50 px-4" onClick={() => {
           setShowModal(false);
           setFeedbackText("");
         }}>
-          <div className="bg-white rounded-2xl w-96 p-6 relative" onClick={(e)=>e.stopPropagation()}>
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 relative" onClick={(e)=>e.stopPropagation()}>
             <button
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-800 font-bold text-xl"
               onClick={() => {

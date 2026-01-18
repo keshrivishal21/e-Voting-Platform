@@ -112,14 +112,14 @@ const CandidateManagement = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6 ">
-      <div className="mt-20 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-indigo-700">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4 sm:p-6">
+      <div className="mt-20 sm:mt-24 max-w-6xl mx-auto">
+      <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-indigo-700">
         Candidate Management
       </h1>
 
       {/* Toggle Buttons */}
-      <div className="mb-6 flex space-x-4">
+      <div className="mb-4 sm:mb-6 flex flex-wrap gap-2 sm:gap-4">
         <button
           onClick={() => setViewPending(true)}
           className={`px-6 py-2 rounded-2xl font-semibold shadow transition ${
@@ -145,11 +145,11 @@ const CandidateManagement = () => {
       {/* Conditional Rendering based on toggle */}
       {viewPending ? (
         <div className="mb-10">
-          <h2 className="text-2xl font-semibold mb-4 text-indigo-600">
+          <h2 className="text-xl sm:text-2xl font-semibold mb-3 sm:mb-4 text-indigo-600">
             Pending Candidate Requests
           </h2>
-          <div className="bg-white shadow rounded-2xl p-4 overflow-x-auto">
-            <table className="min-w-full table-auto">
+          <div className="bg-white shadow rounded-2xl p-2 sm:p-4 overflow-x-auto">
+            <table className="min-w-full table-auto text-sm sm:text-base">
               <thead>
                 <tr className="bg-indigo-100 text-left">
                   <th className="px-4 py-2">#</th>

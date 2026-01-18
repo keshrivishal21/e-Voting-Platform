@@ -129,12 +129,12 @@ const Results = () => {
   const electionsWithResults = elections.filter(election => election.hasResults);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6">
-      <div className="mt-20 max-w-6xl mx-auto mb-18">
-        <h1 className="text-4xl font-bold text-indigo-600 text-center">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4 sm:p-6">
+      <div className="mt-20 sm:mt-24 max-w-6xl mx-auto mb-18">
+        <h1 className="text-3xl sm:text-4xl font-bold text-indigo-600 text-center">
           Election Results
         </h1>
-        <p className="text-center text-gray-600 mt-2 px-5">
+        <p className="text-center text-sm sm:text-base text-gray-600 mt-2 px-2 sm:px-5">
           Congratulations to the winners of the recent elections! Here are the results for each post.
         </p>
 

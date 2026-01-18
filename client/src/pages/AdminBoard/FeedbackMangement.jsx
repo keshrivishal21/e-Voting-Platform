@@ -26,16 +26,16 @@ const FeedbackManagement = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6 ">
-      <div className="mt-20 max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4 sm:p-6">
+      <div className="mt-20 sm:mt-24 max-w-6xl mx-auto">
 
       
-      <h1 className="text-3xl font-bold mb-6 text-indigo-700">
+      <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-indigo-700">
         Feedbacks Recieved
       </h1>
 
-      <div className="bg-white shadow rounded-2xl p-4 overflow-x-auto">
-        <table className="min-w-full table-auto">
+      <div className="bg-white shadow rounded-2xl p-2 sm:p-4 overflow-x-auto">
+        <table className="min-w-full table-auto text-sm">
           <thead>
             <tr className="bg-indigo-100 text-left">
               <th className="px-4 py-2">#</th>
